@@ -3340,277 +3340,495 @@ layout.
 
 ## K. Objectives & Scoring
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
+Every case below assumes the active organization is
+Stark Industries — if the sidebar org-switcher still
+shows Wayne Enterprises (a G36 leftover), switch back
+first. K8 is the master's: it wipes and reseeds after
+the explorer returns (`## The walk` step 5), not in
+document order with the rest of this section.
 
-Owner agents: Agent-G (K1–K6 in Phase 2, K8 in Phase 4),
-Agent-E (K7, K9–K23, K30), Agent-CH (K27–K29). Mutation
-domain delta:
+### K1–K6 — Organization Objectives box
 
-- Agent-G adds: `objectives/:id` document-trio PUTs
-  (archive/reactivate ride the document body lifecycle
-  trio — no shared `states` log; revision history is
-  message-plane pairs at `objectives/:id/revisions/`)
-- Agent-E adds: `projects/:id/objective-baseline-scores`
-  and `projects/:id/objective-actual-scores` (message-plane;
-  adapters `postProjectBaselineScoring` /
-  `postProjectActualMeasurement`)
-- Agent-CH stays read-only
+- [ ] **K1** Open Organization page; confirm Objectives
+  box renders between the Overview and Usage cards with
+  4 seeded active objectives in position order. PASS if
+  all 4 names display.
+  Pin: tests/mock-data-objectives.test.ts 'seeds every
+       objective seed plus the org-2 objective' (pins the
+       seeded count at exactly `OBJECTIVE_SEEDS.length`,
+       4); tests/presenter-organization-objectives.test.ts
+       'renders active section with each active
+       objective' (renders each objective's name and id);
+       exploratory — the live position-ordered placement
+       between Overview and Usage
+- [ ] **K2** Click `+ Add objective`; confirm modal
+  opens. Enter name "Test Objective" and description
+  "Test desc"; click Add. PASS if the new objective
+  appears at the bottom of the active list.
+  Pin: tests/presenter-organization-objectives.test.ts
+       'renders add-objective affordance'; tests/drag-
+       reorder.test.ts 'nextPosition appends one
+       POSITION_GAP past the last integer entry' (decides
+       a new objective's position lands after every
+       existing one); tests/adapters-objectives.test.ts
+       'postObjectiveCreation writes via GET the
+       objective and its first revision through POST
+       /objectives'; exploratory — the live modal and the
+       visual bottom-of-list placement
+- [ ] **K3** Click `Edit` on "Lower expenses"; confirm
+  modal opens pre-filled. Change the name to "Cut costs";
+  click Save. PASS if the list re-renders with the new
+  name. K30 and K7 later confirm this rename resolves
+  temporally.
+  Pin: exploratory — the live modal, pre-fill, and
+       re-render; `postObjectiveRevision` in
+       web-app/app/adapters/objectives.ts (the write this
+       Save triggers) carries no test today
+- [ ] **K4** Click `Archive` on "Test Objective" (K2);
+  confirm dialog opens. Confirm. PASS if the objective
+  moves from active to the Archived sub-section, with
+  strikethrough.
+  Pin: tests/adapters-objectives.test.ts
+       'postObjectiveArchival PUTs the document with an
+       archived trio and the current position';
+       tests/presenter-organization-objectives.test.ts
+       'renders archived section under active' (its own
+       assertions are unscoped `.includes()` calls that
+       confirm an "Archived" section and the objective's
+       name both render, not their relative order);
+       exploratory — the live confirm dialog, the
+       strikethrough style, and the Archived
+       sub-section's position under Active
+- [ ] **K5** Click `Reactivate` on "Test Objective"; PASS
+  if it returns to the active list.
+  Pin: tests/adapters-objectives.test.ts
+       'getObjectiveLifecycleEvents streams dated
+       transitions oldest-first' (drives
+       postObjectiveReactivation and confirms the
+       lifecycle records it); exploratory — the live
+       return to the active list
+- [ ] **K6** Drag "Test Objective" to a new position.
+  Drive with compositor mouse: `pointerdown` on
+  `.drag-handle` (pointer capture), `pointermove`,
+  `pointerup` — not HTML5 `drop`. PASS if the new
+  position persists across a page reload.
+  Pin: tests/adapters-objectives.test.ts 'computeNewPosition
+       + putObjectivePosition wedge an item into the
+       middle without renumbering anyone';
+       tests/adapters-objectives.test.ts
+       'putObjectivePosition preserves adjacent
+       fractional values across sequential reorders';
+       exploratory — the live compositor-mouse drag and
+       the reload-persistence observation (no browser
+       test drags an objective row;
+       tests/browser/list-reorder.test.ts drags projects,
+       a different list)
+- [ ] **K8** Empty state: stop the A3 process.
+  `./postgres-wipe --postgres local` then
+  `./postgres-seed --postgres local --bootstrap` then
+  start `node server.mjs`. Sign in with the stdout admin
+  credential. Open Organization. PASS: the empty-state
+  copy "No objectives yet. Add one to get started."
+  renders (bootstrap seeds org 1 with no objectives).
+  Restore the mock garden by stopping again,
+  `./postgres-wipe --postgres local`, then
+  `./postgres-seed --postgres local --mock-data`, then
+  start. This is the one case that seeds `--bootstrap`
+  rather than `--mock-data`; do not skip it. `crank`
+  mints `POSTGRES_URL`/`JWT_HMAC_SIGNING_KEY` and never
+  prints them, so this manual restart needs them already
+  set in the master's own shell (e.g. from a prior
+  `./serve` session) — a pre-existing limitation of this
+  case, not one this audit can resolve.
+  Pin: tests/presenter-organization-objectives.test.ts
+       'empty state when no objectives'; exploratory —
+       the live wipe/bootstrap/restore ceremony
 
-### K1–K6 — Organization Objectives box (Agent-G, Phase 2)
+### K9–K18 — Project detail: inline scoring + Approve
 
-K7 has been reassigned to Agent-E and appears at the end of
-the K30 subsection. K8 is Phase 4 / alone — it MUST NOT
-run in Phase 2 because it replaces the database via
-process restart, which is shared across the seven Phase 2
-agents.
+The Score and Log-measurement MODALS are retired.
+Baseline and actual scores are edited INLINE in
+`#project-objectives-section`: each
+`.project-objective-row` carries EITHER a
+`.baseline-slider` (before approval) OR an
+`.actual-slider` (once approved) — mutually exclusive,
+selected by project state — with one shared `Save`
+(`data-action="save-objectives"`) button that enables
+only when a slider moves off its `data-initial-value`. A
+project converted through the UI arrives at `submitted`
+ALREADY baseline-scored (convert requires a baseline per
+active objective), so exercising the
+unscored-then-score-then-approve path needs a project
+seeded directly, never converted.
 
-**K1.** Open Organization page; confirm Objectives box
-renders between the Overview and Usage cards with
-4 seeded active objectives in position order. PASS if all
-4 names display.
+Subject: Smart Inventory Optimization
+(`OXxlaOFaAWfVofOqOHeTrQ`), seeded `sent_back` — the
+only unreserved Stark project still carrying an unscored
+objective. The sole seeded `submitted` project, Market
+Sentiment Analyzer, is not available here: AA24a's
+surviving text drives it all the way to `approved`
+earlier in this same document-order walk. K26's three
+`under_review` titles (Workforce Capacity Forecasting,
+Predictive Maintenance System, Employee Training
+Assistant) are reserved — do not Approve or Archive
+them; K18 below only reads one, and does not save.
+Smart Inventory Optimization's "Lower expenses" baseline
+is already seeded; "Increase incomes", "Raise customer
+NPS", and "Improve employee morale" are not.
 
-**K2.** Click `+ Add objective`; confirm modal opens. Enter
-name "Test Objective" and description "Test desc"; click
-Add. PASS if the new objective appears at the bottom of the
-active list.
+- [ ] **K9** Open Smart Inventory Optimization. PASS if
+  the header actions slot shows Edit
+  (`#project-edit-btn` in `.project-actions-slot`), the
+  review action bar (`#project-review-actions` /
+  `.action-bar`) shows Approve / Decline / Send back and
+  no View history, and the objective rows' baseline
+  sliders are editable inline.
+  Pin: tests/presenter-project-action-bar.test.ts
+       'sent_back project: Score button hidden, other
+       review actions shown' (decides only the Score
+       button's absence and Approve's presence on
+       `sent_back` — Decline and Send back are pinned for
+       `submitted` in that file's sibling test, not for
+       `sent_back` itself); exploratory — Decline/Send-
+       back's presence and View history's absence on
+       `sent_back` specifically (the nearest real
+       decider, 'lifecycle actions empty on
+       under_review', tests a different state —
+       `under_review`, not `sent_back` — and a different
+       presenter method, `buildLifecycleActions`); the
+       live header actions slot and the inline sliders on
+       a `sent_back` project (the presenter's
+       editable-baseline branch is exercised only for
+       `under_review` in tests/presenter-project-
+       objectives.test.ts; `sent_back` shares the same
+       code but carries no direct test)
+- [ ] **K10** Transition status to `under_review` via the
+  edit form (resubmitting after being sent back). PASS if
+  the baseline sliders remain editable inline — there is
+  NO Score button and NO modal.
+  Pin: tests/presenter-project-objectives.test.ts
+       'baseline sliders enabled while under_review';
+       exploratory — the live edit-form transition and
+       the absent Score button/modal specifically at
+       `under_review` (only `submitted` and `sent_back`
+       have a direct Score-button-hidden test)
+- [ ] **K11** With every objective but "Cut costs"
+  (K3's rename) still unscored — Increase incomes, Raise
+  customer NPS, Improve employee morale, and Test
+  Objective if K2's creation and K5's reactivation both
+  held — the `Approve` button is disabled with a tooltip
+  prefixed "Set a baseline score before approving:"
+  followed by the comma-joined names of every
+  still-unscored objective. The convert-time gating
+  STILL HOLDS even though the modal is gone.
+  Pin: tests/adapters-project-publish.test.ts
+       'validator: not ready when objectives unscored'
+       (decides the gate itself returns `ready: false`
+       while any active objective lacks a baseline);
+       tests/presenter-project-action-bar.test.ts
+       'under_review with no scores: Approve disabled'
+       (decides the rendered `disabled` attribute follows
+       from `ready: false`); tests/presenter-project-
+       action-bar.test.ts 'Approve tooltip enumerates
+       unscored objective names' (decides the exact
+       tooltip prefix and comma-joined format — proven
+       there with two names, not however many are live
+       here); exploratory — the live enumeration's exact
+       membership
+- [ ] **K12** Inspect the objective rows; PASS if
+  "Cut costs" (K3's rename of "Lower expenses") shows
+  its seeded baseline value and every other active
+  objective — Increase incomes, Raise customer NPS,
+  Improve employee morale, and Test Objective if it is
+  still active — shows an inline slider at its unset
+  position (no modal opens).
+  Pin: tests/presenter-project-objectives.test.ts
+       'renders one row per active objective'; exploratory
+       — the live seeded-vs-unset row states and the row
+       count (four or five, depending on K5)
+- [ ] **K13** Drag the "Increase incomes" and "Raise
+  customer NPS" sliders to non-zero values — send "Raise
+  customer NPS" to the far left (−100); Save. PASS if the
+  shared `Save` button enables (dirty-tracked), the rows
+  show the saved baselines including the signed −100, and
+  Approve is **still** disabled because at least "Improve
+  employee morale" (and Test Objective, if K2/K5 left it
+  active) remains unscored.
+  Pin: tests/presenter-project-objectives.test.ts
+       'renders Save button when any slider is editable'
+       (decides the button is present in the markup, not
+       that it dynamically enables on drag — that is
+       exploratory); tests/validators-objectives.test.ts
+       'validateBaselineScoreEntity accepts -100 and
+       +100' (decides −100 is a legal, persistable signed
+       score); tests/adapters-project-publish.test.ts
+       'validator: not ready when objectives unscored'
+       (decides the gate returns `ready: false` while any
+       active objective lacks a baseline);
+       tests/presenter-project-action-bar.test.ts
+       'under_review with no scores: Approve disabled'
+       (decides the rendered `disabled` attribute follows
+       from `ready: false`); exploratory — the live drag,
+       the dirty-tracked enable, and the signed −100
+       display on this screen (its post-save persistence
+       is K14's; its history-modal rendering is K17's)
+- [ ] **K14** After save, PASS if the moved sliders'
+  `Save` button disables again (each slider's
+  `data-initial-value` resets to the saved value) and
+  saved values persist on re-render.
+  Pin: exploratory — dirty-tracking has no CLI or browser
+       test; only the presenter's initial render is tested
+       (tests/presenter-project-objectives.test.ts), never
+       a save-then-rerender cycle
+- [ ] **K15** Drag every still-unscored slider —
+  "Improve employee morale", and Test Objective if K2's
+  creation and K5's reactivation both held; Save. PASS if
+  the Approve button enables now that every active
+  objective has a baseline.
+  Pin: tests/adapters-project-publish.test.ts
+       'validator: ready when all scored' (decides the
+       gate itself: ready once every active objective
+       carries a baseline, independent of count);
+       tests/presenter-project-action-bar.test.ts
+       'under_review with full scoring: Approve enabled'
+       (decides the button renders enabled once the gate
+       says ready — fed `{ready: true}` directly, so it
+       does not itself decide the gate); exploratory — the
+       live drag and the enable transition
+- [ ] **K16** Click Approve; confirm dialog opens.
+  Confirm. PASS if status flips to `approved` and the
+  action bar re-renders with `Archive` / `View history`;
+  the row `.actual-slider`s become editable inline.
+  Pin: tests/adapters-project-publish.test.ts
+       'postProjectApproval moves state to approved'
+       (decides the write itself lands `approved`);
+       tests/presenter-project-objectives.test.ts
+       'baseline slider hidden after approval' (decides
+       the slider swap this transition produces);
+       exploratory — the live confirm dialog and the
+       `View history` button (`data-action="view-history"`
+       in web-app/app/presenters/project-action-bar.ts
+       carries no test today)
+- [ ] **K17** Negative-score path: recall K13's −100 for
+  "Raise customer NPS". PASS if the row still shows the
+  saved value as a signed −100, and View history (K30)
+  lists it with the negative-score tone.
+  Pin: tests/presenter-project-score-history.test.ts
+       'negative score TD carries data-tone="error"';
+       exploratory — the live persistence of the signed
+       value on the objectives screen itself
+- [ ] **K18** "No-payload" save: open Workforce Capacity
+  Forecasting (K26's reserved trio; read-only here — do
+  not drag any slider) with no slider moved off its
+  `data-initial-value`. PASS if the `Save` button stays
+  disabled and no new baseline-score pairs are written
+  under `projects/.../objective-baseline-scores` (pair
+  count unchanged via console).
+  Pin: exploratory — the no-payload guard has no CLI or
+       browser test; `postProjectBaselineScoring` is
+       tested only with a non-empty payload
+       (tests/adapters-project-scoring.test.ts)
 
-**K3.** Click `Edit` on an active objective; confirm modal
-opens pre-filled. Change the name; click Save. PASS if the
-list re-renders with the new name.
+### K19–K23 — Inline actual measurement + Archive
 
-**K4.** Click `Archive` on an active objective; confirm
-dialog opens. Confirm. PASS if the objective moves from
-active to the Archived sub-section, with strikethrough.
+- [ ] **K19** Open Smart Inventory Optimization (now
+  `approved`, K16). PASS if the objective rows'
+  `.actual-slider`s are editable inline (there is no Log
+  measurement modal), pre-filled from each objective's
+  baseline (none has an actual yet — the seed scores
+  actuals only for projects it seeds `approved` or
+  `archived`, and this one was seeded `sent_back`).
+  Pin: tests/presenter-project-objectives.test.ts
+       'actual sliders enabled while approved for
+       baseline-scored objectives'; exploratory — the
+       live prefill from the baseline specifically
+- [ ] **K20** Drag the "Cut costs" actual slider (K3's
+  rename of "Lower expenses"); click `Save`. PASS if the
+  row's actual value updates (persisted via
+  `postProjectActualMeasurement`) and the Save button
+  re-disables. This mints the FIRST live score event for
+  this objective since K3's rename — K30 reads it back.
+  Pin: tests/adapters-project-scoring.test.ts
+       'postProjectActualMeasurement appends via GET
+       scores'; exploratory — the live drag and the
+       re-disable
+- [ ] **K21** Re-render the page; PASS if the moved
+  actual slider pre-fills with its latest actual value.
+  Then score every remaining unscored actual slider and
+  Save so every active objective carries an actual (K22
+  needs full actual coverage to enable Archive).
+  Pin: tests/adapters-project-publish.test.ts
+       'archival validator: not ready when actuals
+       missing' (decides full-actual coverage gates
+       Archive — the reason this step scores the rest,
+       not the PASS line itself); exploratory — the live
+       re-render prefill onto the slider's `value`
+       attribute specifically ('shows latest actual with
+       sign' does not decide this: its assertion,
+       `html.includes('−10') || html.includes('-10')`,
+       is unscoped over the whole blob — the U+2212 form
+       renders only in `.slider-value`/the gauge tooltip,
+       never in the ASCII `value="${actValue}"` attribute
+       the slider itself uses, and the ASCII form is a
+       tautology against the static `min="-100"` every
+       slider carries regardless of any data; mutation-
+       checked)
+- [ ] **K22** The terminal action is `Archive`, not
+  "Complete", and the terminal state is `archived`, not
+  `completed` — there is no `completed` value in
+  `PROJECT_STATES`. Click Archive; PASS if a confirmation
+  dialog opens.
+  Pin: tests/presenter-project-action-bar.test.ts
+       'approved with full actuals: Archive enabled';
+       exploratory — the live confirmation dialog
+- [ ] **K23** Confirm the archive. PASS if status flips
+  to `archived` and the action bar reflects the archived
+  project.
+  Pin: tests/adapters-project-publish.test.ts
+       'postProjectArchival moves state to archived';
+       exploratory — the live action-bar reflect
 
-**K5.** Click `Reactivate` on a archived objective; PASS
-if it returns to the active list.
+### K24–K26 — Projects list Projected Impact column
 
-**K6.** Drag an objective to a new position.
-Drive with compositor mouse: `pointerdown`
-on `.drag-handle` (pointer capture),
-`pointermove`, `pointerup` — not HTML5
-`drop`. Activate the tab first (prompt
-rule). PASS if the new position persists
-across a page reload.
+- [ ] **K24** Open Projects list; PASS if the Projected
+  Impact column renders a value for each row — Employee
+  Training Assistant (zero baselines, still reserved for
+  K26) shows "—"; scored projects show a signed value.
+  NOTE: the column header carries no visible text label
+  (the "Projected Impact" name is not rendered in the
+  header row), so identify the column by its
+  position/content, not header text.
+  Pin: tests/presenter-projects-list-column.test.ts
+       'projected impact column renders for each
+       project'; tests/presenter-projects-list-column.test.ts
+       'missing score renders absent and sorts last';
+       exploratory — the live header's absent text label
+- [ ] **K25** Sort by Projected Impact descending; PASS
+  if rows re-order accordingly (most-positive first).
+  Pin: tests/presenter-projects-list-column.test.ts
+       'applyProjectSortToggle orders by projected impact
+       descending with no-score last'; exploratory — the
+       live sort-control click and re-order
+- [ ] **K26** Filter to `under_review` status + sort by
+  Projected Impact descending. Three seeded `under_review`
+  mock projects, high first: Workforce Capacity
+  Forecasting, Predictive Maintenance System, Employee
+  Training Assistant. PASS if those three rows render,
+  ranked high first — the "review queue ranked by impact"
+  workflow we designed.
+  Pin: tests/presenter-projects-list-column.test.ts
+       'applyProjectSortToggle orders by projected impact
+       descending with no-score last' (decides the
+       descending-with-absent-last ordering mechanism);
+       exploratory — the live filter-to-`under_review`,
+       and that these three seeded projects rank in this
+       order (a seed-data fact, not a product covenant a
+       unit test should pin)
 
-**K8.** **Phase 4 case** — runs alone last after Phase 2
-and Phase 3. Catastrophic if run in Phase 2 because it
-replaces the database, which is shared across all seven
-Phase 2 agents.
+### K27–K29 — Dashboard Impact + Aggregates
 
-Empty state: stop the A3 process.
-`./postgres-wipe --postgres local` then
-`./postgres-seed --postgres local --bootstrap`
-then start `node server.mjs`. Sign in with the
-stdout admin credential. Open Organization. PASS:
-the empty-state copy "No objectives yet. Add one
-to get started." renders (bootstrap seeds org 1
-with no objectives). Restore the shared garden
-by stopping again, `./postgres-wipe --postgres
-local`, then `./postgres-seed --postgres local
---mock-data`, then start.
+- [ ] **K27** Open dashboard; PASS if four surfaces
+  render: three arc-gauge cards sharing one card shell
+  (Time and Cost are ratio arc-gauges; Impact is a
+  bipolar arc) and an Objectives box (below the grid, one
+  gauge column wide; card title "Objectives").
+  Pin: tests/adapters-dashboard.test.ts
+       'getDashboardGauges returns the three sibling
+       gauges'; tests/adapters-dashboard.test.ts
+       'getDashboardGauges marks Time and Cost as ratio';
+       tests/adapters-dashboard.test.ts
+       'getDashboardGauges marks Impact as bipolar';
+       tests/presenter-dashboard-objective-aggregates.test.ts
+       'card chassis matches Time/Cost/Impact pattern';
+       tests/presenter-dashboard-objective-aggregates.test.ts
+       'heading reads "Objectives"';
+       tests/objectives-card-width.test.ts 'the
+       Objectives card is one gauge column wide';
+       exploratory — the live grid placement below the
+       three gauge cards
+- [ ] **K28** Inspect the Impact gauge. PASS if:
+  - The arc has muted background visible at all values
+  - For a net-positive portfolio (the mock seed's Stark
+    Impact baseline is positive), value arcs sweep right
+    and use green tones
+  - For a net-negative portfolio, value arcs sweep left
+    and use red tones
+  - The "actual" tick is visually distinct from the
+    baseline area (thinner / different opacity)
+  Pin: tests/adapters-dashboard-mock-seed.test.ts 'mock
+       seed produces portfolio Impact baseline +50'
+       (establishes the live portfolio is net-positive,
+       so only the right-sweep/green half is observable
+       live); tests/presenter-misc.test.ts 'GaugePresenter
+       bipolar at positive draws the RIGHT half only'
+       (a scoped SVG path-`d` regex — decides the sweep
+       direction only); tests/presenter-misc.test.ts
+       'GaugePresenter bipolar at negative draws the LEFT
+       half only' (same scoping, the net-negative half a
+       healthy live seed cannot show); exploratory — the
+       always-visible muted track, the actual-tick's
+       visual distinctness, AND the green-for-positive /
+       red-for-negative tone binding itself ('GaugePresenter
+       bipolar declares the red-amber-green tri-gradient
+       stops' only asserts that all three stop-colors
+       appear somewhere in a blob rendering both halves —
+       swapping which side gets which color leaves it
+       green; mutation-tested)
+- [ ] **K29** By this point Smart Inventory Optimization
+  is `archived` (K23) and its Save button is gone — use
+  Market Sentiment Analyzer instead (approved by AA24a
+  earlier in this walk, baseline-scored, no actual yet).
+  From another tab (same cookie jar), drag one of its
+  actual sliders and Save. PASS if the Objectives box
+  updates within ~1 second (BroadcastChannel
+  `fusion-angle:data` + `subscribeProjectScoreChanges`);
+  the three arc-gauge cards refresh only on full page
+  load.
+  Pin: exploratory — `subscribeProjectScoreChanges` /
+       `notifyProjectScoreChange` in
+       web-app/app/adapters/project-scoring.ts carry no
+       CLI or browser test
 
-Serial: do not skip — this is the named
-`--bootstrap` exception (then restore
-`--mock-data`). After restore, K9 sees a
-fresh mock garden (Market Sentiment
-Analyzer is `submitted` again).
+### K30 + K7 — Project history modal & temporal name resolution
 
-### K9–K18 — Project detail: inline scoring + Approve (Agent-E)
+K7 runs last, after K30, so it can name the SAME rename
+K30 only describes.
 
-The Score and Log-measurement MODALS are retired. Baseline
-and actual scores are edited INLINE in
-`#project-objectives-section`: each `.project-objective-row`
-carries EITHER a `.baseline-slider` (before approval) OR an
-`.actual-slider` (once approved) — mutually exclusive, selected
-by project state — with one shared `Save`
-(`data-action="save-objectives"`) button that enables only
-when a slider moves off its `data-initial-value`. Precondition
-note (TALLY.7): a project converted through the UI arrives at
-`submitted` ALREADY baseline-scored (convert requires a
-baseline per active objective), so to exercise the
-unscored→score→approve path you need a project created
-WITHOUT baselines (converted when no objectives existed, or
-seeded directly).
-
-**K9.** Open a `submitted` project. Serial:
-after K8 restore, open Market Sentiment
-Analyzer (`PIfhHMLQQxTxKFDdabXbOw`,
-`submitted`) on Stark. AA24a may have
-approved it during AA; K8 restore returns
-it. If it is already `approved` and K8 did
-not run, org-switch to Wayne and open
-Wayne R&D Portfolio (org-2 `submitted`) —
-do not invent a garden. Parallel: a slice
-`submitted` project. Confirm the header
-actions slot shows Edit (`#project-edit-btn` in
-`.project-actions-slot`) and the review action bar
-(`#project-review-actions` / `.action-bar`) shows Approve /
-Decline / Send back and no View history (View history
-appears only once approved or archived in the lifecycle
-action bar), and the objective rows' baseline sliders are
-editable inline (baseline editing is open across the
-pre-approval states submitted/under_review/sent_back).
-
-**K10.** Transition status to `under_review` via the edit
-form. PASS if the baseline sliders remain editable inline —
-there is NO Score button and NO modal. Leftover: stay on
-K9's subject. Do not approve or archive K26's serial
-queue (Workforce Capacity Forecasting, Predictive
-Maintenance System, Employee Training Assistant) or
-the parallel slice ids `k-project-under-review` /
-`k-project-under-review-2`.
-
-**K11.** With baselines unscored, the `Approve` button is
-disabled with a tooltip prefixed "Set a baseline score
-before approving:" followed by the comma-joined names of the
-unscored objectives (e.g. "Increase incomes, Raise customer
-NPS"); each name falls back to its objective id when no name
-is known. The convert-time gating STILL HOLDS even
-though the modal is gone.
-
-**K12.** Inspect the objective rows; PASS if each shows a
-baseline slider inline in the section (no modal opens), at
-its current or unset value.
-
-**K13.** Drag two baseline sliders to non-zero values; PASS
-if the shared `Save` button enables (dirty-tracked). Click
-Save. PASS if the rows show the saved baselines and Approve
-is **still** disabled because remaining objectives are
-unscored.
-
-**K14.** After save, PASS if the moved sliders' `Save`
-button disables again (each slider's `data-initial-value`
-resets to the saved value) and saved values persist on
-re-render.
-
-**K15.** Drag the remaining baseline sliders; Save. PASS if
-the Approve button enables once every active objective has a
-baseline.
-
-**K16.** Click Approve; confirm dialog opens. Confirm. PASS
-if status flips to `approved` and the action bar re-renders
-with `Archive` / `View history`; the row `.actual-slider`s
-become editable inline. Leftover: do not Approve K26's
-serial queue or the parallel K26 slice ids.
-
-**K17.** Negative-score path: on an under_review project,
-drag a baseline slider to the far left (-100). Save. PASS if
-the saved value persists as a signed value (e.g. −100) and
-View history (once approved) shows the negative score.
-
-**K18.** "No-payload" save: with no slider moved off its
-`data-initial-value`, the `Save` button stays disabled and
-no new baseline-score pairs are written under
-`projects/.../objective-baseline-scores` (pair count
-unchanged via console).
-
-### K19–K23 — Inline actual measurement + Archive (Agent-E)
-
-**K19.** Open an `approved` project; PASS if the objective
-rows' `.actual-slider`s are editable inline (there is no Log
-measurement modal), pre-filled from the latest actual or
-from the baseline when no actual exists yet.
-
-**K20.** Drag one actual slider; click `Save`. PASS if the
-row's actual value updates (persisted via
-`postProjectActualMeasurement`) and the Save button
-re-disables.
-
-**K21.** Re-render the page; PASS if the moved actual slider
-pre-fills with its latest actual value.
-
-**K22.** The terminal action is `Archive`, not "Complete",
-and the terminal state is `archived`, not `completed` —
-there is no `completed` value in `PROJECT_STATES`. Click
-Archive; PASS if a confirmation dialog opens.
-
-**K23.** Confirm the archive. PASS if status flips to
-`archived` and the action bar reflects the archived
-project. Leftover: do not Archive K26's serial queue
-or the parallel K26 slice ids.
-
-### K24–K26 — Projects list Projected Impact column (Agent-E)
-
-**K24.** Open Projects list; PASS if the Projected Impact
-column renders a value for each row — unscored projects show
-"—"; scored projects show a signed value.
-NOTE: the column header carries no visible text label (the
-"Projected Impact" name is not rendered in the header row),
-so identify the column by its position/content, not header
-text.
-
-**K25.** Sort by Projected Impact descending; PASS if rows
-re-order accordingly (most-positive first).
-
-**K26.** Filter to `under_review` status + sort by Projected
-Impact descending. Parallel: the K seed carries two
-`under_review` projects, each with four baselines and
-distinct Projected Impact values
-(`k-project-under-review` high,
-`k-project-under-review-2` low). PASS if both rows
-render, ranked high first. Serial: three seeded
-`under_review` mock projects, high first: Workforce
-Capacity Forecasting, Predictive Maintenance System,
-Employee Training Assistant. Do not require slice ids.
-PASS if those three rows render, ranked high first —
-the "review queue ranked by impact" workflow we designed.
-
-### K27–K29 — Dashboard Impact + Aggregates (Agent-CH)
-
-**K27.** Open dashboard; PASS if four surfaces render: three
-arc-gauge cards sharing one card shell (Time and Cost are ratio
-arc-gauges; Impact is a bipolar arc) and an Objectives box
-(below the grid, one gauge column wide; card title
-"Objectives").
-
-**K28.** Inspect the Impact gauge. PASS if:
-- The arc has muted background visible at all values
-- For a net-positive portfolio, value arcs sweep right and
-  use green tones
-- For a net-negative portfolio, value arcs sweep left and
-  use red tones
-- The "actual" tick is visually distinct from the baseline
-  area (thinner / different opacity)
-
-**K29.** From another tab, log a measurement on the approved K project
-(`k-project-approved`, seeded with four baselines by
-the admin). PASS if the Objectives box updates within
-~1 second (BroadcastChannel `fusion-angle:data` + `subscribeProjectScoreChanges`); the
-three arc-gauge cards refresh only on full page load.
-
-### K30 + K7 — Project history modal & temporal name resolution (Agent-E)
-
-K7 runs LAST in Agent-E's block, after K30. K7 verifies the
-temporal-name-resolution invariant that K30 only describes;
-it has a cross-agent prerequisite on K3 (Agent-G's objective
-rename in Phase 2). The orchestrator embeds the polling
-contract in Agent-E's dispatch prompt.
-
-**K30.** Open an approved project's View history modal.
-PASS if:
-- Events render in chronological order
-- Each row shows date, event kind, objective name (as it
-  was at the event's moment), and detail
-- After an objective rename (K3), historical events still
-  display the OLD name; events after the rename show the
-  NEW name
-- Baseline revisions appear as their own event rows (not
-  collapsed)
-
-**K7.** After K30 has run AND Agent-G's K3 has executed
-(verify via `objectives/:id/revisions/` document message pairs on
-the message plane — or the history UI — that ≥1 revision
-with a `name` change exists, confirming K3 ran), reopen
-the project's history modal. PASS if events that predate
-the K3 edit display the OLD objective name, not the new
-one (temporal name resolution). If after 10 minutes no
-rename revision appears, mark K7 BLOCKED with reason
-"no K3 rename to verify against — Agent-G did not produce
-the prerequisite in time".
+- [ ] **K30** Open Smart Inventory Optimization's View
+  history modal (archived since K23 — View history stays
+  available once archived). PASS if:
+  - Events render in chronological order
+  - Each row shows date, event kind, objective name (as
+    it was at the event's moment), and detail
+  - The seed's original "Lower expenses" baseline (dated
+    before K3's rename) still displays "Lower expenses";
+    K20's live actual (dated after K3's rename) displays
+    "Cut costs"
+  - Baseline revisions appear as their own event rows
+    (not collapsed)
+  Pin: tests/presenter-project-score-history.test.ts
+       'merges all four streams chronologically';
+       tests/presenter-project-score-history.test.ts
+       'resolves historical objective name at each event'
+       (decides the presenter places each score under the
+       name correct for its own timestamp, GIVEN a
+       resolver — the production resolver is inline,
+       unexported glue in web-app/projects/detail.ts and
+       carries no test of its own); exploratory — the
+       live pre-/post-rename split on this specific
+       project
+- [ ] **K7** Reopen Smart Inventory Optimization's
+  history modal (same as K30). PASS if events dated
+  before K3's edit display the OLD objective name
+  ("Lower expenses"), not "Cut costs" — decided directly,
+  since K3 already ran earlier in this same document-order
+  walk (no cross-agent wait). If K3's rename did not land
+  (e.g., K3 itself FAILed as driven), mark K7 DEFERRED —
+  its prerequisite did not produce what this case needs.
+  Pin: tests/presenter-project-score-history.test.ts
+       'resolves historical objective name at each event';
+       exploratory — the live confirmation against K3's
+       own edit
 
 ---
 
