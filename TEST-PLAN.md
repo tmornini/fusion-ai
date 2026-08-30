@@ -88,15 +88,22 @@ Setup, once: clear this origin's cookies with
 set `Emulation.setDeviceMetricsOverride` to 1280×800 with
 `deviceScaleFactor: 1` (I10–I15 set ≤767 and restore);
 open one tab and `activate_tab` it. That tab stays
-visible for the whole walk. Open a second tab of the
-same context only where a same-jar case needs one
-(SV8, SV8b, SV9); open a second browser context — a
-separate cookie jar — where a case needs a second
-identity (SV6, SV7, SV10), recording BLOCKED with the
-reason named if the driver offers no multi-context
-support; activate whichever tab you are driving;
-confirm `document.visibilityState === 'visible'`
-before every gesture and every timing assertion.
+visible for the whole walk. Leave Chrome out of
+fullscreen: `Browser.getWindowForTarget` then
+`Browser.setWindowBounds` with `windowState`
+"normal" and `top` at least 80 so the page sits
+below the macOS menu bar. A focusing click at the
+top-left of a fullscreen or flush window is the
+Apple menu; the next click opens About This Mac.
+Open a second tab of the same context only where a
+same-jar case needs one (SV8, SV8b, SV9); open a
+second browser context — a separate cookie jar —
+where a case needs a second identity (SV6, SV7,
+SV10), recording BLOCKED with the reason named if
+the driver offers no multi-context support; activate
+whichever tab you are driving; confirm
+`document.visibilityState === 'visible'` before
+every gesture and every timing assertion.
 
 Drive with compositor mouse and CDP key events. Never
 `js()` fetch the API — the bearer is memory-only; read
@@ -132,9 +139,12 @@ not repeat the note in every case.
   early.
 - Authentication is throttled to five hits per 60 seconds
   per client, counting `authorize` and `token` together.
-- The first click after a reload only focuses the window.
-  This is a product seam, filed in TODO.md; drive a second
-  click.
+- The first click after a reload only focuses the window
+  (TODO.md). The focusing click is the viewport center,
+  never the top-left brand — that is the Apple menu when
+  Chrome is fullscreen or flush with the menu bar, and
+  the next click opens About This Mac. Then click the
+  intended control once.
 
 ### Scoring
 
