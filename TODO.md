@@ -1160,7 +1160,7 @@ Off the critical path; each with its oracle.
   `tests/api-invitations-fence.test.ts` (:360, :363,
   :505, :509) — `rOEPOcVMQdJiiiMuiiEhlg`, quoted by no
   pin, so it renames alone
-- Two locals named for a hunter the repo no longer has —
+- Two locals named for a retired section slice —
   `gOrganization` and `gAdmin`
   (`tests/api-authentication-token.test.ts:1092-1093`)
   carry the old Section-G prefix; Commandment III says

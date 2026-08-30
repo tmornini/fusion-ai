@@ -4446,8 +4446,8 @@ FSM, unlike `flows/detail`).
   title (humans) or the model name (AIs), and department
   (humans only). The YOU group is a third header, not a
   row inside HUMANS.
-  Pin: tests/presenter-members.test.ts 'ManagedMembers
-       Presenter renders three sections with YOU above
+  Pin: tests/presenter-members.test.ts 'ManagedMembersPresenter
+       renders three sections with YOU above
        HUMANS above AIs' (decides the YOU/HUMANS/AIs
        group order); tests/presenter-members.test.ts
        'YOU section contains only the current member'
