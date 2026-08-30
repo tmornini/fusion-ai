@@ -1409,182 +1409,590 @@ the second organization.
 
 ## D. Core: Ideas Workflow
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
+Every case below assumes the active organization is
+Stark Industries, except where a case names a switch
+to Wayne Enterprises: D16 switches out and back on
+its own; D20 switches out and D24 switches back,
+covering the D20–D24 run between them.
 
 ### Ideas List (`ideas/`)
 
-- [ ] **D1** Navigate to `ideas/`. PASS: list shows the active org's ideas as cards (≈6 for Stark on the mock seed — the list is org-scoped, so this is a tolerant lower bound, not the global 11; note the org-scoped reads can take 5–8s to paint, so wait for the cards before asserting empty), each with a drag-handle grip, title, status badge, and (for approved ideas) a Convert button. Ideas represent the problem-and-proposed-solution shape and do not carry time/cost/impact estimates; those fields live on projects created by conversion.
-- [ ] **D2** Each idea row shows a lifecycle status badge (Active, In Review, Approved, Promoted, Sent Back, or Archived); an active idea missing a required field also shows a single "Incomplete" readiness pill (warning tone) derived from required-field presence — ready ideas and non-active ideas show no pill. PASS: the status badge always renders, and the Incomplete pill appears only on active, not-ready ideas.
-- [ ] **D3** Click an idea row/title. PASS: navigates to `ideas/detail.html?ideaId=<id>` (idea-detail) with the correct `ideaId` parameter.
-- [ ] **D4** "New Idea" or "Create Idea" button is visible. PASS: clicking it navigates to `ideas/create.html`.
+- [ ] **D1** Navigate to `ideas/`. PASS: list shows
+  the active org's ideas as cards (≥ 6 for Stark on
+  the mock seed — the list is org-scoped, so this is
+  a tolerant lower bound, not the global 11; note the
+  org-scoped reads can take 5–8s to paint, so wait
+  for the cards before asserting empty), each with a
+  drag-handle grip, title, status badge, and (for
+  approved ideas) a Convert button. Ideas represent
+  the problem-and-proposed-solution shape and do not
+  carry time/cost/impact estimates; those fields live
+  on projects created by conversion.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaListPresenter.renderList renders one card
+       per idea in position order with a grip in the
+       all view' (decides one card per idea, position
+       order, and the grip in the unfiltered view);
+       tests/presenter-idea.test.ts
+       'IdeaPresenter.buildCard renders the title,
+       state badge, and card data attributes' (decides
+       each card's title and status badge render);
+       tests/presenter-idea.test.ts
+       'IdeaPresenter.buildCard exposes a Convert
+       affordance only for approved ideas' (decides
+       the Convert button on approved cards);
+       exploratory — the live ≥ 6 count and the
+       5–8s paint timing
+- [ ] **D2** Each idea row shows a lifecycle status
+  badge (Active, In Review, Approved, Promoted, Sent
+  Back, or Archived); an active idea missing a
+  required field also shows a single "Incomplete"
+  readiness pill (warning tone) derived from
+  required-field presence — ready ideas and
+  non-active ideas show no pill. PASS: the status
+  badge always renders, and the Incomplete pill
+  appears only on active, not-ready ideas — an
+  invariant true of every row regardless of which
+  ideas happen to be `active` at this point in the
+  walk.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter.buildCard renders the Incomplete
+       pill only for active ideas missing a required
+       field' (decides the pill's exact condition: it
+       renders for an active+incomplete idea and not
+       for a ready or non-active one);
+       tests/presenter-idea.test.ts
+       'IdeaPresenter.buildCard renders the title,
+       state badge, and card data attributes' (decides
+       the badge always renders); exploratory — the
+       live rendering across whichever ideas are
+       `active` when the explorer reaches this case
+- [ ] **D3** Click an idea row/title. PASS: navigates
+  to `ideas/detail.html?ideaId=<id>` (idea-detail)
+  with the correct `ideaId` parameter.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter.buildCard renders the title,
+       state badge, and card data attributes' (decides
+       the card's `data-idea-card` id attribute the
+       click handler reads); exploratory — the live
+       click and navigation
+- [ ] **D4** "New Idea" or "Create Idea" button is
+  visible. PASS: clicking it navigates to
+  `ideas/create.html`.
+  Pin: exploratory — the live button and navigation
+       (no CLI or browser test exercises
+       `web-app/ideas/index.ts`'s page-level click
+       handler)
 
 ### Idea Create Form (`ideas/create.html`)
 
-- [ ] **D5** Page loads showing a single-page form with six conversationally-labeled fields: "Give your idea a clear title" (Title), "What problem does this solve?" (Problem Statement), "Who will benefit from this?" (Target Users), "How would you solve this?" (Proposed Solution), "What outcome do you expect?" (Expected Outcome), "How would you measure success?" (Success Metrics). Parentheticals are conceptual field names (draft keys: title, problemStatement, targetUsers, proposedSolution, expectedOutcome, successMetrics), not DOM field ids; the prompt is the visible label. DOM ids for selectors: `idea-create-field-title|problem|target|solution|outcome|metrics`. PASS: all six fields visible.
+- [ ] **D5** Page loads showing a single-page form
+  with six conversationally-labeled fields: "Give
+  your idea a clear title" (Title), "What problem
+  does this solve?" (Problem Statement), "Who will
+  benefit from this?" (Target Users), "How would you
+  solve this?" (Proposed Solution), "What outcome do
+  you expect?" (Expected Outcome), "How would you
+  measure success?" (Success Metrics). Parentheticals
+  are conceptual field names (draft keys: title,
+  problemStatement, targetUsers, proposedSolution,
+  expectedOutcome, successMetrics), not DOM field
+  ids; the prompt is the visible label. DOM ids for
+  selectors:
+  `idea-create-field-title|problem|target|solution
+  |outcome|metrics`. PASS: all six fields visible.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaCreatePresenter.render enables submit and
+       echoes draft values into the form fields'
+       (decides all six fields exist and render — a
+       filled draft's title, problem, target users,
+       solution, outcome, and metrics values all
+       appear in the output); exploratory — the six
+       specific conversational prompt strings and
+       their DOM ids (no test asserts the individual
+       labels)
 - [ ] **D6** With any required field empty, click
   "Submit Idea". PASS: an error toast reads
   "Title, problem, solution, and outcome are
   required"; the page does not navigate. The
   button stays clickable (no `disabled`
   attribute — validation is post-click).
+  Pin: tests/presenter-idea.test.ts
+       'ideaCreateDraftIsComplete requires title,
+       problem, solution, and outcome' (decides
+       exactly which four fields gate the click
+       handler's toast); tests/presenter-idea.test.ts
+       'IdeaCreatePresenter.render keeps submit
+       clickable while the draft is empty' (decides
+       the button carries no `disabled` attribute);
+       exploratory — the live toast text and the
+       no-navigation outcome
 - [ ] **D7** Fill in all required fields (Title,
   Problem Statement, Proposed Solution,
   Expected Outcome). PASS: the button stays
   clickable (there is no disabled→enabled
   transition). Submit itself is D8.
-- [ ] **D8** Click "Submit Idea". PASS: navigates to `ideas/index.html`.
-- [ ] **D9** Click "Cancel". PASS: navigates to `ideas/` list.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaCreatePresenter.render enables submit and
+       echoes draft values into the form fields'
+       (decides the button still carries no
+       `disabled` attribute once every field is
+       filled — the other half of the no-transition
+       claim); exploratory — the live typing and
+       field echo
+- [ ] **D8** Click "Submit Idea". This creates a new,
+  `active` Stark idea — D18 submits it for review.
+  PASS: navigates to `ideas/index.html`, where the
+  new idea now appears on the list.
+  Pin: tests/adapters-ideas.test.ts
+       'postIdeaCreation persists via GET and records
+       the initial state event' (decides the create
+       call the click handler makes persists the idea
+       and its opening state event — the data-layer
+       reason it can appear on the list); exploratory
+       — the live click, navigation, and the idea's
+       appearance in the rendered list (the created
+       idea's `active` state is a production-source
+       fact, `web-app/ideas/create.ts:164`, not
+       something this test's own 'active' literal can
+       decide)
+- [ ] **D9** Navigate to `ideas/create.html` again —
+  D8 left you on the list, not the create form. Click
+  "Cancel". PASS: navigates to `ideas/` list.
+  Pin: exploratory — the live click and navigation
+       (no CLI or browser test exercises this page's
+       click handler)
 
 ### Idea Detail (`ideas/detail.html?ideaId=<id>`)
 
-- [ ] **D10** Navigate to `ideas/detail.html?ideaId=<id>` (a real identifier from the Ideas list). PASS: page loads with idea title, status badge, and "Submitted by [name] @ [date/time]" in the header.
+- [ ] **D10** Navigate to
+  `ideas/detail.html?ideaId=<id>` (a real identifier
+  from the Ideas list). PASS: page loads with idea
+  title, status badge, and "Submitted by [name] @
+  [date/time]" in the header.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter carries submitter name and
+       submitted timestamp verbatim' (decides the
+       submitter name and timestamp the header line
+       reads from); exploratory — the live title,
+       status badge, and "Submitted by … @ …" header
+       layout itself (renderShell/renderUpdate walk a
+       real DOM tree and stay outside this file's
+       coverage by its own header comment)
 - [ ] **D11** Page displays one card: Problem & Solution (Problem Statement,
-  Target Users, Proposed Solution, Expected
-  Outcome, Success Metrics). PASS: all fields populated. No Details or Estimates cards.
+  Target Users, Proposed Solution, Expected Outcome, Success Metrics).
+  PASS: every field the idea carries is rendered;
+  an empty optional field (Target Users or Success
+  Metrics, on some seeded ideas) shows an em dash
+  rather than blank space. No Details or Estimates
+  cards.
+  Pin: exploratory — the live card layout
+       (`buildProblemSolutionReadonlyCard` in
+       web-app/app/presenters/idea.ts renders through
+       renderUpdate's DOM slots; this section's own
+       test file excludes those methods from its
+       coverage by choice, not because Layer 1 cannot
+       reach them — `makeRecordingContainer` in
+       tests/presenter-project-detail-impact.test.ts
+       renders an equivalent DOM-slot shell under
+       Node, so this is a Layer 1 gap, not a Layer 2
+       one)
 - [ ] **D12** Click "Edit" button. PASS: text fields become editable inputs/textareas, Save and Cancel buttons appear, Edit button hides.
+  Pin: exploratory — the live edit-mode toggle (the
+       page's `handleIdeaActions` click switch has no
+       CLI or browser test)
 - [ ] **D13** Modify a field (e.g. Problem Statement or Expected Outcome), click "Save". PASS: toast "Idea saved" appears, page returns to view mode with updated data.
+  Pin: tests/presenter-idea.test.ts
+       'ideaPatchFromDraft maps camelCase draft to
+       snake_case entity columns' (decides the edited
+       field lands in the write payload the Save
+       button builds); tests/adapters-ideas.test.ts
+       'putIdea persists changes' (decides the write
+       persists via a fresh read); exploratory — the
+       live toast and the return to view mode
 
 ### Idea Detail — Edit & Actions
 
 - [ ] **D14** Click "Edit", then "Cancel". PASS: returns to view mode with original data unchanged.
+  Pin: exploratory — the live edit/cancel toggle
+       (`cancel` resets to the read view without
+       calling any write adapter; no CLI or browser
+       test exercises the page's click handler)
 - [ ] **D15** For an idea in "in_review"
   status: clicking the card navigates to
   `ideas/detail.html` with Send Back /
   Approve buttons in the header next to Edit.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter state predicates reflect the
+       wrapped idea state' (decides `isReviewable()`
+       is true for `in_review`, the gate the header
+       actions slot renders Send Back / Approve
+       from); exploratory — the live click,
+       navigation, and the rendered button pair
+       itself
 - [ ] **D16** Convert is on the list card
   (`data-idea-convert`) and on detail
-  (`#idea-convert-btn`). Serial: leftover
-  Convert is Automated Report Generation
-  (`WurwPqXxGtLhRAoCEcPzfQ`) on Wayne. Select
-  Wayne Enterprises in the sidebar footer
-  `.org-switcher` (G36) — it is not on the
-  Stark list. PASS: both Convert controls are
+  (`#idea-convert-btn`). Select Wayne
+  Enterprises in the sidebar footer
+  `.org-switcher` (G36) and open Automated
+  Report Generation (`WurwPqXxGtLhRAoCEcPzfQ`),
+  Wayne's `approved` idea — Wayne is untouched
+  by AA, so this is still its only convertible
+  idea. PASS: both Convert controls are
   visible; one click (list or detail) navigates
   to `ideas/convert.html`. That click does
   **not** promote (D24 does). Then select Stark
   Industries in `.org-switcher` before D17–D19.
-  Parallel: a slice-garden `approved` idea,
-  same control, same PASS.
-- [ ] **D17** Navigate to `ideas/detail.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows error state, no unhandled JS exception.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter.buildCard exposes a Convert
+       affordance only for approved ideas' (decides
+       Convert renders for an `approved` idea and
+       not for others — `isConvertible()` is a plain
+       equality against `approved`, so this
+       generalizes); exploratory — the live
+       org-switcher navigation and the detail-page
+       Convert button
+- [ ] **D17** Navigate to
+  `ideas/detail.html?ideaId=999` (non-existent).
+  PASS: page handles gracefully — shows error state,
+  no unhandled JS exception.
+  Pin: tests/api.test.ts 'GET
+       organizations/:id/ideas/:id throws on
+       missing' (decides the underlying fetch this
+       page makes rejects for a nonexistent id);
+       tests/loading-states.test.ts 'a rejecting
+       fetch renders the error state and calls
+       neither hook' (decides the shared `loadInto`
+       helper this page's `init()` calls — see
+       `web-app/ideas/detail.ts`'s `fetch: () =>
+       getIdea(...)` — shows an error state with a
+       "Try Again" retry control and fires neither
+       hook when its fetch rejects); exploratory —
+       the live rendering of that error state on this
+       specific page
 
 ### Idea Detail — Submit for Review
 
-- [ ] **D18** Navigate to an idea with status
-  "active". Serial: leftover `active` is
-  Stark — Predictive Maintenance System or
-  Smart Inventory Optimization. Parallel: a
-  slice-garden `active` idea. PASS: "Submit
-  for Review" button is visible in the
-  header area.
+- [ ] **D18** Navigate to the idea created in D8 —
+  still `active` (nothing between D8 and here
+  changes its lifecycle state). PASS: "Submit for
+  Review" button is visible in the header area.
+  Pin: tests/presenter-idea.test.ts
+       'Idea.canBeSubmittedForReview gates on both
+       lifecycle and readiness' (decides an
+       `active`, ready idea shows the button, and
+       every other state/readiness combination does
+       not); exploratory — the live button placement
 - [ ] **D19** Click "Submit for Review". PASS:
   toast "Submitted for review", navigates to
   the ideas list, and the idea's status badge
   there now reads "In Review". The toast is
   still visible on the ideas list after
   navigation (it survives `navigateTo`).
-  Serial: stay on D18's Stark `active`
-  leftover.
+  Pin: tests/adapters-ideas.test.ts
+       'postIdeaStateChange records a state event
+       without changing non-lifecycle entity fields
+       on GET' (decides the transition lands and
+       every other field survives it);
+       tests/toast-pending.test.ts 'showToast writes
+       a pending session payload' and
+       'replayPendingToast restores the toast once'
+       (together decide the write-then-replay-once
+       mechanism `navigateTo` relies on for a toast
+       to survive it — the mechanism only, since
+       these tests supply their own message string,
+       not evidence that production still shows
+       exactly "Submitted for review"); exploratory —
+       the live toast text and the badge update on
+       the list
 
 ### Idea Detail — Sent Back Re-Submit
 
 - [ ] **D20** Navigate to an idea with status
   "sent_back" (after a reviewer sends it
-  back). Serial: org-switch to Wayne
-  Enterprises in `.org-switcher` (G36).
-  Leftover `sent_back` is Employee Training
-  Assistant (`IjrYiSuRyjkQaqiRLhadAg`).
-  Parallel: a slice-garden `sent_back` idea.
-  PASS: "Submit for Review" button is
-  visible, allowing re-submission.
+  back). Switch to Wayne Enterprises in
+  `.org-switcher` (G36) — Stark carries no
+  `sent_back` idea; Wayne's leftover is
+  Employee Training Assistant
+  (`IjrYiSuRyjkQaqiRLhadAg`). PASS: "Submit
+  for Review" button is visible, allowing
+  re-submission.
+  Pin: tests/presenter-idea.test.ts
+       'Idea.canBeSubmittedForReview gates on both
+       lifecycle and readiness' (decides a
+       `sent_back`, ready idea shows the button);
+       exploratory — the live org-switch and button
+       placement
 - [ ] **D21** Click "Edit", modify a field,
   click "Save". PASS: idea updates. Click
   "Submit for Review". PASS: navigates to
   the ideas list with the idea now "In
-  Review". Serial: leftover is Wayne
-  Employee Training Assistant; stay on
-  Wayne for D22.
+  Review". Stay on Wayne for D22.
+  Pin: tests/presenter-idea.test.ts
+       'ideaPatchFromDraft maps camelCase draft to
+       snake_case entity columns';
+       tests/adapters-ideas.test.ts 'putIdea
+       persists changes' (together decide the Edit +
+       Save write); tests/adapters-ideas.test.ts
+       'postIdeaStateChange records a state event
+       without changing non-lifecycle entity fields
+       on GET' (decides the Submit for Review
+       transition); exploratory — the live toasts
+       and navigation
 
 ### Idea Convert (`ideas/convert.html`)
 
-- [ ] **D22** Navigate to
-  `ideas/convert.html?ideaId=<id>` for a
-  convertible idea. Serial: stay on Wayne
-  Enterprises after D21. Automated Report
-  Generation (`WurwPqXxGtLhRAoCEcPzfQ`) —
-  D16 verified this leftover. Parallel: a
-  slice-garden `approved` idea. PASS: page
-  loads with conversion form showing 4
-  required fields:
+- [ ] **D22** Stay on Wayne Enterprises after
+  D21. Navigate to
+  `ideas/convert.html?ideaId=<id>` for
+  Automated Report Generation
+  (`WurwPqXxGtLhRAoCEcPzfQ`) — D16 verified
+  this leftover. PASS: page loads with
+  conversion form showing 4 required fields:
   Project Name, Time (label "Time", unit
   "days" as the input suffix; field key
   `time-days`), Cost, Success Criteria (it
   maps to the project description). There is
   no Impact field. A Scores box renders one
   required baseline slider per active
-  objective. Serial: 1 Wayne slider (Wayne
-  demo objective). Parallel: 4 sliders.
-  Sticky sidebar shows the idea summary
-  (Title, Problem Statement, Target Users,
-  Proposed Solution, Expected Outcome,
+  objective — 1 on Wayne (its one demo
+  objective). Sticky sidebar shows the idea
+  summary (Title, Problem Statement, Target
+  Users, Proposed Solution, Expected Outcome,
   Success Metrics). Source of truth:
   `REQUIRED_FIELDS` in
   `web-app/app/presenters/idea-conversion.ts`.
+  Pin: tests/presenter-idea.test.ts
+       'buildInitialConversionDraft seeds the
+       project name from the idea title and leaves
+       the rest blank' (decides the draft's base
+       fields are project-name/time-days/cost/
+       success-criteria); tests/presenter-idea.test.ts
+       'conversionRequiredCount adds active
+       objectives to the static field count' (decides
+       the static count is exactly 4, off
+       `REQUIRED_FIELDS.length` — the reason no
+       fifth, Impact, field exists);
+       tests/presenter-idea.test.ts
+       'IdeaConversionPresenter renders one baseline
+       row per active objective' (decides one
+       slider per active objective, generalizing to
+       Wayne's one); exploratory — the live sticky
+       sidebar summary and the field labels/layout
 - [ ] **D23** Project Name auto-prefills from the
   idea title, so the bar starts 1/N — not 0/N
   — with the other required fields empty.
-  N = 4 + one per active objective. Serial:
-  1/5 (4 fields + 1 Wayne objective). Parallel:
-  1/8 (4 + 4). "Create Project" stays disabled
-  until every remaining required field and
-  every baseline is set. Fill fields and drag
-  baseline sliders one at a time. PASS: the
-  bar increments with each required field AND
+  N = 4 + one per active objective: 1/5 on
+  Wayne (4 fields + its 1 objective).
+  "Create Project" stays disabled until every
+  remaining required field and every baseline
+  is set. Fill fields and drag baseline
+  sliders one at a time. PASS: the bar
+  increments with each required field AND
   each baseline, checkmarks appear next to
-  completed items, and the button enables only
-  when all required fields AND all baselines
-  are set. Success Criteria is required —
-  filling it advances the bar.
+  completed items, and the button enables
+  only when all required fields AND all
+  baselines are set. Success Criteria is
+  required — filling it advances the bar.
+  Pin: tests/presenter-idea.test.ts
+       'buildInitialConversionDraft seeds the
+       project name from the idea title and leaves
+       the rest blank' (decides the 1/N starting
+       point); tests/presenter-idea.test.ts
+       'conversionRequiredCount adds active
+       objectives to the static field count' (decides
+       N = 4 + one per active objective, tested at
+       0/2/5 objectives); tests/presenter-idea.test.ts
+       'conversion progress counts every required
+       field including success-criteria' (decides
+       Success Criteria advances the completed
+       count); tests/presenter-idea.test.ts
+       'IdeaConversionPresenter.render shows the
+       idea summary and a disabled Create button
+       until required fields are complete' (decides
+       the button stays disabled short of every
+       field); exploratory — the live checkmarks and
+       the baseline-slider half of the gate on
+       Wayne's single objective
 - [ ] **D24** Fill every required field and
-  baseline (the progress bar reaches its max;
-  Serial: 5/5. Parallel: 8/8), click "Create
-  Project". Serial: Create Project on ARG
-  after D16 verified the leftover. PASS:
-  navigates to project detail page for the
-  newly created project. The source idea's
-  lifecycle state becomes `promoted` (list
-  badge label **Promoted**, not "Approved") —
-  convert is a promotion, not a re-approve.
-  Then select Stark Industries in
-  `.org-switcher` before D25–D30.
+  baseline (the progress bar reaches its max,
+  5/5 on Wayne), click "Create Project" —
+  this is the Automated Report Generation
+  conversion D16 opened and D22–D23 filled
+  out. PASS: navigates to project detail page
+  for the newly created project. The source
+  idea's lifecycle state becomes `promoted`
+  (list badge label **Promoted**, not
+  "Approved") — convert is a promotion, not a
+  re-approve. Then select Stark Industries in
+  `.org-switcher` before D25 onward.
+  Pin: tests/adapters-ideas.test.ts
+       'postIdeaConversion commits project, idea,
+       two state events, and N baseline rows in one
+       atomic batch' (decides the project is
+       written, the idea's last state event is
+       `promoted`, and every baseline lands
+       together); tests/presenter-idea.test.ts
+       'IdeaConversionPresenter enables Create once
+       every field and baseline is set' (decides the
+       button enables only once every field and
+       baseline is set); exploratory — the live
+       navigation to project detail and the
+       Promoted-not-Approved badge label
 
 ### Idea Status Filtering (`ideas/index.html`)
 
-- [ ] **D25** Navigate to `ideas/index.html`. PASS: status badges appear showing each status present in the data (e.g., Active, In Review, Approved).
+- [ ] **D25** Navigate to `ideas/index.html`. PASS:
+  a badge renders for each of
+  active/in_review/sent_back/approved that is
+  present among Stark's ideas — promoted and
+  archived ideas never get a filter badge, no
+  matter how many exist.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaListPresenter.renderBadges renders one
+       badge per present state' (decides exactly one
+       badge renders per present status from the
+       four candidates — active/in_review/sent_back/
+       approved — proven here with two present, two
+       absent); exploratory — the live current status
+       mix, and that `promoted`/`archived` get no
+       badge even when present (source-confirmed at
+       `web-app/app/presenters/idea.ts:926`'s
+       hardcoded candidate list; no fixture in the
+       cited test uses a `promoted` or `archived`
+       idea, so this half is not test-decided)
 - [ ] **D26** Click a status badge. PASS: list filters to show only ideas with that status, badge is highlighted (`aria-pressed="true"`), others are dimmed (`data-dimmed="true"`); badges carry label + icon only (no per-badge count).
+  Pin: tests/presenter-idea.test.ts
+       'applyIdeaFilterToggle sets, replaces, and
+       clears the status filter' (decides the filter
+       state a badge click sets);
+       tests/presenter-idea.test.ts
+       'IdeaListPresenter.renderList in a filtered
+       view keeps only matching ideas and omits the
+       grip' (decides the list narrows to the
+       matching status); tests/presenter-idea.test.ts
+       'IdeaPresenter.buildStateBadge marks the badge
+       dimmed when isActive is false' (decides
+       `data-dimmed="true"` on the non-selected
+       badge — half of D26's dimming clause);
+       exploratory — the live `aria-pressed`
+       highlight on the selected badge (the same test
+       builds the selected/`isActive: true` case and
+       checks only `data-dimmed="false"` on it, never
+       `aria-pressed`)
 - [ ] **D27** Click the same badge again. PASS: filter clears, all ideas shown, all badges at full opacity.
+  Pin: tests/presenter-idea.test.ts
+       'applyIdeaFilterToggle sets, replaces, and
+       clears the status filter' (decides a second
+       click on the same status clears back to the
+       all filter); tests/presenter-idea.test.ts
+       'IdeaListPresenter.renderList renders one card
+       per idea in position order with a grip in the
+       all view' (decides every idea shows once
+       unfiltered); tests/presenter-idea.test.ts
+       'IdeaPresenter.buildStateBadge marks the badge
+       dimmed when isActive is false' (decides the
+       neutral, no-filter case renders
+       `data-dimmed="false"` — D27's full-opacity
+       clause); exploratory — the live full-opacity
+       styling
 - [ ] **D28** Click a different badge. PASS: filter switches to the new status.
+  Pin: tests/presenter-idea.test.ts
+       'applyIdeaFilterToggle sets, replaces, and
+       clears the status filter' (decides a click on
+       a different status replaces, rather than
+       toggles off, the filter); exploratory — the
+       live badge-highlight switch
 
 ### Idea Detail — Approval Actions
 
-- [ ] **D29** Navigate to `ideas/detail.html?ideaId=<id>` for an in_review idea (entity ids are identifiers, not sequential integers — copy a real id from the Ideas list). PASS: page loads with idea details and Send Back / Approve buttons in the header next to Edit.
+- [ ] **D29** Navigate to
+  `ideas/detail.html?ideaId=<id>` for an in_review
+  idea (entity ids are identifiers, not sequential
+  integers — copy a real id from the Ideas list).
+  PASS: page loads with idea details and Send Back /
+  Approve buttons in the header next to Edit.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter state predicates reflect the
+       wrapped idea state' (decides `isReviewable()`
+       is true for `in_review`); exploratory — the
+       live page load and the rendered button pair
 - [ ] **D30** Click "Approve". PASS: success toast,
   navigates to ideas list, idea status is now
   "approved". The success toast (`Idea approved
   successfully`) is visible on the list the same
-  way. This is a second `approved` — not
-  D16's leftover Convert subject.
-- [ ] **D31** Click "Send Back". PASS: confirm dialog opens. Confirm. PASS: idea status changes to "sent_back", navigates to ideas list.
+  way. This is a Stark `approved` idea distinct
+  from Wayne's D16/D24 Convert subject and from
+  Sustainability Dashboard for Operations
+  (AA20's leftover).
+  Pin: tests/adapters-ideas.test.ts
+       'postIdeaStateChange records a state event
+       without changing non-lifecycle entity fields
+       on GET' (decides the in_review→approved
+       transition lands and every other field
+       survives it); tests/toast-pending.test.ts
+       'showToast writes a pending session payload'
+       and 'replayPendingToast restores the toast
+       once' (together decide the write-then-replay-
+       once mechanism the toast's list-page survival
+       depends on — the second test's own fixture
+       even reuses this case's exact string, "Idea
+       approved successfully", but that only proves
+       the mechanism replays whatever string it is
+       given, not that production still emits this
+       one — that stays exploratory); exploratory —
+       the live toast text and navigation
+- [ ] **D31** Click "Send Back" on a DIFFERENT
+  in_review idea than D30's — D30 already moved its
+  idea to `approved`, and Send Back needs
+  `in_review`. PASS: confirm dialog opens. Confirm.
+  PASS: idea status changes to "sent_back", navigates
+  to ideas list.
+  Pin: tests/adapters-ideas.test.ts
+       'postIdeaStateChange records a state event
+       without changing non-lifecycle entity fields
+       on GET' (decides the transition lands);
+       exploratory — the live confirm dialog
 - [ ] **D32** Navigate to idea detail for a non-in_review idea. PASS: no Send Back / Approve buttons are shown.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter state predicates reflect the
+       wrapped idea state' (decides `isReviewable()`
+       is false for `active`; a plain equality
+       against `in_review`, so every other state is
+       false by construction); exploratory — the
+       live absence of the buttons for a state other
+       than the one tested
 - [ ] **D32a** On an in_review idea, click "Edit". PASS: the header shows only Cancel / Save — no Send Back, Approve, Submit, or Convert. Click Cancel: the read header (Send Back / Approve / Edit) returns.
+  Pin: exploratory — `IdeaEditPresenter`'s action
+       buttons are unconditionally Cancel/Save (no
+       CLI test renders them), and no test composes
+       the read-header's button set for `in_review`
+       specifically
 
 ### Ideas Workflow Integration
 
 - [ ] **D33** After creating an idea and converting it to a project, navigate back to `ideas/`. PASS: the ideas list still loads correctly with seed data.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaListPresenter.renderList renders one card
+       per idea in position order with a grip in the
+       all view' (decides the list still renders one
+       card per remaining idea); exploratory — the
+       live round trip through create and convert
 - [ ] **D34** Navigate from ideas list → idea convert → back button. PASS: navigates to ideas list.
-- [ ] **D35** Navigate to `ideas/convert.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows empty/error state, no unhandled JS exception.
+  Pin: exploratory — the live back-button navigation
+       (`#convert-back-to-ideas`'s click handler
+       carries no CLI or browser test)
+- [ ] **D35** Navigate to
+  `ideas/convert.html?ideaId=999` (non-existent).
+  PASS: page handles gracefully — shows empty/error
+  state, no unhandled JS exception.
+  Pin: tests/api.test.ts 'GET
+       organizations/:id/ideas/:id throws on
+       missing' (decides the underlying fetch this
+       page makes rejects for a nonexistent id);
+       exploratory — the live "Failed to load idea
+       for conversion." error-state rendering and
+       its Try Again button
 
 ### Ideas List — Drag-reorder
 
@@ -1593,12 +2001,28 @@ depends: A
   upward past another row's midpoint. Drive with
   compositor mouse: `pointerdown` on `.drag-handle`
   (pointer capture), `pointermove`, `pointerup` —
-  not HTML5 `drop`. Activate the tab first (prompt
-  rule). PASS: during the drag a
+  not HTML5 `drop`. PASS: during the drag a
   hysteresis indicator appears at the target drop
   position, the dragged row follows the pointer,
   and on release the ideas list reorders in place.
   Reload the page — new order persists.
+  Pin: tests/drag-reorder.test.ts 'dropIndex returns
+       slot when cursor below midpoint without
+       hysteresis' (decides the drop-slot
+       resolution); tests/drag-reorder.test.ts
+       'computeNewPosition inserts midway between
+       neighbors' (decides the persisted position
+       lands between its new neighbors);
+       tests/drag-reorder.test.ts 'followTranslateY
+       writes translateY of the pointer delta'
+       (decides the dragged row follows the pointer
+       by the transform math); exploratory — the
+       live hysteresis-indicator rendering and the
+       reload-persistence observation (no browser
+       test drags an idea row —
+       tests/browser/list-reorder.test.ts drags
+       `[data-project-card]`, the projects list, a
+       different page)
 - [ ] **D37** During a drag, hover slowly across the
   midpoint of a neighbouring row. Drive with two
   or more `pointermove` samples across the
@@ -1606,6 +2030,14 @@ depends: A
   flips to the new target once the pointer crosses
   the hysteresis threshold, not on the first pixel
   over the midpoint.
+  Pin: tests/drag-reorder.test.ts 'dropIndex
+       respects hysteresis when lastIdx === current
+       slot'; tests/drag-reorder.test.ts 'dropIndex
+       respects hysteresis when lastIdx === next
+       slot' (together decide the 8px hysteresis
+       band on both sides of the midpoint);
+       exploratory — the live drop-indicator line's
+       visual flip
 
 ---
 
