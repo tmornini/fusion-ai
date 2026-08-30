@@ -3618,56 +3618,183 @@ them after K8, once the explorer has returned.
 
 ## SV. Server (Node + Postgres)
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
-This is the default origin, not a second ceremony. A3
-**is** SV1. B15 / B18 / B19 / B23 pin cookie-session
-on the same process. Keep SV6–SV10 as the two-jar /
-two-tab / stale-until-navigation pins.
+This is the default origin, not a second ceremony —
+A3 **is** SV1, on the same crank process every other
+section already walked. B15 / B18 / B19 / B23 pin the
+same cookie-session covenants on this process.
 
 Operator prerequisites:
 
-- A3 is crank. The SV hunter still skips SV1
-  and does not re-seed.
-- Credentials print once on **stdout**, never HTTP
-- One mint process — do not run two crank
-  processes
+- A3 is crank; the explorer skips SV1 and does not
+  re-seed.
+- Credentials print once on **stdout**, never HTTP.
 
 Named residual: the backend emits
 `pg_notify('fusion_events', …)` inside the write
 transaction. There is no LISTEN and no SSE client. A
-second alias looking stale until it navigates is
-**PASS**, not FAIL. BroadcastChannel is origin-scoped
-(same host only). Do not file **SV10** as a
-regression.
+second browser context looking stale until it
+navigates is **PASS**, not FAIL. BroadcastChannel is
+origin-scoped and reaches other tabs of the same
+cookie jar (see SV8b) but not other browser contexts.
+Do not file **SV10** as a regression.
 
 ### Browser against the real server
 
-- [ ] **SV1** Satisfied by A3 — do not re-run. PASS if A3 passed (listen + stdout seed reveal).
-- [ ] **SV2** Open `http://localhost:8080/auth/index.html` (or follow the unsigned root hop to landing, then Sign In). Sign in as `demo@example.com` with the stdout password. PASS: the dashboard loads from this Node origin — pages and API are one process.
-- [ ] **SV3** After SV2, inspect DevTools. PASS: Application → Cookies shows `refresh_token` as HttpOnly, `Path=/api/authentication`, `SameSite=Strict`, `Secure` (always, including `http://localhost` and `http://127.0.0.1`); `localStorage` has no `fusion-angle:authorization` key and no `refresh_token`; the sign-in token response JSON has `access_token` and no `refresh_token`. Access is memory-only; refresh is the cookie.
-- [ ] **SV4** On the signed-in dashboard, reload (Cmd-R). PASS: stays authenticated — no bounce to `auth`. Boot cookie-refreshes via `POST /api/authentication/token` (`grant_type=refresh`, `credentials: 'same-origin'`).
+- [ ] **SV1** Satisfied by A3 — do not re-run.
+  PASS if A3 passed (listen + stdout seed reveal).
+  Pin: tests/pg-seed.test.ts 'mock-data seed
+       prints every human sign-in' (the same event
+       A3 cites); exploratory — confirming A3
+       already passed
+- [ ] **SV2** Open `http://localhost:8080/auth/index.html`
+  (or follow the unsigned root hop to landing,
+  then Sign In). Sign in as `demo@example.com`
+  with the stdout password. PASS: the dashboard
+  loads from this Node origin — pages and API are
+  one process.
+  Pin: tests/browser/sign-in.test.ts 'sign-in
+       lands on the dashboard as the seeded
+       admin'; exploratory — the one-process
+       nature of pages plus API sharing this origin
+- [ ] **SV3** After SV2, inspect DevTools. PASS:
+  Application → Cookies shows `refresh_token` as
+  HttpOnly, `Path=/api/authentication`,
+  `SameSite=Strict`, `Secure` (always, including
+  `http://localhost` and `http://127.0.0.1`);
+  `localStorage` has no `fusion-angle:authorization`
+  key and no `refresh_token`; the sign-in token
+  response JSON has `access_token` and no
+  `refresh_token`. Access is memory-only; refresh
+  is the cookie.
+  Pin: tests/api-authentication-token.test.ts 'token
+       JSON has no refresh_token; Set-Cookie is
+       HttpOnly'; exploratory — the `Secure`
+       attribute over plain `http://`, and the
+       DevTools `localStorage` inspection
+- [ ] **SV4** On the signed-in dashboard, reload
+  (Cmd-R). PASS: stays authenticated — no bounce
+  to `auth`. Boot cookie-refreshes via
+  `POST /api/authentication/token`
+  (`grant_type=refresh`, `credentials: 'same-origin'`).
+  Pin: tests/api-authentication-token.test.ts
+       'refresh grant rotates from the Cookie, not
+       the body'; exploratory — the live reload
+       staying authenticated; `bootAuthGate`'s
+       cookie-session branch carries no CLI test
+       today
 
-### Two browsers / two identities / one database
+### Two identities, one database, one origin
 
-- [ ] **SV6** Two aliases against the one crank origin (`sv.localhost` and `sv2.localhost`; two identities, one Postgres, one Chrome). In browser A (`sv.localhost`), sign in as `demo@example.com`. In browser B (`sv2.localhost`), sign in as `sarah.chen@company.com` (stdout password; Sarah is Stark, same organization as the admin). PASS: both dashboards load; the sidebar member chips name different people; one Postgres, two sessions.
-- [ ] **SV7** In browser A (`sv.localhost`), create an idea with a unique title (Ideas → Create Idea → required fields → Submit Idea). In browser B (`sv2.localhost`), navigate to `ideas/` (or reload if already there). PASS: Sarah's list includes A's new idea — two identities, one database.
+Both SV6 and SV7 need two identities signed in at
+once, not two tabs of one identity — the browser-use
+plugin's two browser **contexts** (two cookie jars,
+one Chrome) are how the walk now gets that. If the
+driver offers no multi-context support, record
+BLOCKED naming that reason; an honest BLOCKED costs
+nothing.
+
+- [ ] **SV6** Two browser contexts against the one
+  crank origin (two cookie jars, one Chrome, one
+  Postgres). In context A, sign in as
+  `demo@example.com`. In context B, sign in as
+  `sarah.chen@company.com` (stdout password; Sarah
+  is Stark, same organization as the admin). PASS:
+  both dashboards load; the sidebar member chips
+  name different people; one Postgres, two
+  sessions.
+  Pin: tests/browser/two-jars.test.ts 'two contexts
+       hold two identities on one origin';
+       exploratory — the live two-context sign-in
+       and the painted chip names
+- [ ] **SV7** Continuing SV6's two contexts: in
+  context A, create an idea with a unique title
+  (Ideas → Create Idea → required fields → Submit
+  Idea). In context B, navigate to `ideas/` (or
+  reload if already there). PASS: Sarah's list
+  includes A's new idea — two identities, one
+  database.
+  Pin: tests/browser/two-jars.test.ts 'two contexts
+       hold two identities on one origin';
+       exploratory — the live UI-driven create, as
+       opposed to the pin's direct write
 
 ### Two tabs share the refresh cookie
 
-- [ ] **SV8** Same alias as the admin session (two tabs of `sv.localhost` share its cookie). In tab A, stay signed in. Open `dashboard/index.html` in a new tab B of `sv.localhost`. PASS: tab B stays authenticated with no second sign-in — both tabs share the `refresh_token` cookie; boot cookie-refreshes.
-- [ ] **SV8b** Two windows of `sv.localhost`, both
-  on `ideas/`. Create an idea in window A. PASS:
-  window B's list gains the card without a reload
+Same origin, same browser context — one cookie jar,
+two tabs — is ordinary explorer driving; no BLOCKED
+applies here.
+
+- [ ] **SV8** Same signed-in session, two tabs of
+  the one browser context (they share its cookie).
+  In tab A, stay signed in. Open
+  `dashboard/index.html` in a new tab B of that
+  context. PASS: tab B stays authenticated with no
+  second sign-in — both tabs share the
+  `refresh_token` cookie; boot cookie-refreshes.
+  Pin: tests/browser/two-jars.test.ts 'two tabs
+       share the cookie; sign-out in one bounces
+       the other'; exploratory — the live open and
+       the painted chip in tab B
+- [ ] **SV8b** Two tabs of the one browser context,
+  both on `ideas/`. Create an idea in tab A. PASS:
+  tab B's list gains the card without a reload
   (BroadcastChannel `fusion-angle:data`).
-- [ ] **SV9** In tab A, click Sign out. In tab B, navigate (sidebar click or reload). PASS: tab B lands on `auth` — logout cleared the shared cookie (`Set-Cookie` `Max-Age=0`); boot refresh cannot mint. (An already-painted tab B may still hold a live access token in memory until that navigation — that is the access-TTL covenant, not a failed cookie clear.)
+  Pin: exploratory — the mock seed's ideas list is
+       never empty, so this walks
+       `onIdeasLoaded`'s populated-list subscription
+       (`web-app/ideas/index.ts`'s direct
+       `subscribeIdeaChanges` call), not the
+       empty-list re-init branch
+       tests/ideas-empty-subscribe.test.ts 'an empty
+       initial ideas load still subscribes to
+       cross-tab changes' decides; neither branch's
+       test covers the other
+- [ ] **SV9** In tab A, click Sign out. In tab B,
+  navigate (sidebar click or reload). PASS: tab B
+  lands on `auth` — logout cleared the shared
+  cookie (`Set-Cookie` `Max-Age=0`); boot refresh
+  cannot mint. (An already-painted tab B may still
+  hold a live access token in memory until that
+  navigation — that is the access-TTL covenant, not
+  a failed cookie clear.)
+  Pin: tests/browser/two-jars.test.ts 'two tabs
+       share the cookie; sign-out in one bounces
+       the other'; exploratory — the live
+       in-memory-access-token nuance before
+       navigation
 
 ### Named residual — stale-until-navigation
 
-- [ ] **SV10** Re-sign browser A (`sv.localhost`) as `demo@example.com` if SV9 cleared that session. With browser B (`sv2.localhost`) already sitting on `ideas/` (do not reload), create a distinctly titled idea in browser A. PASS / named residual: B's open list does not gain the new card until B navigates or reloads. There is no NOTIFY listener; BroadcastChannel is origin-scoped and does not cross aliases. A second alias looking stale until navigation is **not FAIL**. After B navigates or reloads, the card from this write is present (same pin as SV7).
+This residual is a **cross-jar** fact, not a
+cross-tab one: SV8b just proved two tabs of one jar
+DO refresh live via BroadcastChannel. Demonstrating
+staleness needs two separate identities (two browser
+contexts, as SV6/SV7 set up) — one jar's tabs cannot
+show it. If the driver offers no multi-context
+support, record BLOCKED naming that reason rather
+than a case that would read as a FAIL.
+
+- [ ] **SV10** Context B (Sarah Chen, from SV6/SV7)
+  is still signed in and already sitting on
+  `ideas/` — do not reload it. Context A was signed
+  out in SV9; re-sign it as `demo@example.com`
+  first (or open two fresh contexts if neither
+  survived). In context A, create a distinctly
+  titled idea. PASS / named
+  residual: B's open list does not gain the new
+  card until B navigates or reloads. There is no
+  LISTEN and no SSE client; BroadcastChannel
+  crosses tabs of one cookie jar (SV8b) but not
+  separate browser contexts. A second context
+  looking stale until navigation is **not FAIL**.
+  After B navigates or reloads, the card from this
+  write is present (same pin as SV7).
+  Pin: exploratory — the pre-navigation staleness
+       and the post-navigation appearance; no CLI
+       or browser test decides the staleness
+       itself, and this case's two-context setup is
+       reused from SV6, not independently pinned
+       here
 
 ---
 
