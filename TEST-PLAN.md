@@ -3042,18 +3042,38 @@ works; functional billing is tracked in `TODO.md`.
 
 ## I. Cross-Cutting Concerns
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
 ### Theme
 
 - [ ] **I1** Click the theme toggle (sun/moon icon) in the header, select "Dark". PASS: page switches to dark theme — background darkens, text lightens, CSS custom properties update.
+  Pin: exploratory — the live toggle click and the
+       dark-theme repaint
 - [ ] **I2** Navigate to another page. PASS: dark theme persists across navigation.
+  Pin: exploratory — the live cross-page persistence
+       and repaint; a similarly-named existing test
+       does not decide this — it stubs `matchMedia`
+       to `matches: true` and never distinguishes the
+       module's own `'system'`-default fallback
+       (which independently computes 'dark' from that
+       same stub) from an actual hydration of the
+       stored value, so it stays green even with
+       hydration deleted entirely
 - [ ] **I3** Select "Light" theme. PASS: page returns to light theme.
+  Pin: exploratory — the live toggle click and the
+       light-theme repaint
 - [ ] **I4** Select "System" theme. PASS: theme follows OS preference (matches `prefers-color-scheme`).
+  Pin: tests/state-theme-icon.test.ts 'a
+       prefers-color-scheme change event applies
+       data-theme while preference is system';
+       exploratory — the live System selection and
+       the OS-preference match
 - [ ] **I5** Reload the page. PASS: theme choice persists (stored in `localStorage` key `fusion-angle:theme`).
+  Pin: tests/fusion-angle-identifiers.test.ts
+       'storage keys use the fusion-angle prefix'
+       (decides the exact key name
+       `fusion-angle:theme`); exploratory — the live
+       reload persistence; a similarly-named existing
+       test does not decide the hydration itself — see
+       I2's Pin for the confound
 - [ ] **I6** Open the app in a second browser
   tab. Change theme in the first tab. PASS:
   second tab updates to the new theme without
@@ -3073,15 +3093,49 @@ depends: A
   `window.matchMedia('(prefers-color-scheme:
   dark)')` (one interned list per query), or
   use a real OS toggle.
+  Pin: tests/state-theme-icon.test.ts 'a cross-tab
+       theme storage event repaints the toggle icon'
+       (a synthetic `storage` event repaints both the
+       desktop and mobile toggle icons, not only
+       `data-theme`); tests/state-theme-icon.test.ts
+       'a prefers-color-scheme change event applies
+       data-theme while preference is system';
+       tests/state-theme-icon.test.ts 'a
+       MediaQueryList change on a later matchMedia
+       call applies data-theme while preference is
+       system' (a listener registered at init still
+       fires from a MediaQueryList obtained by a later
+       `matchMedia()` call — the interned-list
+       precondition this case's CDP workaround
+       depends on); exploratory — the live second tab
+       and the dispatched `MediaQueryListEvent`
 
 ### Sidebar
 
 - [ ] **I7** Click the sidebar collapse button. PASS: sidebar collapses to icon-only view, main content area expands.
+  Pin: tests/browser/sidebar.test.ts 'collapse and
+       expand transition the sidebar width' (its
+       collapse half: width to 64px, the
+       `sidebar-collapsed` class, nav-text hidden);
+       exploratory — the main content area expanding
 - [ ] **I8** Navigate to another page. PASS:
   collapsed state persists (stored in
   `localStorage` key
   `fusion-angle:sidebar-collapsed`).
+  Pin: tests/fusion-angle-identifiers.test.ts
+       'storage keys use the fusion-angle prefix'
+       (decides the exact key name); exploratory —
+       the live cross-page persistence; `initState`
+       hydrating a valid stored sidebar-collapsed
+       value carries no CLI test today — only the
+       corrupt-value rejection is (a sibling test in
+       `tests/state-init.test.ts`)
 - [ ] **I9** Click the expand button. PASS: sidebar returns to full width with labels.
+  Pin: tests/browser/sidebar.test.ts 'collapse and
+       expand transition the sidebar width' (its
+       expand half: width back to 256px, nav-text
+       visible again); exploratory — the live click
+       and paint of the expand
 
 ### Mobile Responsive
 
@@ -3097,35 +3151,96 @@ layout.
   visible (`display: flex`). Restore ≥768px.
   PASS: sidebar visible, mobile header
   hidden.
+  Pin: tests/browser/viewport.test.ts 'below 768px
+       the drawer replaces the desktop sidebar'
+       (checks both elements at ≤767px, but after
+       restoring to ≥768px re-checks only
+       `#desktop-sidebar`, not that `.mobile-header`
+       hides again); exploratory — that
+       `.mobile-header`'s computed `display` is
+       specifically `flex` rather than merely
+       visible, and that it goes hidden again after
+       the restore
 - [ ] **I11** Tap/click the hamburger menu. PASS: mobile sidebar sheet slides in from the left with navigation links.
+  Pin: exploratory — the live drawer slide-in;
+       `initMobileDrawer` carries no CLI or browser
+       test today
 - [ ] **I12** Tap/click the backdrop or a nav link. PASS: mobile sidebar closes.
+  Pin: exploratory — the live backdrop/nav-link close
 - [ ] **I13** Tap a navigation link in the mobile sidebar. PASS: navigates to the target page and mobile sidebar closes. (Note: the drawer closes implicitly via page navigation — the next page loads in default-hidden state. No explicit close-on-link-click handler is required; navigation is the close trigger.)
+  Pin: exploratory — the live navigation and the
+       drawer's default-hidden state on the next page
 - [ ] **I14** Open the mobile sidebar, press `Escape`. PASS: sidebar closes.
+  Pin: exploratory — the live Escape-close
 - [ ] **I15** Open the mobile sidebar, press `Tab` repeatedly. PASS: focus cycles through focusable elements inside the sidebar without escaping to the page behind it. `Shift+Tab` at the first element wraps to the last.
+  Pin: exploratory — the live focus cycle and wrap;
+       no focus-trap test exists today
 
 ### Command Palette
 
 - [ ] **I16** Press `Cmd+K` (Mac) or `Ctrl+K` (Windows/Linux). PASS: command palette overlay appears with search input focused.
+  Pin: exploratory — the live keybinding, overlay,
+       and input focus
 - [ ] **I17** Type a search term (e.g. "ideas"). PASS: filtered results appear. Select a result — navigates to the corresponding page.
+  Pin: tests/command-palette-search.test.ts
+       'searchItems matches title case-insensitively'
+       (decides the filtering a typed term drives);
+       exploratory — the live open, the typed search,
+       and the result-click navigation
 - [ ] **I18** Press `Escape`. PASS: command palette closes.
+  Pin: exploratory — the live Escape-close
 - [ ] **I19** Open command palette, type a search term. Use `Down Arrow` and `Up Arrow` to navigate results. PASS: active result highlight moves with arrow keys. Press `Enter`. PASS: navigates to the highlighted result.
+  Pin: exploratory — the live arrow-key highlight and
+       Enter navigation; the palette's keyboard-index
+       logic is unexported DOM glue with no CLI test
+       today
 - [ ] **I20** Open command palette with an empty search field. PASS: results list shows up to 12 items from the combined index, grouped by category (Ideas, Projects, Members, Pages) with category headers — when the dataset is sparse enough for multiple categories to fit in 12 items, multiple groups appear; otherwise a single group is shown. Type a multi-category term (e.g. "a", which matches across Pages / Ideas / Projects / Members) that matches across groups. PASS: results regroup under multiple category headers. Type a term that matches no results. PASS: result list is empty or shows a no-results message.
+  Pin: tests/command-palette-search.test.ts
+       'searchItems empty query caps at default
+       count' (an empty query over 50 items returns
+       exactly 12); tests/command-palette-search.test.ts
+       'searchItems no match returns empty';
+       exploratory — the live category grouping,
+       headers, and the regroup across categories
 
 ### Loading States
 
 - [ ] **I21** Navigate to a data-dependent page
-  with mock data loaded. Probe before fetches
-  settle (do not `wait_for_load` first). PASS:
-  loading skeleton (card-grid, card-list, or
-  detail pattern) appears, then content
-  replaces it.
-- [ ] **I22** If an error occurs inside a `loadInto()` fetch path (e.g. a data-dependent page hits a thrown adapter error after the database initialized successfully), the error state with "Try Again" retry button is shown. PASS: clicking retry re-attempts data loading.
+  with mock data loaded; do not `wait_for_load`
+  first (see Driving notes). PASS: loading
+  skeleton (card-grid, card-list, or detail
+  pattern) appears, then content replaces it.
+  Pin: exploratory — the live pre-settlement
+       skeleton; `loadInto` is tested only after its
+       fetch settles (empty, data, or error), never
+       during the pending skeleton itself
+- [ ] **I22** If an error occurs inside a `loadInto()` fetch path (e.g. a data-dependent page hits a thrown adapter error after the database initialized successfully), the error state with "Try Again" retry button is shown. PASS: clicking retry re-attempts data loading. The explorer has no way to force this fault live; if none occurs naturally, record BLOCKED naming that reason — an honest BLOCKED costs nothing.
+  Pin: tests/loading-states.test.ts 'a rejecting
+       fetch renders the error state and calls
+       neither hook' (a rejected fetch renders a
+       "Try Again" control and calls neither
+       `onEmpty` nor `onData`); exploratory — the
+       live retry click re-attempting the load
 
 ### Toasts
 
 - [ ] **I23** Trigger a toast (e.g. save an idea). PASS: toast appears at top-center of the viewport (fixed to `top: var(--space-4); left: 50%; translateX(-50%)`), auto-dismisses after ~6 seconds with fade-out. (Toast position was migrated from bottom-right to top-center.)
+  Pin: exploratory — the live position, the
+       ~6-second auto-dismiss, and the fade
 - [ ] **I24** While a toast is visible, click its close button (×). PASS: toast dismisses immediately without waiting for auto-dismiss timer.
+  Pin: tests/browser/toasts.test.ts 'the close button
+       detaches a toast inside its fade' (the toast
+       detaches within 1.5s of the close click, well
+       inside the 6s auto-dismiss window); exploratory
+       — the live fade-out visual
 - [ ] **I25** Trigger multiple toasts in rapid succession (e.g. save an idea repeatedly). PASS: toasts stack visibly with the *newest at the top*, older ones flowing downward (`prepend` ordering, not `appendChild`). Up to 5 visible. When a 6th toast arrives, the *oldest* — at the bottom of the stack — is removed.
+  Pin: tests/browser/toasts.test.ts 'the stack caps
+       at five toasts' (decides the cap only — every
+       toast in the test carries identical text, so
+       it cannot decide which one is evicted or that
+       new ones render on top); exploratory — the
+       newest-on-top ordering and that the toast
+       removed is specifically the oldest
 
 ### General
 
@@ -3135,7 +3250,17 @@ layout.
   not-found page, not a restore UI). Historical
   I26 (download → wipe → upload) retired with
   the snapshots page.
+  Pin: tests/page-registry.test.ts 'sidebar has no
+       Snapshots item'; tests/page-registry.test.ts
+       'PAGE_REGISTRY has no snapshots page';
+       tests/page-registry.test.ts 'retired snapshots
+       is a missing page' (an unsigned `snapshots/`
+       load resolves as the not-found page);
+       exploratory — the live sidebar and the live
+       not-found render
 - [ ] **I27** Check DevTools Console after navigating through 5+ different pages. PASS: no unhandled JavaScript errors (warnings and info messages from browser extensions are acceptable).
+  Pin: exploratory — the live DevTools console across
+       5+ navigations
 
 ### Sidebar Cross-Tab Sync
 
@@ -3143,6 +3268,12 @@ layout.
   sidebar. PASS: tab 2 reflects the collapsed state without manual
   reload (cross-tab sync via StorageEvent on
   `fusion-angle:sidebar-collapsed`).
+  Pin: exploratory — the live cross-tab sync; only
+       the `STORAGE_KEY_THEME` branch of `state.ts`'s
+       shared storage-event listener is tested (a
+       sibling test in `tests/state-theme-icon.test.ts`)
+       — its `STORAGE_KEY_SIDEBAR` sibling branch
+       carries no CLI test today
 
 ### Accessibility
 
@@ -3162,10 +3293,11 @@ layout.
   (`web-app/app/components-layout.html`)
   contains exactly one `<main>`. Guards
   WCAG 2.4.1 Bypass Blocks (Level A).
+  Pin: exploratory — the live tab order, the focus
+       move on Enter, and the single `<main>` landmark
 - [ ] **I30 — Reduced-motion view-transition
-  guard** Emulate
-  `prefers-reduced-motion: reduce` via CDP
-  (`Emulation.setEmulatedMedia`). PASS: the
+  guard** Emulate `prefers-reduced-motion:
+  reduce` (see Driving notes). PASS: the
   `@media (prefers-reduced-motion: reduce)`
   rule in `base.css` sets
   `::view-transition-group(*)` /
@@ -3179,6 +3311,22 @@ layout.
   reach view-transition pseudo-elements.
   Guards WCAG 2.3.3 Animation from
   Interactions (AAA).
+  Pin: tests/base-css-motion.test.ts 'reduced motion
+       names page-content view transitions so
+       fade-in-up cannot win' (decides the block
+       names the `page-content` pair with
+       `animation: none`; it does not check for the
+       `::view-transition-group(*)` or wildcard
+       `::view-transition-old/new(*)` selectors this
+       case's PASS line also names); exploratory —
+       the live navigation not playing the slide, and
+       that the wildcard selectors themselves carry
+       `animation: none`. A neighboring browser test
+       clamps a different CSS mechanism (the
+       universal `transition-duration` reset on
+       `#desktop-sidebar`), not the named
+       view-transition override this case guards, so
+       that test is not cited here
 
 ---
 
