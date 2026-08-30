@@ -2607,10 +2607,18 @@ FSM, unlike `flows/detail`).
   the stats page; the heat tints and the card remain legible
   in both themes. The face number text contrasts adequately
   at all heat levels.
-  Pin: tests/state-init.test.ts 'initState hydrates
-       the persisted theme preference'; exploratory —
-       the painted contrast of tints and card text in
-       both themes
+  Pin: exploratory — the painted contrast of tints
+       and card text in both themes, and that the
+       theme choice itself persists across
+       navigation to the stats page; a similarly-
+       named existing test does not decide the
+       persistence — it stubs `matchMedia` to
+       `matches: true` and never distinguishes the
+       theme module's own `'system'`-default
+       fallback (which independently computes
+       'dark' from that same stub) from an actual
+       hydration of the stored value, so it stays
+       green even with hydration deleted entirely
 - [ ] **FS9** Data-shape regression: heat fractions sum to
   ~100% across non-special nodes on the flagship flow. WIP
   counts in the card match the WOs currently sitting in each
