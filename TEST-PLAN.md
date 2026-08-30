@@ -3126,8 +3126,14 @@ that the canvas re-renders after each step.)
        (decides the same archive's `flow.mmd` and
        `sidecar.json` both read back — the import path
        parses them straight out of `getFlowZip`'s output);
-       exploratory — the download itself, `flow.json` and
-       `flow.txt`, and the four-entry manifest as a set
+       tests/adapters-refresh-mutex.test.ts
+       'cookie refresh re-scopes the session to the
+       dead token org' (decides a cookie refresh
+       exchanges the flat successor onto the dead
+       token's org before `getFlowZip` reads
+       `activeOrganization`); exploratory — the
+       download itself, `flow.json` and `flow.txt`,
+       and the four-entry manifest as a set
 - [ ] **F43** On `flows/index.html` click "Import Flow", choose a
   project, click "Choose File", and select a `.mmd` file taken
   from a known flow — unzip F42's archive and use its
