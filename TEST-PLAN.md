@@ -2170,279 +2170,438 @@ concurrency, and the org fence. A designer "tag current" action is tracked in
 
 ## F2. Workbox
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
+### Workbox Source Flow
 
-### AA13. Workbox Source Flow
-
-- [ ] **AA-WB-SETUP** Verify the seeded Workbox-only flow named `WB Test Flow` (A3 reveal `flow_id`) is READY in Create Work Order: four nodes Create → Capture (text + select attributes) → Review (read-only) → Archive (`isArchive: true`). Open Workbox, click "+ Create Work Order", and confirm `WB Test Flow` sits in the `READY` section (clickable, `data-flow-id` = reveal `flow_id`). Do not build or rewire the graph. This flow is mutated only by Agent-F2. Agent-F2's WO creation reads from this flow, not from any Agent-F flow. Serial (A3 `--mock-data`): no `WB Test Flow` exists; the subject is Customer Onboarding (READY once its Review node names Sarah Chen and Emily Rodriguez).
+- [ ] **AA-WB-SETUP** Verify Customer Onboarding is
+  READY in Create Work Order — its Review node names
+  Sarah Chen and Emily Rodriguez. Workbox's Create Work
+  Order draws only on flows the mock seed already
+  publishes; it does not depend on any AA or F case
+  creating one live.
+  Pin: tests/mock-flow-readiness.test.ts 'mock admin sees
+       Customer Onboarding and Lead-to-Close' (decides
+       Customer Onboarding is READY); exploratory — the
+       live dropdown listing and the Review node's member
+       names
 
 ### Workbox Inbox (`workbox/`)
 
-- [ ] **WB1** Navigate to `workbox/`. PASS:
-  page shows "Workbox" title, subtitle "Your
-  work order inbox", Active/Archive tabs, and
-  a "Create Work Order" button (plus icon +
-  label; mobile short label "Create").
-- [ ] **WB2** With no work orders, the Active
-  tab shows an empty state with mail icon and
-  "No Active Work Orders Yet" message. The mock
-  seed has active work orders, so verify against
-  an org with none, or by component source.
-- [ ] **WB3** Click the Archive tab. PASS: tab
-  switches to show archive list (Parallel: empty.
-  Serial: the Archive list holds the 105 seeded
-  completed work orders.).
+- [ ] **WB1** Navigate to `workbox/`. PASS: page shows
+  "Workbox" title, subtitle "Your work order inbox",
+  Active/Archive tabs, and a "Create Work Order" button
+  (plus icon + label; mobile short label "Create").
+  Pin: exploratory — the live page chrome; the shell text
+       carries no CLI or browser test
+- [ ] **WB2** With no work orders, the Active tab shows
+  an empty state with mail icon and "No Active Work
+  Orders Yet" message. The mock seed has active work
+  orders, so verify against an org with none, or by
+  component source.
+  Pin: tests/workbox-inbox.test.ts 'buildInboxItems
+       returns an empty array in active mode with no work
+       orders' (decides the data is empty; the rendered
+       empty-state copy itself, `emptyStateFor` in
+       web-app/workbox/index.ts, carries no test);
+       exploratory — the live empty-state render
+- [ ] **WB3** Click the Archive tab. PASS: tab switches
+  to show the archive list — the mock seed carries
+  ≥ 129 completed work orders (of ≥ 145 seeded total:
+  `buildWorkOrders()` seeds Customer Onboarding and
+  Layout Test work orders, and `buildLeadToCloseWorkload()`
+  — a second, easily-missed source — seeds 100 more for
+  Lead-to-Close; all 145 are stamped into Stark and the
+  inbox is org-scoped, so all land in this one list).
+  Pin: exploratory — the live tab switch and list render;
+       the seeded completed count (129 of 145: Customer
+       Onboarding 33/39, Layout Test 5/6, Lead-to-Close
+       91/100 — computed from `buildWorkOrders()` +
+       `buildLeadToCloseWorkload()` and each work order's
+       own embedded `flow_graph`'s `isArchive` node, the
+       same test `curNode.isArchive` in web-app/app/
+       presenters/workbox-inbox.ts applies live) carries
+       no CLI test pinning these numbers
 
 ### Workbox — Create Work Order
 
-- [ ] **WB4** Click "+ Create Work Order". PASS:
-  a dropdown opens with up to two labeled
-  sections — `READY` (clickable rows, one per
-  publishable flow) — Parallel: READY includes
-  `WB Test Flow` as today — Parallel READY
-  containing WB Test Flow with an empty NOT
-  READY list at this step is PASS. Do not fail
-  for a missing NOT READY row. Serial: READY is
-  exactly Customer Onboarding and Lead-to-Close
-  (never a third from AA26/E7); NOT READY is
-  Fusion Angle Flow (16)
-  and Layout Test: Proposal Review Cycle (15), as
-  `tests/mock-flow-readiness.test.ts` pins — and
-  `NOT READY` (disabled rows for any flow with
-  zero-member or dead-end nodes; each carries a
-  red no-entry icon and a subtitle "1 node needs
-  attention" or "N nodes need attention"). Hover
-  a `NOT READY` row. PASS: cursor stays default
-  (no `pointer`), `aria-disabled="true"` is
-  present, no `data-flow-id` attribute.
-- [ ] **WB4a** Click a `NOT READY` row. PASS:
-  nothing happens — the dropdown stays open, no
-  navigation occurs (the click handler ignores
-  rows without `data-flow-id`).
-- [ ] **WB5** Click `WB Test Flow` from the
-  `READY` section. PASS: work order is created,
-  browser navigates to the action screen at the
-  first post-start state ("Capture"). Display ID
-  (8-char hex) is visible in the header. Serial:
-  click Customer Onboarding; the first post-start
-  state is "Data Capture".
-- [ ] **WB5a** Remove the outgoing `submit` edge
-  via pair fixture (no port-drag). Reload Workbox
-  and open Create Work Order. PASS: the subject
-  sits in `NOT READY` with subtitle "1 node needs
-  attention" (`verified via pair fixture`).
-  Restore the same pair, reload. PASS: the
-  subject returns to `READY`. Parallel: `WB Test
-  Flow` / Capture. Serial: Data Capture `submit`.
-- [ ] **WB5b — Server-side gate.** The server-side
-  gate is covered by
-  `tests/adapters-flow-publish.test.ts`
-  (`validateFlowForCreation` + `getFlowsForCreation`).
-  No manual browser verification needed; this case
-  PASSES by virtue of the automated coverage — the
-  production IIFE bundle does not expose
-  `postWorkOrderCreation` on the console, so a
-  DevTools-driven verification is not available
-  against the deployed build.
+- [ ] **WB4** Click "+ Create Work Order". PASS: a
+  dropdown opens with up to two labeled sections — READY
+  (clickable rows, one per publishable flow) includes at
+  least Customer Onboarding and Lead-to-Close. It may
+  hold more by now: E7, earlier in this walk,
+  unconditionally creates a flow whose bare start+complete
+  graph has zero non-exempt nodes, so
+  `validateFlowForCreation` reports it `ready` with zero
+  problems — a live third READY row — and F's own Flow
+  Designer edits may add further flows still. NOT READY
+  includes Fusion Angle Flow and Layout Test: Proposal
+  Review Cycle — disabled rows for any flow with
+  zero-member or dead-end nodes, each carrying a red
+  no-entry icon and a subtitle "1 node needs attention"
+  or "N nodes need attention". Their exact problem counts
+  (16 and 15 in the untouched seed) may also have drifted:
+  F's Flow Designer cases (F19, F32–F39) edit Layout
+  Test's own graph earlier in this walk. Hover a NOT
+  READY row. PASS: cursor stays default (no `pointer`),
+  `aria-disabled="true"` is present, no `data-flow-id`
+  attribute.
+  Pin: tests/mock-flow-readiness.test.ts 'mock admin sees
+       Customer Onboarding and Lead-to-Close' (decides the
+       untouched seed's exact READY pair and NOT READY
+       problem counts — a fact about the seed alone, not
+       a live guarantee once E7 and F have run);
+       exploratory — the live dropdown's exact contents
+       by the time F2 is reached, the NOT-READY subtitle
+       text and its node-count wording (the adapter test
+       pins `problemCount`; whether the page glue's
+       subtitle string reflects that exact number live is
+       unverified by any test), `aria-disabled="true"`,
+       the no-entry icon, and the hover cursor
+- [ ] **WB4a** Click a `NOT READY` row. PASS: nothing
+  happens — the dropdown stays open, no navigation occurs
+  (the click handler ignores rows without
+  `data-flow-id`).
+  Pin: exploratory — the live no-op click; the handler's
+       `data-flow-id` guard carries no CLI or browser
+       test
+- [ ] **WB5** Click Customer Onboarding from the READY
+  section. PASS: work order is created, browser navigates
+  to the action screen at the first post-start state
+  ("Data Capture"). Display ID (8-char hex) is visible in
+  the header.
+  Pin: tests/adapters-work-orders.test.ts
+       'postWorkOrderCreation seeds work order, flow
+       link, and three state events in one call' (decides
+       creation lands the work order at the flow's
+       post-start node, not the Create node itself);
+       exploratory — the live click, navigation, and
+       Display ID render
+- [ ] **WB5a** Click the Data Capture → Review `submit`
+  edge to select it, then click the Delete (trash)
+  toolbar button — F28's own gesture. Reload Workbox and
+  open Create Work Order. PASS: the subject sits in
+  `NOT READY` with subtitle "1 node needs attention".
+  Restore the edge the same way (or via Undo), reload.
+  PASS: the subject returns to `READY`.
+  Pin: tests/adapters-flow-publish.test.ts
+       'validateFlowForCreation flags dead_end on a
+       non-End node with zero outgoing edges' (decides
+       the dead-end detection this edge removal
+       exercises); exploratory — the live edge-select +
+       delete gesture and the reload/dropdown re-check
+- [ ] **WB5b — Server-side gate.** No manual browser
+  verification is needed — the production IIFE bundle
+  does not expose `postWorkOrderCreation` on the console,
+  so a DevTools-driven check is not available against the
+  deployed build. This case PASSES by virtue of automated
+  coverage alone.
+  Pin: tests/adapters-flow-publish.test.ts
+       'validateFlowForCreation reports ready when every
+       regular node has a member and an outgoing edge';
+       tests/adapters-flow-publish.test.ts
+       'getFlowsForCreation partitions ready and notReady
+       flows'
 
 ### Workbox — Action Screen (`workbox/detail.html`)
 
 - [ ] **WB6** The action screen shows: back button
-  (icon-only), flow name, display ID, current
-  state badge, and dynamically rendered attributes
-  matching the current node's attribute references
-  from the flow graph.
+  (icon-only), flow name, display ID, current state
+  badge, and dynamically rendered attributes matching the
+  current node's attribute references from the flow
+  graph.
+  Pin: tests/presenter-workbox-detail.test.ts
+       'WorkboxDetailPresenter exposes id, display id,
+       and flow name from the work order';
+       tests/presenter-workbox-detail.test.ts
+       'renderableAttributes are the current node refs
+       and buildPage renders a labeled input per required
+       attribute with a marker'; exploratory — the live
+       back button and state badge
 - [ ] **WB7** Attribute types render correctly: text
   inputs, selects, number inputs, date inputs,
   checkboxes, and radio buttons as appropriate for each
   attribute type in the flow definition.
-- [ ] **WB8** Transition buttons appear below
-  the attributes, one per outgoing edge from the
-  current node, labeled with the edge name.
-- [ ] **WB9** A "Release Work Order" button is
-  visible,
+  Pin: tests/presenter-workbox-detail.test.ts
+       'buildAttributeInputHtml renders a text input
+       carrying the attribute id'; tests/presenter-
+       workbox-detail.test.ts 'buildAttributeInputHtml
+       renders a number input for the number attribute
+       type'; tests/presenter-workbox-detail.test.ts
+       'buildAttributeInputHtml renders a date input for
+       the date attribute type'; tests/presenter-workbox-
+       detail.test.ts 'buildAttributeInputHtml renders a
+       select with one option per choice plus a
+       placeholder'; tests/presenter-workbox-detail.test.ts
+       'buildAttributeInputHtml renders a radio group
+       with one collectable input per option';
+       tests/presenter-workbox-detail.test.ts
+       'buildAttributeInputHtml renders a bare checkbox
+       input for the checkbox type'
+- [ ] **WB8** Transition buttons appear below the
+  attributes, one per outgoing edge from the current
+  node, labeled with the edge name.
+  Pin: tests/presenter-workbox-detail.test.ts 'buildPage
+       renders one transition button per outgoing edge
+       and a release button when the work order is not
+       complete'
+- [ ] **WB9** A "Release Work Order" button is visible,
   separate from transition buttons.
-- [ ] **WB10** A collapsible History section
-  shows all transitions with from/to state
-  names, user name, and relative timestamp.
-- [ ] **WB10a — Bind picker on an unbound WO.**
-  Open an unbound work order on a flow that has
-  a record-type join and at least one instance.
-  PASS: header shows an Unbound badge; a "Bind
-  instance" button is visible; clicking it opens
-  the bind-instance dialog listing instances for
-  the flow's record type (rows use
+  Pin: tests/presenter-workbox-detail.test.ts 'buildPage
+       renders one transition button per outgoing edge
+       and a release button when the work order is not
+       complete' (the same test decides both)
+- [ ] **WB10** A collapsible History section shows all
+  transitions with from/to state names, user name, and
+  relative timestamp.
+  Pin: tests/presenter-workbox-detail.test.ts 'buildPage
+       shows a single Created -> Triage history row for a
+       freshly created work order'; tests/presenter-
+       workbox-detail.test.ts 'buildPage history lists
+       transitions newest first with their attribute
+       values'; exploratory — the collapsible interaction
+       and the relative-timestamp formatting live
+- [ ] **WB10a — Bind picker on an unbound WO.** Open an
+  unbound work order on a flow that has a record-type
+  join and at least one instance. PASS: header shows an
+  Unbound badge; a "Bind instance" button is visible;
+  clicking it opens the bind-instance dialog listing
+  instances for the flow's record type (rows use
   `data-instance-pick`, never `data-attribute-id`);
-  picking an instance PUTs
-  `work-orders/:id/binding` (201), the dialog
-  closes, and the screen re-presents with a bound
-  Instance badge and pre-filled values from the
-  instance head.
-- [ ] **WB10b — Disabled fields + bind prompt.**
-  On an unbound work order with current-node
-  attribute refs. PASS: every attribute input is
-  disabled/readonly with title "Bind an instance
-  before editing values"; the bind button from
-  WB10a is the path to enable editing.
+  picking an instance PUTs `work-orders/:id/binding`
+  (201), the dialog closes, and the screen re-presents
+  with a bound Instance badge and pre-filled values from
+  the instance head.
+  Pin: tests/presenter-workbox-detail.test.ts 'buildPage
+       unbound disables fields, shows bind prompt and
+       picker button'; tests/presenter-workbox-detail.test.ts
+       'buildPage pre-fills inputs from instance values
+       and shows a bound badge'; tests/api-work-order-
+       binding.test.ts 'fresh bind → 201; detail + list
+       embed; unbound omits keys'; exploratory — the live
+       dialog open/close and the click-to-pick gesture
+- [ ] **WB10b — Disabled fields + bind prompt.** On an
+  unbound work order with current-node attribute refs.
+  PASS: every attribute input is disabled/readonly with
+  title "Bind an instance before editing values"; the
+  bind button from WB10a is the path to enable editing.
+  Pin: tests/presenter-workbox-detail.test.ts
+       'buildAttributeInputHtml force-disables with bind
+       prompt title when unbound'; tests/presenter-
+       workbox-detail.test.ts 'buildPage unbound disables
+       fields, shows bind prompt and picker button'
 
 ### Workbox — Transitions
 
-- [ ] **WB11** Fill in required attributes and click
-  a transition button. PASS: transition POSTs
-  `work-orders/:id/transition` (201), work order
-  moves to the next state, browser navigates back
-  to the inbox. The work order appears in the
-  Active tab (unclaimed). Serial: bind an instance,
-  fill Company Name and Contact Email, click
-  `submit` → Review.
-- [ ] **WB16** Read the daemon's own network
-  log, accumulated by the hunter: before the
-  bind, and after every step through WB11's
-  inbox landing, append `drain_events()` to a
-  list you keep — the daemon ring holds 500
-  events and `drain_events` empties it. Never
-  call `wait_for_network_idle()` inside that
-  window (it drains and discards). Never
-  `performance.getEntries()`: the inbox
-  navigation destroys the detail document's
-  buffer, and resource entries carry neither
-  body nor headers. Never `js()` `fetch`
-  (bearer is memory-only). Filter
-  `Network.requestWillBeSent` on the attached
-  `session_id`; pair `requestId` with
-  `Network.responseReceived` for status.
-  Assert the binding PUT (201), the transition
-  POST (201; instance shape in
-  `request.postData`; strong `If-Match` in
-  `request.headers`), and the history GET.
-  PASS:
-  the work-order
-  document message pair head carries `display_id`
-  and `flow_graph` JSON; the binding PUT is at
-  `work-orders/:id/binding` with
-  `{instance_id, record_type_id}`; value-bearing
-  transitions are `work-orders/:id/transition`
-  operation message pairs whose body is the
-  **instance shape** (`targetState`, `instance_id`,
+- [ ] **WB11** Bind an instance, fill Company Name and
+  Contact Email, click `submit` → Review. PASS: transition
+  POSTs `work-orders/:id/transition` (201), work order
+  moves to the next state, browser navigates back to the
+  inbox. The work order appears in the Active tab
+  (unclaimed).
+  Pin: tests/api-work-order-transition-instance.test.ts
+       'value-bearing fresh If-Match → 204; head advances'
+       (its own assertion checks `res.status === 201`,
+       despite the test's stale name); exploratory — the
+       live form fill and the navigation back to the inbox
+- [ ] **WB16** Read the network log across WB11's bind
+  and transition (never `js()` fetch — the bearer is
+  memory-only, per the explorer prompt). PASS: the
+  binding PUT lands at `work-orders/:id/binding` with
+  `{instance_id, record_type_id}` (201); the transition
+  POST is `work-orders/:id/transition` (201) whose body
+  is the **instance shape** (`targetState`, `instance_id`,
   `record_type_id`, `set`/`clear` delta, `release`,
-  `transitionAt` — no `fieldValues` bag) and carry
-  strong If-Match against the instance etag; pure
-  moves omit `set`/`clear`/`instance_id`/
-  `record_type_id` and send no If-Match; a sibling
-  instance revision pair advances the head when
-  the transition was value-bearing. Derived WO
-  history is `(at, id)` DESC (index 0 = current)
-  with one non-claim event per transition
-  (`entity_id` = work-order id, `state` = target
-  node id, `member_id` = actor, `at` = RFC-3339
-  Zulu). Live form values come from the instance
-  head, not a history fold.
-- [ ] **WB12** Click the work order row in the
-  Active tab. PASS: work order PUTs
-  `work-orders/:id/claim` (201) and the browser
-  navigates to the action screen showing the new
-  state's attributes.
-- [ ] **WB13** Click "Release Work Order". PASS:
-  a single click DELETEs
-  `work-orders/:id/claim` (204), soft-releases
-  the active claim, and the browser navigates to
-  the inbox, where the work order reappears in the
-  Active tab.
-- [ ] **WB13a — Claim → unclaim → reclaim.** From
-  the Active tab, click the same work order again
-  (claim). PASS: action screen opens under the
-  caller's claim. Click "Release Work Order"
-  (unclaim via DELETE claim). PASS: back on the
-  Active tab unclaimed. Click the row a third time
-  (reclaim). PASS: claim succeeds again; the message
-  plane carries the sequence
-  `claimed` → `claim_released` → `claimed` under
-  the `(at, id)` order for this work order's
-  `entity_id` (inspect via
-  `GET work-orders/:id/history` or the matching
-  operation message pairs). No shared event-append write is involved.
+  `transitionAt` — no `fieldValues` bag) and carries a
+  strong `If-Match` against the instance etag; a pure move
+  omits `set`/`clear`/`instance_id`/`record_type_id` and
+  sends no `If-Match`; a sibling instance revision pair
+  advances the head when the transition was value-bearing.
+  Derived WO history is `(at, id)` DESC (index 0 =
+  current) with one non-claim event per transition
+  (`entity_id` = work-order id, `state` = target node id,
+  `member_id` = actor, `at` = RFC-3339 Zulu). Live form
+  values come from the instance head, not a history fold.
+  Pin: tests/api-work-order-binding.test.ts 'fresh bind →
+       201; detail + list embed; unbound omits keys';
+       tests/api-work-order-transition-instance.test.ts
+       'value-bearing fresh If-Match → 204; head advances'
+       (its own assertion checks
+       `instancePairCount === before + 1` — decides the
+       sibling revision pair advancing the head);
+       tests/api-work-order-transition-instance.test.ts
+       'pure move WITH If-Match → 400' (decides a pure
+       move sending an If-Match is rejected, so a
+       succeeding one sent none);
+       tests/api-work-order-transition-instance.test.ts
+       'pure move carrying instance_id → 400';
+       tests/api-work-order-transition-instance.test.ts
+       'pure move carrying record_type_id → 400' (both
+       decide a pure move must omit them);
+       tests/api-work-order-history.test.ts 'GET
+       organizations/:id/work-orders/:id/history returns
+       200 DESC rows; row[0] is current; transition
+       carries field_values; claim rows carry []';
+       exploratory — the live network-log read itself
+- [ ] **WB12** Click the work order row in the Active
+  tab. PASS: work order PUTs `work-orders/:id/claim`
+  (201) and the browser navigates to the action screen
+  showing the new state's attributes.
+  Pin: tests/api-work-order-claim.test.ts 'a fresh claim
+       appends one claimed event'; exploratory — the live
+       navigation and rendered attributes
+- [ ] **WB13** Click "Release Work Order". PASS: a single
+  click DELETEs `work-orders/:id/claim` (204),
+  soft-releases the active claim, and the browser
+  navigates to the inbox, where the work order reappears
+  in the Active tab.
+  Pin: tests/api-work-order-release.test.ts 'release of a
+       live claim is 204 and the claim history shows
+       claim_released'; exploratory — the live navigation
+       back to the inbox and the reappearance in Active
+- [ ] **WB13a — Claim → unclaim → reclaim.** From the
+  Active tab, click the same work order again (claim).
+  PASS: action screen opens under the caller's claim.
+  Click "Release Work Order" (unclaim via DELETE claim).
+  PASS: back on the Active tab unclaimed. Click the row a
+  third time (reclaim). PASS: claim succeeds again; the
+  message plane carries the sequence
+  `claimed` → `claim_released` → `claimed` under the
+  `(at, id)` order for this work order's `entity_id`
+  (inspect via `GET work-orders/:id/history` or the
+  matching operation message pairs).
+  Pin: tests/api-work-order-claim.test.ts 'a released
+       claim allows a fresh claim' (decides exactly this
+       claim→release→reclaim sequence and its event
+       ordering); exploratory — the live three-click UI
+       sequence
 - [ ] **WB19** Subject: the bound Active WO from
-  WB11–WB13 (still Active; WB14 archives it).
-  Skipping because "WO already archived" is FAIL.
-  After transitioning a work order through at
-  least two states, read the derived history
-  (`GET work-orders/:id/history` or the matching pairs in
-  `message_pairs`) for this work order's id. PASS:
-  rows are `(at, id)` DESC (index 0 = current); each
-  non-claim event has the immutable shape `{id, entity_id,
-  state, member_id, at, field_values}`, with `state`
-  carrying the target node's identifier. Live values live
-  on the instance head; history `field_values` may be
-  empty for new-shape transitions. Verify no app code
-  path mutates an existing pair — the message plane is
-  append-only.
+  WB11–WB13 (still Active; WB14 archives it). Skipping
+  because "WO already archived" is FAIL. After
+  transitioning a work order through at least two states,
+  read the derived history (`GET work-orders/:id/history`
+  or the matching pairs in `message_pairs`) for this work
+  order's id. PASS: rows are `(at, id)` DESC (index 0 =
+  current); each non-claim event has the immutable shape
+  `{id, entity_id, state, member_id, at, field_values}`,
+  with `state` carrying the target node's identifier.
+  Live values live on the instance head; history
+  `field_values` may be empty for new-shape transitions.
+  Pin: tests/api-work-order-history.test.ts 'GET
+       organizations/:id/work-orders/:id/history returns
+       200 DESC rows; row[0] is current; transition
+       carries field_values; claim rows carry []';
+       tests/derive-work-order-lifecycle-for.test.ts
+       'workOrderHistoryFor: folds field_values onto
+       transition events, [] on claim/birth/release, DESC
+       current-first'; exploratory — that no app code path
+       ever mutates an existing pair (an architectural
+       invariant, not a single assertion)
 - [ ] **WB19a — Two-tab 412 on the action screen.**
   Subject: the same bound Active WO from WB11–WB13;
-  skipping because "WO already archived" is FAIL.
-  Bind a work order to an instance. Open the action
-  screen in two tabs. In tab 2, change an instance
-  value via the records detail instance editor (or a
-  second transition) so the head etag advances. In
-  tab 1, edit a value and transition. PASS: tab 1
-  receives 412, re-GETs the instance, re-presents the
-  action screen with a conflict notice and a warning
-  toast ("This instance changed underneath you —
-  values refreshed; re-apply your edit"),
-  and does **not** auto-retry the transition.
-- [ ] **WB19b — Direct instance PATCH vs transition
-  412 convergence.** Subject: the same bound Active
-  WO from WB11–WB13; skipping because "WO already
-  archived" is FAIL. With a bound WO open on the
-  action screen, PATCH the same instance from the
-  record detail UI (save) so the head advances; then
-  attempt a value-bearing transition on the stale
-  action screen. PASS: same 412 recovery shape as
-  WB19a (re-present + warning toast). Conversely,
-  after a successful **value-bearing**
-  transition (set/clear + If-Match — serial Review
-  fills Reviewer Notes), a stale instance Save on
-  record detail 412s and recovers. Review is
-  read-only; do not drive the converse there. The
-  converse is a value-bearing instance Save, not a
-  pure Review→Archive move. A **pure move**
-  (no set/clear, no If-Match) does not advance the
-  instance etag; a Save with the held etag is 201,
-  not a FAIL.
+  skipping because "WO already archived" is FAIL. Bind a
+  work order to an instance. Open the action screen in
+  two tabs. In tab 2, change an instance value via the
+  records detail instance editor (or a second transition)
+  so the head etag advances. In tab 1, edit a value and
+  transition. PASS: tab 1 receives 412, re-GETs the
+  instance, re-presents the action screen with a conflict
+  notice and a warning toast ("This instance changed
+  underneath you — values refreshed; re-apply your
+  edit"), and does **not** auto-retry the transition.
+  Pin: tests/api-work-order-transition-instance.test.ts
+       'value-bearing stale If-Match → 412' (decides the
+       server 412 when a transition's held etag is
+       stale); exploratory — the live re-GET, the
+       conflict notice, and the absence of auto-retry (no
+       CLI or browser test exercises workbox/detail.ts's
+       client-side 412 recovery; `WorkboxDetailPresenter`'s
+       `conflictNotice` rendering carries no test either)
+- [ ] **WB19b — Direct instance PATCH vs transition 412
+  convergence.** Subject: the same bound Active WO from
+  WB11–WB13; skipping because "WO already archived" is
+  FAIL. With a bound WO open on the action screen, PATCH
+  the same instance from the record detail UI (save) so
+  the head advances; then attempt a value-bearing
+  transition on the stale action screen. PASS: same 412
+  recovery shape as WB19a. Conversely, after a successful
+  **value-bearing** transition (set/clear + If-Match —
+  Review fills Reviewer Notes), a stale instance Save on
+  record detail 412s and recovers — drive the converse as
+  a plain instance Save from record detail, never as a WO
+  transition: Review has two outgoing edges, and its
+  `approve` edge archives the WO — exactly the transition
+  WB14 still needs to drive later (value-bearing, with
+  Reviewer Notes), so do not pre-empt it here. A
+  **pure move** (no set/clear, no If-Match) does not
+  advance the instance etag; a Save with the held etag is
+  201, not a FAIL.
+  Pin: tests/adapters-work-orders.test.ts
+       'postWorkOrderTransition 412s when the snapshot
+       etag is stale against a concurrent PATCH' (decides
+       the forward direction: an instance PATCH advances
+       the etag, so a stale-etag transition afterward
+       412s); tests/api-work-order-transition-instance.test.ts
+       'value-bearing transition then stale instance
+       PATCH is 412' (the converse direction);
+       tests/api-work-order-transition-instance.test.ts
+       'pure move does not advance instance etag; held
+       If-Match PATCH is 201'; tests/presenter-record-
+       instances.test.ts 'edit form surfaces 412 conflict
+       notice' (record detail's own conflict-notice
+       render); exploratory — the live re-present and
+       warning toast on the workbox action screen
+       specifically
 
 ### Workbox — Completion
 
-- [ ] **WB14** Transition a work order to the
-  completion (Archive) node (its `isArchive` is
-  true). PASS:
-  work order moves to the Archive tab. It no
-  longer appears in Active. Serial: on Review fill
-  Reviewer Notes and click `approve`.
-- [ ] **WB15** Click a completed work order in
-  the Archive tab. PASS: action screen shows
-  read-only view with history but no attributes
-  or transition buttons.
+- [ ] **WB14** Transition a work order to the completion
+  (Archive) node (its `isArchive` is true) — on Review
+  fill Reviewer Notes and click `approve`. PASS: work
+  order moves to the Archive tab. It no longer appears in
+  Active.
+  Pin: tests/workbox-inbox.test.ts 'buildInboxItems shows
+       a finished work order in archived mode and hides
+       it from active'; exploratory — the live transition
+       and tab move
+- [ ] **WB15** Click a completed work order in the
+  Archive tab. PASS: action screen shows read-only view
+  with history but no attributes or transition buttons.
+  Pin: tests/presenter-workbox-detail.test.ts 'buildPage
+       on a complete work order hides the attributes
+       card, transition buttons, and release button';
+       exploratory — the live read-only render
 
 ### Workbox — Data Integrity
 
-- [ ] **WB17** Navigate away from the action
-  screen and return. PASS: all data persists
-  correctly across page navigation.
+- [ ] **WB17** Navigate away from the action screen and
+  return. PASS: all data persists correctly across page
+  navigation.
+  Pin: exploratory — page-navigation data persistence has
+       no CLI or browser test
 
 ### Workbox — Concurrency & Integrity
 
-- [ ] **WB18** Open the same unclaimed work order in two browser
-  tabs. In tab 1, click the row to claim it. In tab 2, attempt the
-  same. PASS: tab 2 either navigates to a read-only/already-claimed
-  view or the claim is rejected — and the message plane carries at
-  most one live `'claimed'` event for this work order's
-  `entity_id` under the `(at, id)` reduction (a stale prior claim
-  is superseded by a `'claim_expired'` event, never overwritten
-  in place). Inspect via `message_pairs` or derived
-  `GET work-orders/:id/history` (DESC; claim rows carry
-  `field_values: []`).
+- [ ] **WB18** Open the same unclaimed work order in two
+  browser tabs. In tab 1, click the row to claim it. In
+  tab 2, attempt the same. PASS: tab 2 either navigates to
+  a read-only/already-claimed view or the claim is
+  rejected — and the message plane carries at most one
+  live `'claimed'` event for this work order's `entity_id`
+  under the `(at, id)` reduction (a stale prior claim is
+  superseded by a `'claim_expired'` event, never
+  overwritten in place). Inspect via `message_pairs` or
+  derived `GET work-orders/:id/history` (DESC; claim rows
+  carry `field_values: []`).
+  Pin: tests/api-work-order-claim.test.ts 'a live claim by
+       another member is a 409'; tests/api-work-order-
+       claim.test.ts 'two-actor contention: exactly one
+       claimed event lands and exactly one request gets
+       the byte-exact 409 body — never which actor wins';
+       tests/api-work-order-claim.test.ts 'an expired
+       claim is superseded atomically' (the general
+       never-overwritten-in-place invariant, though this
+       specific live two-tab drive is unlikely to trigger
+       an actual expiry); exploratory — tab 2's rendered
+       read-only/already-claimed view specifically
 
 ### Workbox — All-See-All Visibility
 
@@ -2452,22 +2611,41 @@ per-user visibility filter.
 
 - [ ] **WB20** As the demo user, navigate to `workbox/`.
   Active tab. PASS: every active (non-completed) work
-  order is listed, claimed or not — a claim does not
-  hide the row; the row names its claimant
-  (`claimedByName` badge). Listed regardless of the
-  current node's `memberIds` — including nodes assigned
-  only to AI members and nodes with zero members
-  (which carry the danger badge in the designer but
-  are still visible in the inbox).
+  order is listed, claimed or not — a claim does not hide
+  the row; the row names its claimant (`claimedByName`
+  badge). Listed regardless of the current node's
+  `memberIds` — including nodes assigned only to AI
+  members and nodes with zero members (which carry the
+  danger badge in the designer but are still visible in
+  the inbox).
+  Pin: tests/workbox-inbox.test.ts 'buildInboxItems
+       surfaces a claimed, unfinished work order as an
+       active item naming its claimant'; tests/workbox-
+       inbox.test.ts 'buildInboxItems surfaces an
+       unclaimed, in-progress work order as an active
+       item'; exploratory — the live rendering for
+       AI-only-member and zero-member nodes specifically
+       (no fixture in tests/workbox-inbox.test.ts uses
+       either)
 - [ ] **WB21** Switch to the Archive tab. PASS: every
   completed work order is listed regardless of which
   member(s) the final transition referenced.
+  Pin: tests/workbox-inbox.test.ts 'buildInboxItems shows
+       a finished work order in archived mode and hides
+       it from active'; exploratory — that the member(s)
+       the final transition referenced do not affect
+       Archive-tab visibility (no fixture varies this)
 - [ ] **WB22** Inspect `web-app/app/presenters/workbox-
   inbox.ts`. PASS: `buildInboxItems` takes
   `(workOrders, transitions, claims, memberMap, mode)`
   with no scope parameter. The presenter exports nothing
   related to per-user visibility — the workbox shows all
   work orders to all users by construction.
+  Pin: exploratory — confirmed directly by reading
+       `buildInboxItems`'s exported signature (five
+       parameters, no scope parameter); a function
+       signature is not something a `node:test` assertion
+       decides
 
 ---
 
