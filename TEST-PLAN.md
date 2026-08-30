@@ -2160,22 +2160,59 @@ covering the D20–D24 run between them.
 
 ## F. Tools
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
+Sign in as `demo@example.com` (Tony Stark); Stark
+Industries is the active organization throughout. F's
+working flow is the seeded "Layout Test: Proposal Review
+Cycle" — a long branching graph with back-edges, no
+members on any node, and no Record bound. Every
+structural edit below (add, delete, move, rename, lock,
+undo) happens there unless a case names another flow.
+Customer Onboarding is read-only to F except where a case
+names it, and those cases restore what they touch: FS and
+F2 read its four seeded nodes and its two two-member
+nodes later in the walk.
+
+The canvas cases lean on `## The walk`'s
+`### Driving notes` — read that list once before F1
+rather than looking for the reminders here.
 
 ### Flow List (`flows/`)
 
-- [ ] **F1** Navigate to `flows/`. PASS: page shows
-  flow cards with name, project name badge, and
-  state/transition counts.
+- [ ] **F1** Navigate to `flows/`. PASS: the page lists
+  flow cards, each with the flow name, a project-name
+  badge, and state/transition counts. At least the four
+  seeded Stark flows appear — Customer Onboarding, Fusion
+  Angle Flow, Lead-to-Close, and Layout Test: Proposal
+  Review Cycle — plus whatever AA26 and E7 minted earlier
+  in the walk.
+  Pin: tests/presenter-misc.test.ts 'FlowPresenter
+       renders the flow name and a data-flow-card hook';
+       tests/presenter-misc.test.ts 'FlowPresenter shows
+       a project badge only when a project name is
+       supplied' (decides the badge renders only for a
+       flow whose project name resolves);
+       tests/presenter-misc.test.ts 'FlowPresenter
+       pluralizes states and transitions for counts other
+       than one' (decides the "N states / N transitions"
+       line); tests/adapters-flow-queries.test.ts
+       'getFlowsWithProjectNames includes node and edge
+       counts in the summary' (decides the counts the
+       card renders are the flow's own node and edge
+       counts); exploratory — the live card list
 - [ ] **F2** Flow-list search. RETIRED / N/A: `flows/` has
   no search input (never shipped on the list page). Do not
   assert a filter control. PASS vacuously; re-open only if
   a flow-list search UI is added later.
+  Pin: exploratory — confirming the list page renders no
+       search input
 - [ ] **F3** Click a flow card. PASS: navigates
   to `flows/detail.html?flowId=<id>`.
+  Pin: tests/presenter-misc.test.ts 'FlowPresenter
+       renders the flow name and a data-flow-card hook'
+       (decides the card carries the
+       `data-flow-card="<id>"` hook the list's click
+       handler reads); exploratory — the live click and
+       the resulting URL
 
 ### Flow Import
 
@@ -2185,130 +2222,289 @@ depends: A
 dialog, the file-upload affordance, and that the imported flow
 opens and renders.)
 
-- [ ] **F4** Click "Import Flow" button on the flows list page. PASS: import dialog opens with a project selector dropdown and a "Choose File" button (the file input is hidden and triggered by that button).
-- [ ] **F5** Choose a project from the dropdown, click "Choose File", and select a `.mmd` file — selecting the file imports it directly (no separate confirm button). PASS: flow is created, toast confirms import, and browser navigates to the flow designer for the imported flow.
-- [ ] **F6** Repeat with a `.zip` file exported from a previous flow. PASS: imported flow renders with nodes, edges, and attributes visible (round-trip fidelity is covered by `tests/mermaid.test.ts` + `tests/zip-guards.test.ts`). NOTE: export ZIP carries graph + positions (`flow.mmd` / `flow.json` / `sidecar.json`) only — it does **not** rebind `flow_records`. After import the designer Record control may show **(none)** until the operator rebinds a record; that is scope, not a failed import.
+- [ ] **F4** Click "Import Flow" on the flows list page.
+  PASS: the import dialog opens with a Project selector
+  (`#import-project`) and a "Choose File" button; the file
+  input itself is hidden and triggered by that button.
+  Pin: exploratory — the import dialog's markup carries
+       no CLI or browser test
+- [ ] **F5** Choose a project from the dropdown, click
+  "Choose File", and select a `.mmd` file — hand-write a
+  two-line `stateDiagram-v2` (`[*] --> Draft`,
+  `Draft --> [*]`) if you have none. Selecting the file
+  imports it directly, with no separate confirm button.
+  PASS: a flow is created, a "Flow imported" toast
+  confirms, and the browser lands on the designer for the
+  imported flow.
+  Pin: tests/adapters-flow-export.test.ts
+       'postFlowFromMermaid creates a flow with a
+       message-plane graph from simple .mmd' (decides a
+       `.mmd` import writes a flow whose message-plane
+       graph carries a start node, a complete node, and at
+       least one auto-wired edge); exploratory — the live
+       file picker, the toast, and the navigation
+- [ ] **F6** Repeat with a `.zip`. Take one first: open
+  **Customer Onboarding** and click Export ZIP (F42's
+  gesture) — it is the flow that carries attribute refs;
+  Layout Test carries none, so an archive of Layout Test
+  cannot show this case's attributes. Return to `flows/`
+  and choose that archive. Because the archive names a flow
+  and a project that both still exist, the dialog replaces
+  "Choose File" with **Overwrite** and **Create New** —
+  there is no direct import for this shape. Click
+  **Overwrite**: it re-PUTs the same flow id with the same
+  graph, so Customer Onboarding is unchanged and no
+  duplicate row appears on `flows/`. PASS: a "Flow
+  overwritten" toast fires, the designer opens on that
+  flow, and it renders with nodes, edges, and attributes.
+  NOTE: the export ZIP
+  carries graph + positions (`flow.mmd` / `flow.json` /
+  `sidecar.json`) only — it does **not** rebind
+  `flow_records`, so the designer's Record control may read
+  **(none)** until the operator rebinds it; that is scope,
+  not a failed import.
+  Pin: tests/api-flows-save-relations.test.ts
+       'PUT /organizations/:id/flows/:id ROUND-TRIP:
+       message-plane graph equals the intended saved graph'
+       (decides all three thirds of this PASS on the path
+       Overwrite actually walks — `handleOverwrite` calls
+       the same `putFlow` this test calls: after the PUT
+       the message-plane graph carries the intended nodes,
+       the intended edge, each node's `memberIds`, and each
+       attribute ref's `attributeId`, `mode` and
+       `isRequired`); exploratory — the Overwrite /
+       Create New resolution dialog, and the
+       `getFlowZip` -> `getBackupFromZip` parse that feeds
+       the PUT: no test carries members or attribute refs
+       through a real archive. (The sibling
+       `postFlowFromBackup round-trip preserves node
+       members AND attributes` is NOT cited here: it
+       exercises the POST-to-create path Create New takes,
+       from an in-memory backup literal, so it stays green
+       however Overwrite breaks.)
 
 ### Flow Designer (`flows/detail.html?flowId=...`)
 
-- [ ] **F7** Navigate to a flow designer page.
-  PASS: page wears the standard sidebar + top-bar
-  layout (formerly standalone) — left sidebar with
-  the global nav, top bar with search/
-  organization stats/theme toggle (no greeting —
-  it has been removed), and the flow
-  designer occupying the remaining content area.
-  Toolbar runs vertically along the left edge of
-  the canvas (inside the content area, not the
-  global sidebar) with Undo/Redo, Zoom −/+,
-  Copy Mermaid, Export ZIP, and Delete (trash icon)
-  arranged top-to-bottom. The header above the
-  canvas hosts the Back button, a Stats button, and
-  three header switches (Locked, Auto Layout, Auto Fit). SVG
-  canvas to the right of the toolbar with dot
-  grid background showing the flow graph. When
-  Auto Fit is on, conflicting interactions (drag,
-  pan, zoom buttons, panel pan) are gated with a
-  fire-and-toast "blocked" message rather than
-  being silently absorbed; the user either turns
-  Auto Fit off or accepts the constraint. Changes
-  auto-save (no explicit Save button).
-- [ ] **F8** Nodes display correctly: start node
-  has green border with its name centered in the
-  card and no subtitle, standard nodes have blue
-  border with attribute count subtitle, complete
-  node has a red 3-px border with its name centered
-  in the card and no subtitle.
-- [ ] **F9** Edges display correctly: forward
-  edges are solid blue lines with arrow markers
-  and named labels. Cycle edges — those that
-  close a loop because a return path from target
-  back to source already exists in the graph —
-  are dashed orange with a warning arrow. Sibling
-  transitions between nodes that have no return
-  path render as solid blue even when they share
-  a level.
-  Serial and Parallel: open the seeded "Layout
-  Test: Proposal Review Cycle" (parallel F lists
-  two flows — garden Customer Onboarding plus
-  Layout Test). Cycle edges live on that graph.
-- [ ] **F10** Connection ports (small circles) are
-  visible on every middle node when the flow is
-  unlocked. Create and Archive nodes show a port
-  only when they have no connected edges yet —
-  per `canShowPort` in `web-app/app/flow-graph.ts`,
-  ports render when not locked AND (not a
-  start/complete node OR that special node has no
-  connections). When the flow is locked, no node
-  shows a port. Each port sits on the longest open
-  perimeter gap of its node, not always the right
-  side. Hover over a port. PASS: cursor changes
-  to crosshair and a browser tooltip reads "Click
-  and drag to create a new node attached here.
-  Hold Shift to connect to an existing node
-  instead."
-- [ ] **F11** Click a node. PASS: node gets gold
-  glow selection effect. Double-click the node.
-  PASS: properties panel appears with the
-  "State Properties" title and close button on
-  the right (regular nodes only — Create/Archive
-  nodes still show their kind title), then a
-  Members fieldset (HUMANS / AIs checkbox
-  groups), then state name, a Task Instructions
-  textarea, the attributes list, and outgoing
-  transitions.
-  Drive the double-click with compositor mouse.
-- [ ] **F12** Pan so a node sits near the right
-  edge of the canvas, then double-click it. PASS:
-  the properties panel slides out from the
-  toolbar edge over ~200ms and the canvas
-  re-centers so the node sits at the visual center
-  of the canvas region not covered by the panel.
-  Drive the double-click with compositor mouse.
-- [ ] **F13** While the panel is open, drive two compositor
-  `pointerdown`s on a different node within 400
-  ms (there is no `dblclick` listener), same as
-  F11. PASS: panel content updates to the new
-  node and the canvas re-centers on it.
-- [ ] **F14** Enable Auto Fit, then double-click a
-  node. PASS: panel opens and the canvas re-fits to
-  the panel-aware visible region (no toast, no
-  blocking — Auto Fit handles the re-fit via
-  `fitBoxToCanvas`'s `panelOffsetPx`). Turn Auto
-  Fit off and double-click again. PASS: panel opens
-  and the canvas pans to keep the node visible, and
-  the previous viewBox is saved for restoration when
-  the panel closes.
-- [ ] **F15** Drag from a middle node's port into
-  empty canvas past 20 pixels, without holding
-  Shift. PASS: during the drag a faint bezier
-  preview plus a "New State" ghost card track the
-  cursor. On release, a new middle node is
-  created at the drop position and
-  auto-connected from the source node with a
-  default edge name.
-  (The node-creation + auto-edge logic is now
-  covered by `tests/flow-operations.test.ts`
-  (`performAddNodeAtPosition` + `performAddEdge`).
-  Drive the port-drag with compositor mouse.)
+- [ ] **F7** Open the Layout Test: Proposal Review Cycle
+  designer. PASS: the page wears the standard sidebar +
+  top-bar layout — left sidebar with the global nav, top
+  bar with search / organization stats / theme toggle and
+  no greeting — with the designer occupying the remaining
+  content area. The toolbar runs vertically along the left
+  edge of the canvas (inside the content area, not the
+  global sidebar): Undo/Redo, Zoom −/+, Copy Mermaid,
+  Export ZIP, and Delete (trash), top to bottom. The header
+  above the canvas hosts the Back button, a Stats button,
+  and three switches (Locked, Auto Layout, Auto Fit). The
+  SVG canvas sits to the right of the toolbar with a
+  dot-grid background. With Auto Fit on, the view-changing
+  controls — Zoom −/+, wheel zoom, and Space (pan mode) —
+  refuse with an error toast "Disable Auto-Fit to change
+  the view" rather than silently absorbing; a node drag is
+  not refused, the camera simply re-fits at gesture end.
+  Changes auto-save (no Save button).
+  Pin: tests/presenter-misc.test.ts 'buildToolbar leaves
+       undo, redo, and delete enabled when their actions
+       are available' (decides the toolbar carries the
+       copy-mermaid and export-zip actions with nothing
+       disabled when every action is available);
+       tests/flow-fsm-reduce.test.ts 'wheel with autofit
+       shows toast and does not zoom' (decides wheel zoom
+       under Auto Fit leaves the zoom at 1.0);
+       tests/flow-fsm-reduce.test.ts 'space-toggle from
+       off with autofit shows toast and stays off';
+       exploratory — the page chrome, the toolbar's
+       vertical order, the header switches, and the dot
+       grid
+- [ ] **F8** Nodes render by kind: the start node has a
+  green border with its name centred in the card and no
+  subtitle; standard nodes have a blue border and an
+  attribute-count subtitle; the complete node has a red
+  3-px border with its name centred and no subtitle.
+  Pin: tests/flow-graph-locked.test.ts 'an unlocked canvas
+       keeps per-type strokes' (decides that the success,
+       primary, and error strokes each appear on an
+       unlocked canvas and that no accent-text stroke
+       does); exploratory — which kind wears which colour.
+       That test renders all three kinds into one blob and
+       asks only that each colour appear *somewhere*, so a
+       regression swapping green and red survives it. Also
+       exploratory: the 3-px width, the centred label, and
+       the attribute-count subtitle
+- [ ] **F9** On Layout Test — whose "revise" and "back to
+  draft" edges close loops — edges render by class:
+  forward edges are solid blue lines with arrow markers
+  and named labels. Cycle edges, those that close a loop
+  because a return path from target back to source already
+  exists in the graph, are dashed orange with a warning
+  arrow. Sibling transitions between nodes that have no
+  return path render solid blue even when they share a
+  level.
+  Pin: tests/flow-cycle-edges.test.ts 'a back-edge to an
+       ancestor is a cycle edge' (decides the back-edge
+       classification the dashed-orange paint follows);
+       tests/flow-cycle-edges.test.ts 'a diamond with no
+       back-edge has no cycle edges' (decides that
+       same-level siblings are NOT cycle edges);
+       tests/flow-cycle-edges.test.ts 'a linear flow has no
+       cycle edges'; exploratory — the painted dashed
+       orange, the warning arrowhead, and the edge labels
+- [ ] **F10** Connection ports (small circles) are visible
+  on every middle node while the flow is unlocked. Create
+  and Archive show a port only when they have no connected
+  edges yet — per `canShowPort` in
+  `web-app/app/flow-graph.ts`, a port renders when not
+  locked AND (not a start/complete node OR that special
+  node has no connections); on Layout Test both are already
+  wired, so neither shows one. When the flow is locked, no
+  node shows a port. Each port sits on the longest open
+  perimeter gap of its node, not always the right side.
+  Hover a port. PASS: the cursor becomes a crosshair and
+  the browser tooltip reads "Click and drag to create a new
+  node attached here. Hold Shift to connect to an existing
+  node instead."
+  Pin: exploratory — `canShowPort` and the port's `<title>`
+       carry no CLI or browser test; the browser suite only
+       drags a port that is already rendered
+- [ ] **F11** Click a node. PASS: the node gets the gold
+  glow selection effect. Double-click it — the mechanics
+  are in `### Driving notes`, and every later double-click
+  in F uses the same drive. PASS: the
+  properties panel appears with the "State Properties"
+  title and a close button on the right (regular nodes only
+  — Create/Archive show their own kind title), then a
+  Members fieldset (HUMANS / AIs checkbox groups), the
+  state name, a Task Instructions textarea, the attributes
+  list, and the outgoing transitions.
+  Pin: tests/flow-fsm-scenarios.test.ts 'double-click node
+       opens panel; second tap within window flips
+       open=true (AA28/F13)' (decides two pointerdowns on
+       one node inside the window emit exactly one
+       open-panel action with open=true);
+       tests/presenter-misc.test.ts 'buildNodePanel for a
+       regular node lists the member checkboxes grouped
+       Humans / AIs' (decides the "State Properties" title,
+       the `#prop-node-members` fieldset, and the HUMANS /
+       AIs group labels); tests/presenter-misc.test.ts
+       'buildNodePanel renders outgoing transitions by name
+       and falls back to None when empty'; exploratory —
+       the gold glow and the Task Instructions textarea
+- [ ] **F12** Panning needs pan mode: turn Auto Fit off,
+  focus `svg.flow-canvas`, tap Space (F47's drive), drag a
+  node near the right edge of the canvas, then tap Space
+  again — in pan mode a pointerdown on a node pans instead
+  of selecting. Now double-click that node. PASS: the
+  properties panel
+  slides out from the toolbar edge over ~200 ms and the
+  canvas re-centres so the node sits at the visual centre
+  of the canvas region the panel does not cover.
+  Pin: tests/flow-designer-actions.test.ts
+       'applyPanToRevealSelected centers a node, else null'
+       (decides that the pan tracks the selected node —
+       moving the node 100 to the right moves the viewBox
+       origin by 100 — and that no selection means no pan);
+       exploratory — the ~200 ms slide and the
+       panel-aware half of the re-centre. This case turns
+       Auto Fit OFF, and `reconcileFitFromDom` — the only
+       caller of `withFitToBox` on the panel-open path —
+       returns at once when Auto Fit is off, so the
+       `fitBoxToCanvas` panel-offset tests describe a
+       camera path this case disables; the path it does
+       take, `#panToRevealSelected`, passes the real
+       `PANEL_WIDTH_PX` while the test above passes 0
+- [ ] **F13** While the panel is open, double-click a
+  *different* node (F11's drive). PASS: panel content
+  retargets to the
+  new node and the canvas re-centres on it.
+  Pin: tests/flow-fsm-scenarios.test.ts 'double-click n1
+       then double-click n2 retargets panel and selection
+       to n2 (F13 retarget)' (decides the selection
+       collapses to the second node and the last open-panel
+       action is open=true);
+       tests/flow-fsm-scenarios.test.ts 'second click
+       beyond DBLCLICK window does not open panel (F13
+       negative)' (decides that a real double-click window
+       exists — a second press far enough out opens no
+       panel; the test brackets the window with its own
+       literals rather than reading `DBLCLICK_MS`);
+       tests/flow-designer-actions.test.ts
+       'applyPanToRevealSelected centers a node, else
+       null'; exploratory — the live retarget paint
+- [ ] **F14** Turn Auto Fit on, then double-click a node.
+  PASS: the panel opens and the canvas re-fits to the
+  panel-aware visible region — no toast, no blocking. Turn
+  Auto Fit off and double-click again. PASS: the panel
+  opens, the canvas pans to keep the node visible, and the
+  previous viewBox is saved for restoration when the panel
+  closes.
+  Pin: tests/flow-designer-actions.test.ts
+       'applyPanelTransition saves the viewBox on open'
+       (decides both halves: under Auto Fit the panel
+       transition returns null — no pan, no save — and with
+       Auto Fit off a just-opened panel returns
+       `shouldPanToReveal: true` with
+       `savedViewBox.kind === 'saved'`);
+       tests/flow-zoom-to-fit.test.ts 'fitBoxToCanvas with
+       panel offset centers content in the right visible
+       region (panel is on the left)' (decides the Auto Fit
+       re-fit is panel-aware); exploratory — the live
+       restore when the panel closes
+- [ ] **F15** Drag from a middle node's port into empty
+  canvas past 20 pixels, without holding Shift. PASS:
+  during the drag a faint bezier preview plus a "New State"
+  ghost card track the cursor. On release a new middle node
+  is created at the drop position and auto-connected from
+  the source node with a default edge name.
+  Pin: tests/flow-fsm-scenarios.test.ts 'port drag far-drop
+       emits add-node (AA27/AA31/F15)' (decides a far
+       port-drag emits exactly one add-node, from the
+       dragged node at the drop point, and zero add-edge
+       actions); tests/flow-fsm-scenarios.test.ts 'port
+       drag close-drop (under 20px) emits no add-node (AA27
+       negative)' (decides the 20-pixel threshold);
+       tests/flow-operations.test.ts
+       'performAddNodeAtPosition: returns node, edge,
+       selectId and centers on the point' (decides the new
+       node lands centred on the drop point with an edge
+       from the source); tests/browser/canvas-gestures.test.ts
+       'a port drag onto empty canvas adds a node and its
+       edge' (decides the same through a real compositor
+       drag: one more node and one more edge); exploratory
+       — the ghost card and the bezier preview
 - [ ] **F16** Drag a standard node to a new
   position. PASS: the node's `transform`
   follows the pointer **during** the drag
-  (rAF). F-slice Auto Layout starts ON —
-  drop may snap (F17). For a resting free
+  (rAF). Layout Test's Auto Layout starts ON —
+  the drop may snap (F17). For a resting free
   placement see F34 (toggle Auto Layout off
   first; F18's first toggle is that off).
-  Activate the tab first (prompt rule): the
-  rAF paint this PASS observes exists only
-  on the visible tab.
-- [ ] **F17** Drag the start node. PASS: it moves
-  freely like any standard node (start and
-  complete nodes are both draggable; with Auto
-  Layout on, the drop re-lays out — Create
-  returns to the head of the first column,
-  Archive to the foot of the last). Clicking
-  the start node's port still initiates a
-  drag-from-start to create a new state.
+  Pin: tests/flow-fsm-scenarios.test.ts 'drag node emits
+       move-nodes with delta matching cumulative pointer
+       travel (F16/F17)' (decides the committed position is
+       the start position plus the whole pointer travel);
+       tests/flow-designer-actions.test.ts 'applyDragPreview
+       applies offset to dragging nodes' (decides the
+       in-flight preview offsets the dragged node by the
+       pointer delta); tests/browser/canvas-gestures.test.ts
+       'a body drag moves the node and persists its
+       position' (decides a real compositor body drag
+       changes the node's stored positionX/positionY);
+       exploratory — the per-frame rAF paint
+- [ ] **F17** Drag the start node by its body. PASS: it
+  moves freely like any standard node — start and complete
+  nodes are both draggable. With Auto Layout on the drop
+  re-lays out: Create returns to the head of the first
+  column and Archive to the foot of the last. Layout Test's
+  Create is already wired, so it shows no port (F10); the
+  start-port drag is AA27's case, not this one.
+  Pin: tests/flow-fsm-scenarios.test.ts 'drag start node
+       also emits move-nodes (F17)' (decides a body drag on
+       the start node commits a move like any other node);
+       tests/adapters-flow-queries.test.ts 'the Layout Test
+       flow keeps the ruled covenant: Create min x, Archive
+       max x, inside the y range' (decides where the
+       re-layout puts Create and Archive on this very
+       flow); exploratory — the live drop and its snap
 - [ ] **F18** Toggle the Auto Layout header
   switch twice (the seed starts ON — the first
   toggle turns it off and moves nothing). PASS:
@@ -2319,50 +2515,88 @@ opens and renders.)
   Archive ends the last — never above or below
   a column-mate; the covenant is the columns,
   not the corners. Create min x, Archive max x.
-  Hunter measures laid-out node positions on
+  The explorer measures laid-out node positions on
   `svg.flow-canvas` (`data-node-id` plus the
   node's x/y or transform) after the second
-  Auto Layout toggle, not screenshot y. A long
-  chain wraps into a serpentine (Customer
-  Onboarding,
-  Lead-to-Close): Create leads the top row and
-  Archive ends the last — bottom-left on an
-  even row count.
-- [ ] **F19** Hold Shift and drag from a middle
-  node's port over another middle node, then
-  release. PASS: during the drag the preview
-  re-draws from a ghosted grey straight line
+  Auto Layout toggle, not screenshot y. Layout Test is a
+  wide fan, not a serpentine: to see the wrap, open
+  Customer Onboarding or Lead-to-Close, whose long chains
+  do wrap — Create leads the top row and Archive ends the
+  last, bottom-left on an even row count. Return to Layout
+  Test afterwards, and change nothing on either.
+  Pin: tests/adapters-flow-queries.test.ts 'the Layout Test
+       flow keeps the ruled covenant: Create min x, Archive
+       max x, inside the y range' (decides exactly this
+       flow's laid-out Create/Archive extremes and that
+       neither is pinned to a corner);
+       tests/flow-layout.test.ts 'computeLayout: a long
+       chain wraps to more rows rather than overflowing the
+       canvas width' (decides the serpentine wrap);
+       tests/flow-layout.test.ts 'computeLayout: a wrapped
+       chain keeps Create leftmost past an orphan';
+       tests/flow-designer-actions.test.ts 'applyAutoLayout
+       positions every node'; exploratory — the live toggle
+       and the first toggle moving nothing
+- [ ] **F19** Hold Shift and drag from a middle node's
+  port over another middle node it has no edge to yet,
+  then release. (F19–F23 each need a free pair: a
+  duplicate edge, an edge into Create, and an edge out of
+  Archive are all refused.) PASS: during the drag the
+  preview re-draws from a ghosted grey straight line
   (when the cursor is over empty canvas) into a
   curved bezier with an arrowhead the moment the
   cursor enters a valid target node. On release
   over the target, a new edge is created with a
   default name. No "New State" ghost card is
   shown while Shift is held.
-  (Applies to F19–F23: the connection-validation
-  rules these would check — no edge to a start
-  node, none from an end node, no duplicate edge,
-  start-node-single-outgoing, and the cycle-vs-
-  forward classification via the reachability
-  check — are now covered by
-  `tests/flow-operations.test.ts` (`performAddEdge`,
-  including the noop branch for a release in empty
-  canvas). Drive F19–F23 with compositor mouse;
-  the FSM preview transitions are also
-  exercised by `tests/flow-fsm-reduce.test.ts`.)
+  Pin: tests/flow-fsm-scenarios.test.ts 'shift-drag from
+       port onto different node emits add-edge (AA32/F19)'
+       (decides a shift-drag onto another node emits
+       exactly one add-edge from source to target and zero
+       add-node actions); tests/flow-fsm-scenarios.test.ts
+       'shift-drag onto same source node emits nothing (no
+       self-loop) (F19 self)'; tests/flow-operations.test.ts
+       'performAddEdge: success returns the new edge and
+       persists it'; tests/browser/canvas-gestures.test.ts
+       'a shift drag from a port onto a node commits an
+       edge' (decides the same through a real compositor
+       drag: one more edge, no new node); exploratory — the
+       grey-line-to-bezier preview transition
 - [ ] **F20** Shift-drag forward (earlier node →
   later node). PASS: the curved preview is solid
   blue while over the target. The committed edge
   matches the preview exactly.
+  Pin: tests/flow-layout.test.ts 'wouldBeCycle: forward
+       edge in DAG is fine' (decides a forward edge is not
+       flagged as a loop, which is what keeps the preview
+       and the committed edge blue);
+       tests/flow-operations.test.ts 'performAddEdge:
+       success returns the new edge and persists it';
+       exploratory — the preview's painted colour and its
+       match to the committed edge
 - [ ] **F21** Shift-drag backward (later node →
   earlier node). PASS: the curved preview is
   dashed orange with a warning arrow while over
   the target — the reachability check recognises
   that target → … → source already exists. The
   committed cycle edge matches the preview.
+  Pin: tests/flow-layout.test.ts 'wouldBeCycle: backward
+       edge creates cycle' (decides the reachability check
+       flags the backward edge before it is committed);
+       tests/flow-cycle-edges.test.ts 'a back-edge to an
+       ancestor is a cycle edge' (decides the committed
+       edge is classified as a cycle, which is what dashes
+       and colours it); exploratory — the painted
+       dashed-orange preview
 - [ ] **F22** Shift-drag and release in empty
   canvas (no node under cursor). PASS: the grey
   straight-line preview disappears and nothing
   happens — no edge, no new node.
+  Pin: tests/flow-fsm-scenarios.test.ts 'shift-drag
+       released over empty canvas emits nothing (F22)'
+       (decides the release emits zero add-edge and zero
+       add-node actions and returns connect to idle);
+       exploratory — the preview vanishing
 - [ ] **F23** Begin a plain drag from a port (no
   Shift). While the mouse remains stationary,
   press and hold Shift. PASS: without any mouse
@@ -2373,108 +2607,261 @@ opens and renders.)
   returns. Release the mouse with Shift held to
   create an edge, or without Shift to create a
   node.
+  Pin: tests/flow-fsm-scenarios.test.ts 'plain port-drag
+       then shift-key toggles connect.isShift (F23)'
+       (decides a bare shift-key input flips the in-flight
+       connect gesture's `isShift` with no pointer move);
+       tests/flow-interactions-shift.test.ts 'pointerIsShift
+       is true when the window tracks Shift even if the
+       pointer event reports false' (decides the held key
+       is honoured when the pointer event does not carry
+       it); exploratory — the ghost card appearing and
+       disappearing
 - [ ] **F24** Double-click a node, edit its name in
   the properties panel. PASS: the node label
   updates on the SVG canvas immediately (changes
   auto-save after 800ms debounce).
-- [ ] **F25** Double-click a node to open the
-  properties panel. Open a node that does not
-  already reference every record attribute. On
-  the F slice that is Create, Archive, or a New
-  State — not Capture or Review (both already
-  bind Company Name and Industry; an empty
-  picker there is correct). In the "Attributes"
-  fieldset, click the "+ Add Attribute…"
-  dropdown. PASS: the picker lists available
-  record attributes. Select one. PASS: the
-  attribute appears in the attributes list with
-  mode (Editable / Read-only) and required
-  toggles plus a remove control.
-- [ ] **F26** Click an edge to select it (gold glow).
-  Drive two compositor `pointerdown`s on the edge
-  within 400 ms (there is no `dblclick` listener),
-  same as F11. PASS: panel shows transition name,
-  from/to state names. Edit the name. PASS: label
-  updates on the canvas.
-- [ ] **F27** Select a non-start/non-complete node,
-  click the Delete (trash) button in toolbar.
-  PASS: node and all connected edges are removed.
-  If F15 already created a New State, delete a
-  *different* intermediate (Capture or Review),
-  not that New State — F68–F72 need it.
+  Pin: tests/flow-designer-actions.test.ts
+       'applyUpdateNode patches matching id' (decides a
+       name patch lands on that node and no other);
+       tests/flow-designer-presenter.test.ts
+       'withNodeNamed(id, name) renames that node even when
+       the selection has moved to another' (decides the
+       debounced flush is bound to its target rather than
+       to whatever is selected when it fires); exploratory
+       — the immediate canvas repaint and the 800 ms
+       debounce
+- [ ] **F25** On Customer Onboarding, double-click the
+  **Review** node — the seed binds Review to Company Name,
+  Contact Email, and Reviewer Notes, so seven of Customer
+  Profile's ten attributes are still free. (Data Capture
+  has only one free, and Layout Test binds no Record at
+  all, which disables the picker outright.) In the
+  "Attributes" fieldset, click the "+ Add Attribute…"
+  dropdown. PASS: the picker lists the record attributes
+  this node does not already reference. Select one, e.g.
+  Industry. PASS: the attribute appears in the attributes
+  list with mode (Editable / Read-only) and required
+  toggles plus a remove control. Remove it again before
+  moving on — FS and F2 read this flow later.
+  Pin: tests/flow-operations.test.ts
+       'performAddAttributeRef: appends a ref to the single
+       selected node' (decides the picked attribute is
+       appended to the selected node and persisted);
+       tests/flow-operations.test.ts
+       'performRemoveAttributeRef: removes the ref from the
+       single selected node' (decides the tidy-up removes
+       it again); exploratory — the picker listing only
+       unreferenced attributes and the mode / Required
+       toggle rendering
+- [ ] **F26** Back on Layout Test — do not rename
+  Customer Onboarding's seeded transitions, which F2 and
+  FS read by name — click an edge to select it (gold
+  glow). Double-click the edge (F11's drive). PASS: panel
+  shows
+  transition name, from/to state names. Edit the name.
+  PASS: label updates on the canvas.
+  Pin: tests/flow-fsm-scenarios.test.ts 'edge double-click
+       selects edge and opens panel (F26)' (decides two
+       edge pointerdowns inside the window select that edge
+       and emit exactly one open-panel with open=true);
+       tests/flow-fsm-scenarios.test.ts 'single edge click
+       selects but does not open panel (F26 single)';
+       tests/presenter-misc.test.ts 'buildEdgePanel shows
+       the transition name plus resolved From and To node
+       names' (decides the panel's title and its from/to
+       rows); tests/flow-designer-actions.test.ts
+       'applyUpdateEdge patches matching id' (decides the
+       rename lands on that edge only); exploratory — the
+       gold glow and the live label repaint
+- [ ] **F27** Select a non-Create / non-Archive node on
+  Layout Test — a Panel node is a safe pick — and click the
+  Delete (trash) button in the toolbar. PASS: the node and
+  all connected edges are removed.
+  Pin: tests/flow-operations.test.ts
+       'performDeleteSelectedNodes: removes the selected
+       intermediate node' (decides the node leaves the
+       persisted graph); tests/flow-designer-actions.test.ts
+       'applyDeleteNodes removes nodes and orphan edges'
+       (decides the connected edges go with it);
+       tests/flow-operations.test.ts
+       'performDeleteSelectedNodes: keeps start/end when
+       the selection mixes them with an intermediate';
+       exploratory — the toolbar click and the canvas
+       repaint
 - [ ] **F28** Select an edge, click the Delete
   (trash) button in toolbar. PASS: edge is
   removed from the canvas.
-- [ ] **F29** The seed loads with Auto Fit ON:
-  click Zoom in (icon-only buttons; `title` /
+  Pin: tests/flow-operations.test.ts
+       'performDeleteSelectedEdge: removes the selected
+       edge' (decides the selected edge leaves the
+       persisted graph); tests/flow-operations.test.ts
+       'performDeleteSelectedEdge: a node selection is a
+       no-op'; exploratory — the toolbar click and the
+       canvas repaint
+- [ ] **F29** Turn Auto Fit ON first — the seed loads
+  with it on but F14 left it off. Click Zoom in
+  (icon-only buttons; `title` /
   `aria-label` "Zoom in" / "Zoom out") — an
   error toast "Disable Auto-Fit to change the
   view" appears and `viewBox` stands. Toggle
   Auto Fit OFF. Click Zoom in,
-  then Zoom out, re-querying `svg.flow-canvas`
-  after each click (every commit rebuilds the
-  `<svg>`). PASS: `viewBox` width and height
+  then Zoom out, querying the canvas fresh after
+  each click per `### Driving notes`. PASS:
+  `viewBox` width and height
   shrink then restore (zoom steps ±0.1,
   clamped 0.25–2.0). Click the empty canvas
   once — `viewBox` keeps the zoomed value.
   Toggle Auto Fit ON — the canvas re-fits to
   all nodes.
+  Pin: tests/flow-designer-presenter.test.ts 'withZoomedIn
+       steps +0.1 scaling the viewBox about its center;
+       withZoomedOut reverses it' (decides one step of each
+       button: zoom 1.0 → 1.1 with the viewBox scaled about
+       its own centre, then back to 1.0 at the original
+       width); tests/flow-zoom-to-fit.test.ts
+       'fitBoxToCanvas clamps zoom to MAX_ZOOM for tiny
+       content with panel offset' (decides the upper clamp
+       through the shared `MAX_ZOOM`); exploratory — the
+       0.25 LOWER clamp, which no cited test asserts; the
+       Auto-Fit refusal toast on the zoom BUTTONS (only the
+       wheel path carries a test); and the viewBox standing
+       across an empty-canvas click
 - [ ] **F30** Edit a node name via the properties
   panel, wait 1 second for auto-save. Navigate
   away and return to the designer. PASS: all
   nodes, edges, and attributes persist.
   Positions persist only when Auto Layout is
-  off (F18's first toggle; wait for the flow
-  PUT before leaving). Seed Auto Layout is ON:
+  off — F18's second toggle left it on, so turn
+  it off first to check that, and wait for the
+  flow PUT before leaving. With Auto Layout on,
   boot re-lays-out to the current canvas, so a
   1-row snake may wrap to 2×2 on return —
   that is not a fail.
+  Pin: tests/adapters-flow-mutations.test.ts 'putFlow
+       persists every FlowSaveShape field' (decides a save
+       survives a fresh read — the flow's own name and its
+       node and edge counts);
+       tests/flow-graph-relations.test.ts 'an added
+       attribute is current with its payload' (decides an
+       attribute ref's attributeId, mode, and isRequired
+       are current on reassembly);
+       tests/adapters-flow-queries.test.ts 'getFlowGraph
+       lays out an auto-layout flow whose stored positions
+       are placeholders' (decides the re-layout-on-load
+       this case must not read as a fail); exploratory —
+       the 800 ms debounce and the navigate-away/back cycle
 - [ ] **F31** Navigate to
   `flows/detail.html?flowId=nonexistent`. PASS:
   page handles gracefully — shows error state,
   no unhandled JS exception.
+  Pin: tests/loading-states.test.ts 'a rejecting fetch
+       renders the error state and calls neither hook'
+       (decides the designer's own `loadInto` renders the
+       error state — with its Try Again affordance — and
+       calls no data hook when the bundle fetch rejects,
+       which a missing flow id makes it do); exploratory —
+       the live console staying clean
 
 ### Flow Designer — Undo/Redo
 
-(Undo is undo-as-replay (Phase 14 Task 8): the server resolves the restore
-target by replaying the flow's own document-message-pair history against its
-own undo operation-message-pair history (stack+pointer — a second consecutive
-undo goes FURTHER back rather than oscillating; a save after an undo-undo
-truncates the abandoned branch). Redo is client-only — an in-memory stack
-(`web-app/app/flow-history.ts`) cleared by `recordFlowMutation()` on every
-committed content edit. This cursor algorithm, redo's in-memory stack,
-exhaustion as a graceful no-op, and the 412-retry-then-fresh-resolve on a save
-racing an undo are covered by `tests/flow-undo-cursor.test.ts` and
-`tests/flow-operations.test.ts` (`performUndo` / `performRedo`).
-`flow_versions` routes were RETIRED (Phase 15 Task 7; router 404) and the
-table is DELETED (Phase Final); undo walks the flow's own
-document-message-pair history only. The cases below verify the toolbar
-buttons, the keyboard shortcuts, the disabled states, and that the canvas
-re-renders after each step.)
+(Undo is undo-as-replay: the server resolves the restore target
+by replaying the flow's own document-message-pair history against
+its own undo operation-message-pair history — a stack+pointer, so
+a second consecutive undo goes FURTHER back rather than
+oscillating, and a save after an undo-undo truncates the abandoned
+branch. Redo is client-only, an in-memory stack
+(`web-app/app/flow-history.ts`) cleared by `recordFlowMutation()`
+on every committed content edit. `flow_versions` routes were
+RETIRED and the table is DELETED; undo walks the flow's own
+document-message-pair history only. The cases below verify the
+toolbar buttons, the keyboard shortcuts, the disabled states, and
+that the canvas re-renders after each step.)
 
-- [ ] **F32** After adding a state, click the Undo
-  toolbar button. PASS: the state and its
+- [ ] **F32** Return to Layout Test — F31 left the browser
+  on an error page. Add a state with F15's port-drag and
+  wait for the node count to rise — F19–F31 have saved since
+  F15, and undo steps back exactly one save. Then click
+  the Undo toolbar button. PASS: that state and its
   connecting edge are removed. Redo button
   becomes enabled.
+  Pin: tests/api-flows-undo-redo-relations.test.ts
+       'ADD-THEN-UNDO deletes the added node: pair graph
+       omits it (working-not-target is a deletion)'
+       (decides the added node leaves the message-plane
+       graph on undo); tests/flow-operations.test.ts
+       'performUndo: restores the previous save (one step
+       back), and stages a redo entry' (decides the redo
+       stack gains exactly one entry — what enables the
+       button); tests/flow-history.test.ts 'canRedoFlowEdits
+       is true iff redo stack is non-empty'; exploratory —
+       the toolbar click and the button's live enabled
+       state
 - [ ] **F33** Click the Redo toolbar button. PASS:
   the state and edge reappear.
-- [ ] **F34** On a non-auto-layout flow, after moving a
-  node, press Cmd+Z (Mac) or Ctrl+Z. PASS: node returns
+  Pin: tests/flow-operations.test.ts 'performRedo:
+       re-applies the popped version, snapshots the current
+       state, and marks undo available' (decides the popped
+       version's graph is written back and read back from
+       the message plane);
+       tests/api-flows-undo-redo-relations.test.ts 'REDO
+       round-trip: redo re-applies the delete after an undo
+       revived it (X tombstoned again)'; exploratory — the
+       toolbar click and the canvas repaint
+- [ ] **F34** Ensure Auto Layout is **off** — F18's second
+  toggle left it on, but F30 already turned it off, so
+  check the switch rather than toggling blind; a blind
+  toggle turns it back on and the restore below then
+  re-flows instead (F37b). Then move a node and press Cmd+Z
+  (Mac) or Ctrl+Z. PASS: node returns
   to its previous position, pixel-identical (see F37b for
   the auto-layout exception to this promise).
+  Pin: tests/flows-detail-shortcuts.test.ts 'Cmd+z is undo'
+       (decides the chord resolves to the undo action);
+       tests/flow-undo-cursor.test.ts 'undo cursor: a
+       single undo restores the previous save (one step
+       back)' (decides the restore target is the save
+       immediately before the head, not the head itself);
+       exploratory — that the restored coordinates are
+       pixel-identical; no test asserts node positions
+       across an undo
 - [ ] **F35** Toolbar Delete (`data-action="delete-selected"`)
   on a non-Create / non-Archive node, same as F27.
   Wait until that node is gone, then Undo. Do
   not use Backspace unless F38's `aria-current`
   is already true. PASS: the state and all
   its connected edges are restored.
+  Pin: tests/api-flows-undo-redo-relations.test.ts
+       'DELETE-THEN-UNDO revives the deleted node and its
+       edge: pair graph includes them, latest state is
+       'restored'' (decides that after the undo BOTH the
+       node and the edge deleted alongside it are back in
+       the message-plane graph, their tombstones
+       superseded); tests/flow-operations.test.ts
+       'performUndo: restores the previous save (one step
+       back), and stages a redo entry'; exploratory — the
+       toolbar drive and the canvas repaint
 - [ ] **F36** Undo and Redo buttons are disabled
-  when their respective stacks are empty. PASS:
-  buttons show disabled state initially. (Undo
+  when their respective stacks are empty.
+  Re-open the flow — a fresh load stages no redo,
+  and F32–F35 have filled the stack otherwise.
+  PASS: the Redo button renders disabled. (Undo
   may stay enabled at exhaustion —
   `hasUndoHistory` is `pairs > 1`
   (`api/derive-flows.ts`) — and the click is a
   graceful server no-op.)
+  Pin: tests/presenter-misc.test.ts 'buildToolbar disables
+       undo, redo, and delete buttons when their actions
+       are unavailable' (decides the `disabled` attribute
+       renders on `data-action="undo"` and
+       `data-action="redo"`); tests/flow-history.test.ts
+       'canRedoFlowEdits is true iff redo stack is
+       non-empty' (decides redo's enablement rule);
+       tests/flow-undo-cursor.test.ts 'undo cursor: undo at
+       exhaustion (nothing before genesis) is a graceful
+       no-op — 204, no document pair, no graph change'
+       (decides the exhausted click leaves the graph
+       untouched); exploratory — the live button states
 - [ ] **F37** Perform an action, undo, then perform
   a new action; let the new action's
   `PUT /api/organizations/:id/flows/:id` land —
@@ -2483,7 +2870,16 @@ re-renders after each step.)
   canvas or another node before the PUT. PASS:
   the redo stack is cleared (redo button
   disabled).
-- [ ] **F37a** Open the same flow in two tabs. In tab A, edit
+  Pin: tests/flow-history.test.ts 'recordFlowMutation sets
+       hasUndoHistory and leaves redo stack empty (F37)'
+       (decides a committed content edit leaves the redo
+       stack empty); tests/flow-history.test.ts
+       'canRedoFlowEdits is true iff redo stack is
+       non-empty' (decides the empty stack is what disables
+       the button); exploratory — the 800 ms save and the
+       live button state
+- [ ] **F37a** Open the same flow in two tabs of the same
+  jar. In tab A, edit
   a node name and let auto-save complete. In tab B (which
   still shows the pre-edit head), click Undo immediately.
   PASS: nothing looks wrong — no error toast, no stuck
@@ -2492,40 +2888,75 @@ re-renders after each step.)
   412) and the client silently retries with a freshly
   resolved target against the new head — the 412-retry is
   invisible to the tester by design.
-- [ ] **F37b** On a flow with Auto Layout ON, add via
-  F15's plain port-drag (no Shift). Wait until node
-  count + 1, then Undo. PASS: the canvas restores
-  to the pre-edit graph. Now make ANY new
-  edit (e.g. rename a node). PASS: node positions may
-  re-flow to the auto-layout orientation on this next edit —
-  this is expected, not a regression (the server-resolved
-  restore is canvas-less; auto-layout re-computes positions
-  on its own next content change). Pixel-identical restores
-  are only promised for non-auto-layout (manually-positioned)
-  flows, per F34.
+  Pin: tests/flow-undo-cursor.test.ts 'undo cursor: a 412
+       on attempt 1 is absorbed — attempt 2 succeeds with
+       no client-side baseline refetch' (decides the client
+       absorbs the 412 and the second attempt lands without
+       refetching a baseline); exploratory — the two live
+       tabs and the absence of any user-visible error
+- [ ] **F37b** Toggle Auto Layout back on if F34 turned it
+  off, then add a node via F15's plain port-drag (no
+  Shift). Wait until the node count rises by one, then
+  Undo. PASS: the canvas restores to the pre-edit graph.
+  Now make ANY new edit (e.g. rename a node). PASS: node
+  positions may re-flow to the auto-layout orientation on
+  this next edit — expected, not a regression: the
+  server-resolved restore is canvas-less, and auto-layout
+  re-computes positions on its own next content change.
+  Pixel-identical restores are promised only for
+  non-auto-layout (manually-positioned) flows, per F34.
+  Pin: tests/api-flows-undo-redo-relations.test.ts
+       'ADD-THEN-UNDO deletes the added node: pair graph
+       omits it (working-not-target is a deletion)' (decides
+       the added node is gone after the undo);
+       tests/adapters-flow-queries.test.ts 'getFlowGraph
+       lays out an auto-layout flow whose stored positions
+       are placeholders' (decides an auto-layout flow's
+       positions are recomputed rather than read back
+       verbatim); exploratory — the re-flow landing on the
+       next edit rather than on the undo
 
 ### Flow Designer — Keyboard Shortcuts
 
 - [ ] **F38** Focus a `.flow-node` (Tab through
   chrome, or `js()` `.focus()` on the node) —
   do not Tab from document start expecting the
-  first node. Tab through chrome now lands on
-  `svg.flow-canvas`, then the first `.flow-node`
-  or `.flow-edge` — that is PASS, not a skip.
-  Wait for `aria-current="true"` before Delete /
-  Backspace (F38) or Enter (F38b) / Space
+  first node. Tab through chrome lands on
+  `svg.flow-canvas`, then the first `.flow-edge`
+  or `.flow-node` in DOM order (the renderer emits
+  every edge before every node) — that is PASS, not
+  a skip. Wait for `aria-current="true"` before
+  Delete / Backspace (F38) or Enter (F38b) / Space
   (F57a). Assert `aria-current="true"`; it
   also takes the selection (glow), panel closed.
   Press Delete or Backspace. PASS: the focused
   node is deleted; focus lands on `<body>`.
+  Pin: tests/flow-canvas-tab.test.ts 'Tab from the canvas
+       SVG enters the first item' (decides the very step
+       this case's drive note describes:
+       `nextCanvasTabIndex(4, -1, false) === 0`, and index
+       -1 is exactly "focus is on the SVG, not an item");
+       tests/flow-fsm-reduce.test.ts 'canvas-focus on an
+       unselected node single-selects it with
+       request-update and no open-panel' (decides the focus
+       takes the selection without opening the panel);
+       tests/flows-detail-shortcuts.test.ts 'Delete with
+       canvas focus deletes' (decides the Delete chord
+       resolves to the delete action when no editable
+       target holds focus); tests/flow-operations.test.ts
+       'performDeleteSelectedNodes: removes the selected
+       intermediate node' (decides the delete lands);
+       tests/browser/canvas-keyboard.test.ts 'Tab from the
+       canvas enters the ring and marks the node' (decides
+       Tab from the canvas reaches a node and marks exactly
+       one `aria-current="true"`); exploratory — focus
+       landing on `<body>` after the delete, and
+       **Backspace**: `reduceDesignerShortcut` handles
+       Delete and Backspace in one branch but only Delete
+       is asserted
 - [ ] **F38a** Focus a remaining `.flow-node`
-  first (same chrome-first drive as F38). Tab
-  through chrome now lands on `svg.flow-canvas`,
-  then the first `.flow-node` or `.flow-edge`
-  — that is PASS, not a skip. Wait for
-  `aria-current="true"` before Delete /
-  Backspace (F38) or Enter (F38b) / Space
-  (F57a). Next Tab moves to the next node or
+  first (same chrome-first drive as F38).
+  Next Tab moves to the next node or
   edge; from the last item it wraps to the first
   (DOM order) and never leaves the canvas.
   Selection follows the focus. With the panel
@@ -2538,19 +2969,63 @@ re-renders after each step.)
   non-member collapses the selection to that
   node. PASS: focus and selection stay paired
   through every re-render.
+  Pin: tests/flow-canvas-tab.test.ts 'Tab from the last
+       canvas item wraps to the first';
+       tests/flow-canvas-tab.test.ts 'Tab walks forward
+       inside the ring'; tests/flow-canvas-tab.test.ts 'Tab
+       outside the canvas ring is a no-op' (together decide
+       the ring walks forward, wraps, and never leaves the
+       canvas); tests/flow-fsm-reduce.test.ts 'canvas-focus
+       collapses a foreign multi-selection to the focused
+       node' (decides the marquee group collapses on the
+       first non-member focus);
+       tests/flows-detail-canvas-focus.test.ts 'a focusin
+       outside a restore still promotes the focused node to
+       the selection' (decides selection follows focus);
+       tests/flow-designer-actions.test.ts
+       'applyPanToRevealSelected centers a node, else null'
+       (decides the pan-to-reveal, viewBox width and so
+       zoom untouched); exploratory — the pairing surviving
+       every live re-render
 - [ ] **F38b** Tab to a node, press Enter — its
   panel opens and the node keeps focus through
   the re-render; Escape closes the panel and
   focus stays on the node. A mouse click
   selects without keeping focus. PASS:
   keyboard focus survives open and close.
+  Pin: tests/flow-fsm-reduce.test.ts 'canvas-key-activate
+       on a node single-selects it, opens the panel, and
+       requests an update' (decides Enter on the focused
+       node opens its panel);
+       tests/flows-detail-shortcuts.test.ts 'Escape closes
+       only an open panel' (decides Escape resolves to the
+       close action only while a panel is open);
+       tests/flows-detail-canvas-focus.test.ts
+       'restoreCanvasFocus focuses the matching id once
+       with preventScroll' (decides the rebuilt canvas
+       re-focuses that same id, once);
+       tests/browser/canvas-keyboard.test.ts 'Tab from the
+       canvas enters the ring and marks the node' (decides
+       Enter on a Tab-focused node renders
+       `#prop-node-name` with exactly one node
+       `aria-current="true"`); exploratory — focus staying
+       on the node after Escape
 - [ ] **F39** With Undo enabled, press Cmd+Z /
   Ctrl+Z — it matches the Undo toolbar button.
   Without a node click in between, press
-  Cmd+Shift+Z / Ctrl+Shift+Z (the browser
-  reports `key: 'Z'`) — it matches Redo. PASS:
+  Cmd+Shift+Z / Ctrl+Shift+Z (the Shift-uppercased key is
+  in `### Driving notes`) — it matches Redo. PASS:
   keyboard shortcuts match toolbar button
   behavior.
+  Pin: tests/flows-detail-shortcuts.test.ts 'Cmd+z is
+       undo'; tests/flows-detail-shortcuts.test.ts
+       'Cmd+Shift+Z arrives as key Z and is redo';
+       tests/flows-detail-shortcuts.test.ts 'Ctrl+Shift+z
+       is redo' (the three decide that both chords resolve
+       to the same 'undo' and 'redo' actions the toolbar
+       buttons dispatch, including the Shift-uppercased
+       key); exploratory — the live canvas result matching
+       the buttons'
 
 ### Flow Designer — Additional Coverage
 
@@ -2580,6 +3055,28 @@ re-renders after each step.)
   interactive again, and per-type colors return
   (Create green, Archive red, Regular blue,
   Cycle amber).
+  Pin: tests/flow-graph-locked.test.ts 'a locked canvas
+       paints node and edge strokes as accent-text, not
+       type colors' (decides `flow-canvas-locked` on the
+       svg, the accent-text stroke, and that no per-type
+       stroke survives); tests/flow-graph-locked.test.ts
+       'an unlocked canvas keeps per-type strokes' (decides
+       the untoggle restores them);
+       tests/presenter-misc.test.ts 'buildNodePanel
+       disables inputs when the flow is locked' (decides
+       `#prop-node-name` and every `data-member-id`
+       checkbox carry `disabled`);
+       tests/flow-operations.test.ts
+       'performDeleteSelectedNodes: locked flow fails'
+       (decides a locked flow refuses the delete);
+       exploratory — the per-type colours the untoggle
+       restores (the locked tests decide only that the
+       three tokens are present or absent as a set, never
+       which kind wears which, and "Cycle amber" — the
+       `WARN` token — is asserted nowhere); the ports
+       disappearing; the Delete button's own disabled
+       attribute; the edge-label backgrounds; and the dot
+       grid
 - [ ] **F41** With a non-trivial flow loaded,
   click "Copy Mermaid" in the toolbar. PASS: a
   visible success toast "Mermaid copied to
@@ -2587,30 +3084,79 @@ re-renders after each step.)
   `document.body`, outside `#page-root`), and
   the clipboard holds Mermaid flowchart syntax
   for the current graph.
-  (Round-trip correctness — `generateMermaid` → `parseMermaid`
-  preserving nodes, edges, and attribute references — is covered by
-  `tests/mermaid.test.ts`; this case verifies the toolbar action
-  and the clipboard write.)
-- [ ] **F42** Click "Export ZIP" in the toolbar. PASS: a `.zip` file
+  Pin: tests/mermaid.test.ts 'generateMermaid emits
+       flowchart LR header' (decides what the clipboard
+       receives is flowchart syntax);
+       tests/mermaid.test.ts 'generateMermaid emits labeled
+       edges' (decides the named transitions ride along);
+       tests/flow-detail-toast-overflow.test.ts
+       'flow-detail html/body do not clip fixed toasts'
+       (decides this page does not clip the toast this case
+       must see); exploratory — the clipboard write and the
+       toast's own text
+- [ ] **F42** Turn Auto Layout **off** on Layout Test first
+  (F37b left it on): `postFlowFromBackup` copies
+  `is_auto_layout` verbatim, and all four seeded flows ship
+  it ON, so F44's preserved-position check is only
+  observable from an archive taken with the flag off. Then
+  click "Export ZIP" in the toolbar. PASS: a `.zip` file
   downloads. Unzip the archive — it contains `flow.mmd` (Mermaid
   source), `flow.json` (graph with node positions), `sidecar.json`,
-  and a human-readable `flow.txt`. (ZIP read/write correctness is covered
-  by `tests/zip-guards.test.ts`.)
+  and a human-readable `flow.txt`.
+  Pin: tests/adapters-flow-export.test.ts 'zip sidecar
+       mermaid ids stay injective' (decides the archive
+       this button writes carries a readable `sidecar.json`
+       entry whose mermaid ids do not collide);
+       tests/adapters-flow-export.test.ts 'zip mermaid path
+       reads sidecar.json positions and begin edges'
+       (decides the same archive's `flow.mmd` and
+       `sidecar.json` both read back — the import path
+       parses them straight out of `getFlowZip`'s output);
+       exploratory — the download itself, `flow.json` and
+       `flow.txt`, and the four-entry manifest as a set
 - [ ] **F43** On `flows/index.html` click "Import Flow", choose a
-  project, click "Choose File", and select a `.mmd` file previously
-  exported from a known flow — selecting the file imports it
+  project, click "Choose File", and select a `.mmd` file taken
+  from a known flow — unzip F42's archive and use its
+  `flow.mmd` — selecting the file imports it
   directly (no separate submit/confirm button; same shape as F5).
-  PASS: the imported flow opens in the designer and renders nodes,
-  edges, and attributes. (Structural fidelity of the mermaid
-  round-trip is covered by `tests/mermaid.test.ts`; this case
-  verifies the import dialog and that the designer opens on the
-  imported flow.)
-- [ ] **F44** Repeat F43 with a `.zip` archive. PASS: the imported
-  flow renders with node positions preserved (not auto-laid-out).
-  (ZIP round-trip is covered by `tests/zip-guards.test.ts`; this
-  case verifies the `.zip` import path through the dialog and the
-  preserved-position rendering.)
-- [ ] **F45** The 11-step walk is required, not
+  PASS: the imported flow opens in the designer and renders
+  nodes and edges. Do **not** look for attributes: mermaid
+  is topology only, so a `.mmd` import carries no attribute
+  refs on any node and their absence is the product working.
+  Pin: tests/adapters-flow-export.test.ts 'flowchart mmd
+       with begin round-trips through postFlowFromMermaid'
+       (decides that `generateMermaid`'s own flowchart
+       output — which is exactly what `flow.mmd` is —
+       imports back with its edges intact:
+       `assert.deepEqual(names, ['begin', 'submit'])`);
+       tests/mermaid.test.ts 'mermaid drops node task
+       instructions' (`assert.ok(!text.includes('SECRET
+       INSTRUCTIONS'))` — decides that per-node payload
+       beyond topology does not survive `generateMermaid`;
+       attributes are a step further out still, absent from
+       the format entirely, which is a source fact no test
+       states); exploratory — the dialog drive, the
+       designer opening on the import, and the absence of
+       attribute rows
+- [ ] **F44** Repeat F43 with F42's `.zip` archive — the one
+  taken with Auto Layout off; an archive of any seeded flow
+  as shipped carries `is_auto_layout: true` and the import
+  copies that verbatim, so the imported flow would re-lay
+  out and this case would read as a fail on healthy
+  product. Because the
+  archive names a flow and a project that both still exist,
+  click **Create New** in the resolution dialog (F6's
+  shape). PASS: the imported flow renders with node
+  positions preserved, its Auto Layout switch off.
+  Pin: tests/adapters-flow-export.test.ts 'zip Create New
+       keeps begin edges and sidecar positions with Auto
+       Layout off' (decides the Create New path yields
+       `isAutoLayout === false` and every node's exported
+       positionX/positionY verbatim); exploratory — the
+       resolution dialog drive
+- [ ] **F45** Return to Layout Test — F43 and F44 left
+  the designer on an imported flow. The 11-step walk is
+  required, not
   optional. Rename 11 nodes one at a time; after
   each name, wait for that flow's `PUT /api/
   organizations/:id/flows/:id` in the network log
@@ -2627,6 +3173,13 @@ re-renders after each step.)
   further Undo that answers 201 with no canvas
   change, Undo still enabled, is F36 exhaustion
   (graceful server no-op), not a missed step.
+  Pin: tests/flow-undo-cursor.test.ts 'undo cursor: eleven
+       saves walk eleven undos — N10 back to genesis, no
+       cap' (decides eleven saves are reachable by eleven
+       undos, each landing on the preceding name, with the
+       twelfth reaching genesis — the no-cap covenant);
+       exploratory — the live rename drive and the
+       per-undo canvas change
 - [ ] **F46** Edit a flow (rename a state), let
   auto-save complete. Navigate away from the
   designer to `flows/index.html`. Re-open the
@@ -2642,6 +3195,18 @@ re-renders after each step.)
   content; Locked, Auto Layout, and Auto Fit
   are guards that undo never flips and never
   counts. Opening a flow writes nothing.
+  Pin: tests/flow-undo-cursor.test.ts 'undo after lock
+       toggles reverts name not lock' (decides an undo
+       across lock toggles reverts the flow name and leaves
+       isLocked alone); tests/flow-undo-cursor.test.ts
+       'undo cursor: a flag-only pair is not a step'
+       (decides a flag-only save is skipped by the cursor
+       and its flag value is carried forward, never
+       restored); tests/flow-designer-open.test.ts 'opening
+       a flow does not append pairs' (decides opening
+       writes nothing); exploratory — the
+       navigate-away/back round-trip and the live canvas
+       revert
 
 ### Flow Designer — Flow Tags (API-only, no UI this phase)
 
@@ -2657,40 +3222,87 @@ concurrency, and the org fence. A designer "tag current" action is tracked in
 
 ### Space Toggle (Pan Mode)
 
+Pan mode is a toggle with no on-screen label: read it as the
+`flow-pan-cursor` class on `.flow-canvas-wrap`, and set it as
+each case requires before driving. F51–F53 need it OFF, or the
+gesture pans instead of dragging, marquee-ing, or connecting.
+
 - [ ] **F47** Toggle Auto-Fit **off** before
-  F47–F49 pan (seed Auto-Fit is ON). After
+  F47–F49 pan (F29 left it on). After
   touching Auto-Fit (or any header switch), do
-  **not** leave focus on that `button` — Space
-  would activate it. Focus `svg.flow-canvas` via
-  Tab or `js()` (`tabindex="0"`) with **no**
-  `pointerdown` on the canvas (F56's trap), then
+  **not** leave focus on that `button`: Space
+  would activate it. Focus `svg.flow-canvas`
+  (`tabindex="0"`) per `### Driving notes`, then
   send Space. PASS: a
   primary-colored outline appears around the
   canvas; the cursor becomes `grab` over canvas,
   nodes, and edges.
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle from off
+       enables pan mode and emits cursor-on action'
+       (decides Space with Auto Fit off sets `isPanMode`
+       true and emits set-pan-cursor on);
+       tests/flow-graph-locked.test.ts 'the canvas svg is a
+       tab stop for Space pan' (decides the canvas carries
+       `tabindex="0"` so it can take the focus this case
+       needs); tests/browser/canvas-pan.test.ts 'Space
+       toggles pan mode and a drag pans the viewBox'
+       (decides a real Space keypress puts
+       `flow-pan-cursor` on the canvas wrap); exploratory —
+       the primary-coloured outline
 - [ ] **F48** With pan mode on, tap the spacebar a second time.
   PASS: the outline disappears and the cursor returns to its
   default state.
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle from on
+       disables pan mode and emits cursor-off action'
+       (decides the second Space clears `isPanMode` and
+       emits set-pan-cursor off);
+       tests/browser/canvas-pan.test.ts 'Space toggles pan
+       mode and a drag pans the viewBox' (its closing step
+       decides the wrap loses `flow-pan-cursor` on the
+       second Space); exploratory — the outline
+       disappearing
 - [ ] **F49** With pan mode on, drag the canvas, release, then
   drag again. PASS: both drags pan the viewport — pan mode
   persists across multiple drags until toggled off.
+  Pin: tests/browser/canvas-pan.test.ts 'Space toggles pan
+       mode and a drag pans the viewBox' (decides the first
+       drag changes the canvas `viewBox` while pan mode is
+       on); exploratory — the SECOND drag; no test drives
+       two pans inside one pan-mode session
 - [ ] **F50** Hold the spacebar down for two seconds without
   releasing. The first Space `keydown` must have
   `repeat: false`; hold may auto-repeat after that.
   PASS: pan mode toggles on exactly once; browser
   auto-repeat does not chatter the toggle.
+  Pin: exploratory — the interaction layer's
+       `if (ke.repeat) return` guard carries no CLI or
+       browser test, and the FSM never sees the repeats
 - [ ] **F51** Begin dragging a node — require an
   in-flight `dragging` gesture. While the drag is
   in flight, tap the spacebar. PASS: the drag
   completes unchanged; pan mode state is unchanged
   when the drag ends. Space mid-gesture must not
   toggle pan.
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle while
+       dragging is ignored' (decides the reducer returns
+       the identical state object and zero actions while a
+       drag is in flight); exploratory — the live mid-drag
+       keypress
 - [ ] **F52** Begin a marquee selection on empty
   canvas — require an in-flight marquee. While the
   marquee is in flight, tap the spacebar. PASS:
   the marquee continues; pan mode state is
   unchanged when pointer-up resolves. Space
   mid-gesture must not toggle pan.
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle while
+       marquee selecting is ignored' (decides the reducer
+       returns the identical state object and zero actions
+       while a marquee is in flight);
+       tests/flow-fsm-scenarios.test.ts 'marquee drag
+       covers two nodes → selection contains both
+       (marquee)' (decides the marquee still resolves its
+       selection at pointer-up); exploratory — the live
+       mid-marquee keypress
 - [ ] **F53** The flow must be unlocked (ports
   visible); do not start from a locked canvas.
   Shift-drag from a node port to begin a connect
@@ -2698,44 +3310,95 @@ concurrency, and the org fence. A designer "tag current" action is tracked in
   PASS: the connect gesture continues; pan mode
   state is unchanged at pointer-up. Space
   mid-gesture must not toggle pan.
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle while
+       connecting is ignored' (decides the reducer returns
+       the identical state object and zero actions while a
+       connect gesture is in flight); exploratory — the
+       live mid-connect keypress
 - [ ] **F54** With pan mode on and a pan drag in flight, tap the
   spacebar mid-drag. PASS: the pan drag continues; pan mode
   state is unchanged until the drag ends.
-- [ ] **F55** Seed Auto-Fit is ON. Pan must be
-  off first (F48 if pan is on). Auto-Fit must
-  be on (seed ON, or toggle **on** if F47–F49
-  turned it off). After touching the Auto-Fit
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle while
+       panning is ignored' (decides the reducer returns the
+       identical state object and zero actions while a pan
+       is in flight); exploratory — the live mid-pan
+       keypress
+- [ ] **F55** Pan must be
+  off first (F48 if pan is on), and Auto-Fit must
+  be on — toggle it **on** if F47–F49
+  turned it off. After touching the Auto-Fit
   button, move focus off it: focus
-  `svg.flow-canvas` via Tab or `js()`
-  (`tabindex="0"`) with **no** `pointerdown`
-  on the canvas (F56's trap). If F29 just
+  `svg.flow-canvas` (`tabindex="0"`) per
+  `### Driving notes`. If F29 just
   toasted the same Auto-Fit message, wait out
   `WHEEL_TOAST_COOLDOWN_MS` (2000) before the
   Space that must toast again. Then send Space
   once. PASS: an error
   toast appears ("Disable Auto-Fit to change
   the view"); pan stays off.
-- [ ] **F56** With pan mode on, toggle Auto-Fit on, then tap the
-  spacebar. Do **not** click the canvas first to move focus
-  off the Auto-Fit switch — that click starts a pan
-  gesture, so Space is ignored (`isGestureActive`) and a
-  leftover Auto-Fit toast looks like a fail. Focus
-  `svg.flow-canvas` via `js()` (`tabindex="0"`)
-  or Tab (no `pointerdown` on the canvas), then
-  send Space with no in-flight gesture. PASS:
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle from off
+       with autofit shows toast and stays off' (decides
+       `isPanMode` stays false and an error-tone toast
+       action is emitted); tests/browser/canvas-pan.test.ts
+       'Space under Auto-Fit toasts and does not enter pan'
+       (decides the real toast text appears and the wrap
+       never gains `flow-pan-cursor`); exploratory — the
+       2000 ms cooldown
+- [ ] **F56** Pan mode cannot be entered while Auto Fit is
+  on — that is the covenant F55 just proved — so build the
+  starting state in this order: Auto Fit **off**, focus
+  `svg.flow-canvas`, Space (pan **on**), Auto Fit **on**,
+  and only then tap Space again. F55 leaves Auto Fit on and
+  pan off, so skipping the first two steps gets the
+  Auto-Fit toast and pan never turns on. Focus the canvas
+  per `### Driving notes` (its F56 entry is this case's own
+  trap: a canvas click starts a pan gesture, Space is then
+  ignored by `isGestureActive`, and a leftover Auto-Fit
+  toast reads like a fail). Send Space with no in-flight
+  gesture. PASS:
   pan mode turns off cleanly with no toast —
   exiting pan mode is always permitted.
-- [ ] **F57** Focus `#prop-node-name` (the input,
-  not a node). Tap the spacebar. PASS: a literal
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle from on
+       with autofit still toggles off' (decides `isPanMode`
+       goes false and set-pan-cursor off fires even under
+       Auto Fit); tests/flow-fsm-reduce.test.ts
+       'space-toggle off under autofit still
+       request-updates' (decides no show-toast action is
+       emitted on that path);
+       tests/flow-fsm-reduce.test.ts 'space-toggle while
+       panning is ignored' (decides the very trap this case
+       names — a pan gesture in flight swallows the Space);
+       exploratory — the live focus drive
+- [ ] **F57** Open a regular node's panel first — F56 left
+  the focus on the canvas, and `#prop-node-name` exists
+  only while a regular-node panel is open. Focus that input
+  (not a node) and tap the spacebar. PASS: a literal
   space character is inserted into the input;
   pan mode state is unchanged.
+  Pin: tests/flow-fsm-reduce.test.ts 'space-toggle while
+       form-focused is ignored' (decides the reducer
+       returns the identical state object and zero actions
+       when a form field holds focus);
+       tests/flows-detail-shortcuts.test.ts 'texty inputs,
+       textarea, and select are editable targets' (decides
+       a text input is the editable target that suppresses
+       the canvas chord); exploratory — the space character
+       landing in the input
 - [ ] **F57a** Tab to a node, tap Space. PASS: the
   node's panel opens (Space activates the
   focused item); pan mode stays off.
+  Pin: tests/flow-fsm-reduce.test.ts 'canvas-key-activate
+       on a node single-selects it, opens the panel, and
+       requests an update' (decides the activation path
+       Space shares with Enter selects the node and emits
+       open-panel:true); exploratory — pan mode staying
+       off, which rests on the interaction layer's
+       `defaultPrevented` guard and carries no test
 
 ### Members Selector (Node Panel)
 
-- [ ] **F58** Open a regular-node properties panel. PASS:
+- [ ] **F58** Open a regular-node properties panel on
+  Layout Test. PASS:
   the Members fieldset is the first body block, with a
   "Members" legend, a HUMANS group containing one
   labeled `<input type="checkbox" data-member-id="<id>">`
@@ -2744,93 +3407,218 @@ concurrency, and the org fence. A designer "tag current" action is tracked in
   (alphabetized by name). When the checkbox list overflows
   the panel height, the fieldset scrolls inside its own
   region.
+  Pin: tests/presenter-misc.test.ts 'buildNodePanel for a
+       regular node lists the member checkboxes grouped
+       Humans / AIs' (decides the `#prop-node-members`
+       fieldset, the HUMANS and AIs group labels, and one
+       `data-member-id` / `data-ai-member-id` checkbox per
+       member, each carrying its name); exploratory — the
+       `<legend>Members</legend>` text, which that test
+       does not assert; the alphabetical order; the
+       fieldset's position as the first body block; and the
+       overflow scroll
 - [ ] **F59** Tick one human checkbox. Reload the page
   and reopen the same node panel. PASS: that human
-  checkbox is still ticked. Inspect the flow's head
-  document message pair — the stored graph body carries
-  `memberIds: [<humanId>]`. AI checkboxes are
-  display-only (`data-ai-member-id`): they reflect
-  stored `agentIds` and do not write. A seeded
-  `agentIds` list survives this save.
+  checkbox is still ticked, and the flow's own
+  `GET /api/organizations/:id/flows/:id` in the network
+  log carries `memberIds: [<humanId>]` on that node. AI
+  checkboxes are display-only (`data-ai-member-id`): they
+  reflect stored `agentIds` and never write. The seed puts
+  `agentIds` on Lead-to-Close alone, so Layout Test has no
+  stored list to preserve here — that half of the covenant
+  is a Layer 1 assertion, not a walk observation.
+  Pin: tests/flow-designer-actions.test.ts
+       'applyUpdateNode patches memberIds' (decides the
+       tick patches memberIds on that node and leaves its
+       siblings empty); tests/flow-graph-relations.test.ts
+       'an added member with no later removal is current'
+       (decides the added member is current on reassembly);
+       tests/flow-designer-presenter.test.ts
+       'buildFlowSaveShape keeps stored agentIds and person
+       memberIds' (decides the save keeps stored agentIds
+       while writing the human memberIds); exploratory —
+       the reload-and-reopen round trip
 - [ ] **F60** Untick the human checkbox. Reload the page
-  and reopen the panel. PASS: the human is gone from
-  `memberIds`. Stored `agentIds` are unchanged.
+  and reopen the panel. PASS: the checkbox is unticked and
+  the flow GET no longer carries that id in `memberIds`.
+  Pin: tests/flow-graph-relations.test.ts 'a later removal
+       drops the member' (decides the untick's removal
+       event wins over the earlier add on reassembly);
+       tests/adapters-flow-save-events.test.ts 'remove a
+       member emits one removed event' (decides the save
+       delta carries exactly one removed member event);
+       tests/flow-designer-presenter.test.ts
+       'buildFlowSaveShape keeps stored agentIds and person
+       memberIds'; exploratory — the reload-and-reopen
+       round trip
 - [ ] **F61** Untick all human checkboxes so `memberIds`
   is `[]`. Reload the page. PASS: every human checkbox
   in the panel is unticked. The node now displays the
   danger badge per F73 if no humans remain.
+  Pin: tests/presenter-misc.test.ts 'buildNodePanel marks
+       currently assigned member checkboxes as checked'
+       (decides the ticked state is drawn from `memberIds`,
+       so an empty list ticks none);
+       tests/flow-graph-hazard.test.ts 'zero members on a
+       regular node renders danger' (decides the emptied
+       node earns the danger level); exploratory — the
+       reload round trip
 - [ ] **F62** Lock the flow via the designer-header Locked switch.
   Open a regular-node panel. PASS: every checkbox in the
   Members fieldset is rendered with the `disabled`
-  attribute; clicking does nothing.
+  attribute; clicking does nothing. Untoggle Locked before
+  moving on.
+  Pin: tests/presenter-misc.test.ts 'buildNodePanel
+       disables inputs when the flow is locked' (decides
+       every `data-member-id` checkbox carries `disabled`);
+       exploratory — the click doing nothing
 - [ ] **F63** Open a Start-node panel. PASS: the header
   shows the "Create" title and close button — no
   Members fieldset (Create nodes never assign members).
+  Pin: tests/presenter-misc.test.ts 'buildNodePanel renders
+       the start node with its display label, not its
+       stored name' (decides the start node's panel renders
+       its own name and NOT the "State Properties" heading
+       — and it is that heading's branch that carries the
+       Members fieldset); exploratory — the close button
 - [ ] **F64** Open an End-node panel. PASS: the header
   shows the "Archive" title and close button — no
   Members fieldset.
+  Pin: exploratory — the sibling test 'buildNodePanel
+       renders the complete node as Archive' asserts only
+       that the string "Archive" appears somewhere in the
+       output, which the regular-node branch satisfies from
+       its own name input; nothing decides the Archive
+       panel's shape
 - [ ] **F65** Open an edge panel. PASS: the header shows
   "Transition Properties" title and close button — no
   Members fieldset.
-- [ ] **F66** MOOT (Phase Final). The `flow_versions` table is
-  DELETED; there is nothing to inspect.
-  Member assignment is captured only in the flow's own
-  document-message-pair history (`message_pairs`). Confirm
-  via pair fixtures or F67: a `memberIds` change is still
-  undoable through that history.
+  Pin: tests/presenter-misc.test.ts 'buildEdgePanel shows
+       the transition name plus resolved From and To node
+       names' (decides the panel renders "Transition
+       Properties" plus the from and to names); exploratory
+       — the close button and the absent fieldset
+- [ ] **F66** MOOT (Phase Final). The `flow_versions` table
+  is DELETED; there is nothing to inspect. Member
+  assignment is captured only in the flow's own
+  document-message-pair history (`message_pairs`) — F67
+  confirms a `memberIds` change is still undoable through
+  it.
+  Pin: tests/api-flows-versions-retired.test.ts 'pair-chain
+       GET flow versions; table-backed vid 404' (decides
+       the retired route 404s rather than serving a version
+       row); exploratory — nothing left to drive
 - [ ] **F67** Tick one checkbox in the Members fieldset,
   then wait for the `memberIds` PUT (`SAVE_DELAY_MS`
   800 ms) before Cmd+Z (Mac) / Ctrl+Z (Win/Linux).
   PASS: the panel stays open on that node and the
   checkbox unticks — `memberIds` changes are undoable
   like name changes.
+  Pin: tests/api-flows-undo-redo-relations.test.ts 'MEMBER
+       add + undo: the member is gone after undo' (decides
+       the undo drops the added member from the
+       message-plane graph); tests/flow-operations.test.ts
+       'performUndo: keeps the panel open on a surviving
+       node and restores memberIds' (decides `isPanelOpen`
+       stays true, the selection stays on that node, and
+       its memberIds revert);
+       tests/flows-detail-shortcuts.test.ts 'a Members
+       checkbox is not an editable target' (decides the
+       chord is not suppressed by the just-clicked
+       checkbox); exploratory — the live checkbox repaint
 
 ### Attribute Editor (Node Panel)
 
-- [ ] **F68** Open F15's New State (not Capture, not
-  Review, not Create/Archive): drive two compositor
-  `pointerdown`s within 400 ms (there is no
-  `dblclick` listener), same as F13. In the
+- [ ] **F68** On Customer Onboarding, double-click the
+  **Review** node. In the
   "Attributes" fieldset, click the "+ Add Attribute…"
-  dropdown. PASS: the picker lists leftover record
-  attributes (Company Name and/or Industry)
-  pre-defined on the bound record-type (loaded via
-  `getRecordAttributesByRecord` from the nested
-  `record-types/:id/attributes` collection on the
-  message plane).
+  dropdown. PASS: the picker lists the Customer Profile
+  attributes Review does not already reference, sorted
+  alphabetically — Annual Revenue, Company Logo, Contact
+  Phone, Founded On, Industry, Number of Employees,
+  Supporting Documents — loaded
+  via `getRecordAttributesByRecord` from the nested
+  `record-types/:id/attributes` collection on the message
+  plane.
   (Regression for the captured-presenter bug in the
   attribute-picker handler: this exact click used to do
   nothing because the handler closed over a presenter
   captured at init time, which had no selection.)
-- [ ] **F69** Continuing from F68, select **Company Name**
-  from the picker. PASS: the row "Company Name" appears
+  Pin: tests/adapters-flow-records.test.ts
+       'getRecordForFlow returns the bound record id, or
+       null if unbound' (decides which record the designer
+       resolves for this flow);
+       tests/adapters-record-attributes.test.ts
+       'getRecordAttributesByRecord returns only the
+       attributes for the given recordId' (decides the
+       picker's source list is that record's own
+       attributes); exploratory — the unreferenced-only
+       filter and the click landing on the current
+       presenter
+- [ ] **F69** Continuing from F68, select **Industry**
+  from the picker. PASS: the row "Industry" appears
   in the list with mode (Editable / Read-only) and
   required toggles. The dropdown remains available so
   additional attributes can be added.
+  Pin: tests/flow-operations.test.ts
+       'performAddAttributeRef: appends a ref to the single
+       selected node' (decides the picked attribute is
+       appended to that node and persisted);
+       tests/flow-designer-actions.test.ts
+       'applyAddAttributeRef appends to the matching node'
+       (decides only the selected node gains the ref);
+       exploratory — the row's mode and Required controls
+       and the dropdown staying available
 - [ ] **F70** Continuing from F69, click the remove ("×")
-  control on the "Company Name" attribute row. PASS: the row
-  disappears from the attributes list.
-- [ ] **F71** Lock the flow via the designer-header Locked switch.
-  Open the same New State as F68: drive two compositor
-  `pointerdown`s within 400 ms (there is no `dblclick`
-  listener), same as F13. Click the disabled
+  control on the "Industry" attribute row. PASS: the row
+  disappears from the attributes list, leaving Review as
+  the seed had it.
+  Pin: tests/flow-operations.test.ts
+       'performRemoveAttributeRef: removes the ref from the
+       single selected node' (decides the ref leaves the
+       persisted node); tests/adapters-flow-save-events.test.ts
+       'remove an attribute emits one removed event';
+       tests/flow-graph-relations.test.ts 'a later removal
+       drops the attribute' (decides the removal is current
+       on reassembly); exploratory — the "×" control and
+       the row disappearing
+- [ ] **F71** Lock Customer Onboarding via the
+  designer-header Locked switch.
+  Reopen Review's panel and click the disabled
   "+ Add Attribute…" dropdown in the Attributes
   fieldset. PASS: nothing happens — no panel change,
   no toast, no attribute row appended (a disabled
-  `<select>` does not fire `change`).
-- [ ] **F72** Open the same New State as F68: drive two
-  compositor `pointerdown`s within 400 ms (there is
-  no `dblclick` listener), same as F13. Tick one
-  Members checkbox on that New State, then click the
+  `<select>` does not fire `change`). Untoggle Locked
+  before moving on; FS and F2 read this flow later.
+  Pin: tests/flow-operations.test.ts
+       'performAddAttributeRef: locked flow fails' (decides
+       that even were a change to fire, a locked flow
+       appends nothing); exploratory — the `<select>`'s own
+       `disabled` attribute, which no test asserts, and the
+       absent toast
+- [ ] **F72** Reopen Review's panel. Tick one unticked
+  human in the Members fieldset, then click the
   "+ Add Attribute…" dropdown in the same panel. PASS:
-  the dropdown remains functional and lists leftover
-  record attributes (Company Name and/or Industry).
+  the dropdown remains functional and lists Review's
+  unreferenced record attributes. Untick that human
+  again so Review returns to its two seeded members.
   (Regression: a `memberIds` commit
   replaces the presenter, so a click handler that
   captured a stale presenter would have acted on the
   pre-commit snapshot — this case proves the handler
   reads the current presenter at click time.)
-- [ ] **F73 — Hazard severity rendering.** On a regular
+  Pin: tests/flow-designer-presenter.test.ts 'a presenter
+       built from withInteractionState reports the selected
+       node, and the source presenter remains unchanged'
+       (decides a commit yields a NEW presenter carrying
+       the selection while the stale one is left untouched
+       — the seam this regression rides);
+       tests/flow-designer-actions.test.ts 'applyUpdateNode
+       patches memberIds' (decides the tick and untick);
+       exploratory — the picker still working after the
+       member commit
+- [ ] **F73 — Hazard severity rendering.** Back on Layout
+  Test, on a regular
   (non-start, non-complete) node, vary the member count
   and outgoing-edge count and confirm the bottom-left
   badge:
@@ -2846,18 +3634,79 @@ concurrency, and the org fence. A designer "tag current" action is tracked in
     - **≥2 members AND ≥1 outgoing edge** → no badge.
   Confirm the start node and the complete node never
   display a badge regardless of state.
+  Pin: tests/flow-graph-hazard.test.ts 'zero members on a
+       regular node renders danger';
+       tests/flow-graph-hazard.test.ts 'one member with no
+       outgoing edges (dead-end) renders danger (precedence
+       over warning)'; tests/flow-graph-hazard.test.ts 'one
+       member on a regular node with outgoing edges renders
+       warning'; tests/flow-graph-hazard.test.ts 'two or
+       more members with outgoing edges renders no hazard';
+       tests/flow-graph-hazard.test.ts 'a start node never
+       renders hazard regardless of member count';
+       tests/flow-graph-hazard.test.ts 'a complete node
+       never renders hazard regardless of member count';
+       tests/flow-graph-hazard.test.ts 'multiple members
+       but no outgoing edges still renders danger (dead-end
+       takes precedence)' (decides the "regardless of
+       member count" half of the dead-end rung, which the
+       one-member test alone does not reach:
+       `shouldShowMemberHazard(buildNode('n1', ['hw_1',
+       'hw_2', 'hw_3']), []) === 'danger'`) — the seven
+       together decide every rung of the precedence ladder
+       this case walks; exploratory — the painted icons,
+       their bottom-left slot, and the hover tooltips
 - [ ] **F74** With the Properties panel closed,
   confirm the flow canvas fills the content area
   to the right of the global sidebar (panel-aware
   fit honors `PANEL_WIDTH_PX`). Open the panel,
-  pan the canvas, then close the panel via the X.
+  pan the canvas (Auto Fit off and pan mode on, per
+  F47), then close the panel via the X.
   PASS: pan/zoom/auto-fit/panel-toggle interactions
   read the *content-area* clientWidth, not the
   full viewport — the global sidebar does not
   steal canvas space.
-- [ ] **F75** Open a flow whose layout routes edges beyond the node bounding box — the seeded "Layout Test: Proposal Review Cycle" is one (its long back-edges arc above the top row and dip well below the bottom row) — with Auto Fit on. PASS: the whole graph, including the edge curves and waypoints that bow past the outermost nodes, sits inside the canvas with margin; nothing clips at any edge (the prior bug sliced the bottom routing). Then toggle Auto Fit off then on, add then delete an edge, and undo. PASS: every re-fit re-frames the full *drawn* content (curves included), never just the node rectangles — the camera measures the rendered SVG (`.flow-content` `getBBox`), not node positions.
-  Serial and Parallel: open that Layout Test
-  flow (do not open the garden chain).
+  Pin: tests/flow-zoom-to-fit.test.ts 'fitBoxToCanvas with
+       panelOffsetPx=0 reproduces today's full-canvas
+       centered fit' (decides the panel-closed fit centres
+       on the whole canvas width);
+       tests/flow-zoom-to-fit.test.ts 'fitBoxToCanvas panel
+       offset shifts content pixel position from
+       full-canvas center to right-visible center (panel on
+       left)' (decides the panel-open fit excludes the
+       panel strip and nothing else);
+       tests/flow-detail-toast-overflow.test.ts
+       'flow-detail page-root clips the designer, not the
+       viewport' (decides the designer is bounded by the
+       content area, not the viewport); exploratory — the
+       live content-area measurement
+- [ ] **F75** Open the seeded "Layout Test: Proposal Review
+  Cycle" with Auto Fit on — its layout routes edges beyond
+  the node bounding box, its long back-edges arcing above
+  the top row and dipping well below the bottom row. PASS:
+  the whole graph, including the edge curves and waypoints
+  that bow past the outermost nodes, sits inside the canvas
+  with margin; nothing clips at any edge (the prior bug
+  sliced the bottom routing). Then toggle Auto Fit off then
+  on, add then delete an edge, and undo. PASS: every re-fit
+  re-frames the full *drawn* content (curves included),
+  never just the node rectangles — the camera measures the
+  rendered SVG (`.flow-content` `getBBox`), not node
+  positions.
+  Pin: tests/flow-zoom-to-fit.test.ts 'fitBoxToCanvas
+       viewBox contains a box that extends far beyond the
+       node cluster' (decides a fitted viewBox contains the
+       whole measured box, not merely the node rectangles);
+       tests/flow-designer-presenter.test.ts 'withFitToBox
+       frames a box that extends far below the nodes
+       (edge/waypoint geometry)' (decides the presenter's
+       own re-fit covers a deep dip on both top and bottom
+       edges); tests/flow-designer-presenter.test.ts
+       'withFitToBox re-fits the viewBox but does NOT move
+       nodes (viewport op contract)' (decides the re-fit is
+       a camera op, never an auto-layout); exploratory —
+       the `getBBox` measurement itself and the painted
+       margins
 
 ---
 
