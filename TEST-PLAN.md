@@ -288,512 +288,773 @@ them separately. Abort on any AT red.
 
 ## AA. Data Entry Workflow
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
+Sign in as `demo@example.com` (Tony Stark), the seed
+reveal's admin credential. Stark Industries is the
+active organization throughout — AA never switches to
+the second organization.
 
-Parallel: AA's slice is already bootstrap-only —
-do not restart the process. Sign in as the AA
-admin and run AA3+ create-from-empty.
-Each later step creates data that subsequent
-steps depend on. Run AA3+ in order. Serial: A3
-`--mock-data` stands through J. Do not wipe to
-`--bootstrap`. Do not mint garden rows: no Add
-Member, no Add objective, no Create Idea, no
-Submit for Review, no idea Approve, no Create
-Project, no New Flow (AA26 and E7). Dialog-open
-cases stay. Edits of a seeded subject stay.
-AA24a may approve one seeded `submitted`
-project (not an idea, not a K26 `under_review`
-title). Serial leftover Convert is AA21: click
-Convert to open the form; do not Create
-Project.
-
-- [ ] **AA3** Verify bootstrap data exists: user "Tony Stark", organization "Stark Industries" (domain `acmecorp.com`). `OrganizationEntity` has no plan field — its quota fields are `seats`, `projects_limit`, `ideas_limit`.
+- [ ] **AA3** Verify bootstrap data exists: user "Tony
+  Stark", organization "Stark Industries" (domain
+  `acmecorp.com`). `OrganizationEntity` has no plan
+  field — its quota fields are `seats`,
+  `projects_limit`, `ideas_limit`.
+  Pin: exploratory — the live sign-in and the rendered
+       organization name/domain
 
 ### AA2. Create Members
 
-- [ ] **AA4** Navigate to Members (sidebar). Click "+ Add
-  Member". PASS: dialog opens with a Kind toggle (Human /
-  AI, Human selected by default), a Human form below
-  showing Name, Email, Title, Department,
-  Phone, Bio, and an AI form (hidden by default) with
-  Name, a Model pulldown (grouped by provider, no
-  default selection), Description, and a Skill Focus
-  textarea — no Auth Token field or security warning.
-- [ ] **AA5** Serial: Sarah Chen is already seated
-  (Title: Project Lead, Department: Operations);
-  do not Create. PASS: she appears in the
-  seat-derived roster. Parallel: With Human
-  selected, fill all fields for "Sarah Chen"
-  (Title: Project Lead, Department: Operations).
-  Click Create. PASS: toast confirms creation;
-  `PUT /identities/:id` plus PII and a seat at
-  the active organization (`PUT
-  organizations/:id/members/:identity-id`); the
-  person appears in the seat-derived roster.
-- [ ] **AA6** Serial: the mock garden already
-  holds all 10 humans — Sarah Chen, Mike
-  Thompson, Jessica Park, David Martinez, Emily
-  Rodriguez, Alex Kim, Marcus Johnson, David
-  Kim, Lisa Wang, James Miller. Do not Create.
-  PASS: Stark Members shows the six seated
-  there (Sarah Chen, Jessica Park, Emily
-  Rodriguez, Marcus Johnson, Lisa Wang, plus
-  Tony Stark from AA3); the other five sit on
-  Wayne. Parallel: Repeat for all 10 humans:
-  Sarah Chen, Mike Thompson, Jessica Park,
-  David Martinez, Emily Rodriguez, Alex Kim,
-  Marcus Johnson, David Kim, Lisa Wang, James
-  Miller. PASS: all 10 are written as identity
-  + PII + seat and appear in the seat-derived
-  roster.
-- [ ] **AA7** Reload the Members page. PASS:
-  the roster is seat-derived. Serial: the
-  seeded humans re-render with their seats.
-  Parallel: the freshly Added humans re-render
-  with the seeded seats.
-- [ ] **AA7a** Click "+ Add Member", switch the
-  Kind toggle to AI. PASS: the Human form hides
-  and the AI form appears. Serial: PASS: the
-  AIs group already holds Claude Opus 4.8,
-  Claude Sonnet 4.6, GPT-5.5, and Grok 4.3
-  (agents are global, not seated); do not
-  Create. Parallel: Fill Name, pick a Model,
-  fill Description and Skill Focus. PASS:
-  Create is blocked until a Model is chosen;
-  once chosen, click Create →
-  toast confirms and the AI is written as a
+- [ ] **AA4** Navigate to Members (sidebar). Click "+
+  Add Member". PASS: dialog opens with a Kind toggle
+  (Human / AI, Human selected by default), a Human form
+  below showing Name, Email, Title, Department, Phone,
+  Bio, and an AI form (hidden by default) with Name, a
+  Model pulldown (grouped by provider, no default
+  selection), Description, and a Skill Focus textarea —
+  no Auth Token field or security warning.
+  Pin: exploratory — the live dialog affordance
+       (`bindAddMemberDialog` in
+       web-app/members/index.ts carries no CLI or
+       browser test)
+- [ ] **AA5** Sarah Chen (`sarah.chen@company.com`,
+  Title: Project Lead, Department: Operations) is
+  already seated on Stark — do not Create her again; a
+  second "Sarah Chen" would leave two same-named rows
+  for every later section to trip over. Instead, with
+  Human selected, fill the form for a new person, e.g.
+  "Jordan Rivera" (`jordan.rivera@company.com`, Title:
+  QA Lead, Department: Quality), and click Create.
+  PASS: toast confirms creation; the person writes as
+  `PUT /identities/:id` plus PII and a seat at Stark
+  Industries (`PUT
+  organizations/:id/members/:identity-id`) and appears
+  in the seat-derived roster alongside Sarah Chen.
+  Pin: tests/adapters-members.test.ts
+       'postHumanMemberCreation persists identity PII
+       and a seat' (decides the identity + PII + seat
+       write this Create triggers); exploratory — the
+       live toast and roster append
+- [ ] **AA6** The mock seed already holds all 10
+  humans — Sarah Chen, Mike Thompson, Jessica Park,
+  David Martinez, Emily Rodriguez, Alex Kim, Marcus
+  Johnson, David Kim, Lisa Wang, James Miller. Do not
+  Create any of them. PASS: Stark Members shows the six
+  seated there (Sarah Chen, Jessica Park, Emily
+  Rodriguez, Marcus Johnson, Lisa Wang, plus Tony Stark
+  from AA3) alongside Jordan Rivera from AA5; the other
+  five sit on the second organization, out of view — do
+  not switch there to check them.
+  Pin: exploratory — the live seat-derived roster
+       membership (no test pins the 10-human /
+       6-on-Stark split as a single assertion)
+- [ ] **AA7** Reload the Members page. PASS: the roster
+  is seat-derived — the seeded humans and Jordan Rivera
+  (AA5) all re-render with their seats.
+  Pin: exploratory — the live post-reload re-render
+- [ ] **AA7a** Click "+ Add Member", switch the Kind
+  toggle to AI. PASS: the Human form hides and the AI
+  form appears; the AIs group already holds Claude Opus
+  4.8, Claude Sonnet 4.6, GPT-5.5, and Grok 4.3 (agents
+  are global, not seated) — do not Create any of them.
+  Fill Name "Ops Assistant", pick Model "Claude Haiku
+  4.5", fill Description and Skill Focus. PASS: Create
+  is blocked until a Model is chosen; once chosen, click
+  Create → toast confirms and the AI is written as a
   message-plane AI agent document (`PUT
-  /ai-agents/:id`); it appears in the AIs
-  group (agents are global, not seated).
-  Repeat for 4 AIs matching mock data (Claude
-  Opus 4.8, Claude Sonnet 4.6, GPT-5.5, Grok
-  4.3).
+  /ai-agents/:id`); it appears in the AIs group beside
+  the four seeded agents.
+  Pin: tests/adapters-ai-members.test.ts
+       'postAIMemberCreation writes PUT /ai-agents/:id'
+       (decides the AI-agent write this Create
+       triggers); exploratory — the live Kind toggle,
+       the disabled-until-Model-chosen gate, and the
+       AIs-group append
 
 ### AA3. Member Detail & Organization
 
-- [ ] **AA8** On Members, click the current user's row.
-  PASS: navigates to `member-detail` for that human. Read
-  mode shows avatar, name, title •
-  department subtitle, Personal Information card (Name,
-  Email, Phone, Title, Department, Bio),
-  Working Styles card, and Strengths card.
-- [ ] **AA8a** From the Members list, click any AI
-  member's row. PASS: navigates to `member-detail` for
-  that AI. Read mode shows the AI identity card (Name,
-  Model as "{name} — {provider}", Description) and a
-  Skill Focus row; there is no Auth Token row.
+- [ ] **AA8** On Members, click the current user's
+  (Tony Stark's) row. PASS: navigates to
+  `member-detail` for that human. Read mode shows
+  avatar, name, title • department subtitle, Personal
+  Information card (Name, Email, Phone, Title,
+  Department, Bio), Working Styles card, and Strengths
+  card.
+  Pin: tests/presenter-member-detail.test.ts
+       'HumanMemberDetailPresenter renders the name,
+       title, department, and personal-info card'
+       (decides the read-mode card renders name, title,
+       department, email, and a strength);
+       exploratory — the live avatar and Working
+       Styles card
+- [ ] **AA8a** From the Members list, click a seeded AI
+  member's row (e.g. Claude Sonnet 4.6). PASS:
+  navigates to `member-detail` for that AI. Read mode
+  shows the AI identity card (Name, Model as "{name} —
+  {provider}", Description) and a Skill Focus row;
+  there is no Auth Token row.
+  Pin: tests/presenter-member-detail.test.ts
+       'AIMemberDetailPresenter renders the model name,
+       provider, and skill focus' (decides the Skill
+       Focus text and the Model row's provider half
+       render, and confirms no "Auth Token" text
+       appears; the fixture's AI member name is
+       'Claude Opus 4.8', identical to
+       `firstProviderModel().name`, so this same
+       assertion's model-NAME half passes from the
+       identity's own Name heading alone and decides
+       nothing about the Model row's name);
+       exploratory — the live Name heading and
+       Description text
 - [ ] **AA9** Open the current user's own detail — the
   seeded admin, who carries three strengths (Strategic
-  Planning, Data Analysis, Stakeholder Management); never
-  an AA5/AA6-added human, which starts with none. Click
-  Edit, change Phone and Bio, toggle Data Analysis off and
-  Agile Methods on (`.strength-chip` buttons with
-  `data-strength`, toggled by click — not checkboxes),
-  click Save. PASS: toast "Member saved" appears and the
-  page returns to read mode showing the edits — no
-  navigation. Read mode renders `#member-strengths
-  .pill-tag-strength` spans (three, with no
-  `data-strength`); `.strength-chip` is edit-only. Reload
-  the page. PASS: edited Phone, Bio, and the three
-  strengths persist.
-- [ ] **AA9a** From an AI member detail, click Edit,
-  change Description and Skill Focus, and pick a
-  different Model from the pulldown (grouped by
-  provider, current model pre-selected), click Save.
-  PASS: toast "AI member saved" fires and the
-  page returns to read mode showing the edits — no
-  navigation. Reload; the edited Description, Skill Focus,
-  and Model persist.
-  There is no Auth Token field.
+  Planning, Data Analysis, Stakeholder Management);
+  never an AA5/AA7a-added member, which starts with
+  none. Click Edit, change Phone and Bio, toggle Data
+  Analysis off and Agile Methods on (`.strength-chip`
+  buttons with `data-strength`, toggled by click — not
+  checkboxes), click Save. PASS: toast "Member saved"
+  appears and the page returns to read mode showing the
+  edits — no navigation. Read mode renders
+  `#member-strengths .pill-tag-strength` spans (three,
+  with no `data-strength`); `.strength-chip` is
+  edit-only. Reload the page. PASS: edited Phone, Bio,
+  and the three strengths persist.
+  Pin: tests/api-human-members.test.ts 'a strengths PUT
+       replaces the list — the toggled-on id persists'
+       (decides that toggling Data Analysis off and
+       Agile Methods on in one save leaves exactly
+       [Strategic Planning, Stakeholder Management,
+       Agile Methods] on the next GET); exploratory —
+       the live toast, read-mode return, the Phone/Bio
+       edit (a separate `PUT identities/:id/pii` this
+       test never calls), and reload persistence
+- [ ] **AA9a** From "Ops Assistant" (AA7a)'s member
+  detail, click Edit, change Description and Skill
+  Focus, and pick a different Model from the pulldown
+  (grouped by provider, current model pre-selected),
+  click Save. PASS: toast "AI member saved" fires and
+  the page returns to read mode showing the edits — no
+  navigation. Reload; the edited Description, Skill
+  Focus, and Model persist. There is no Auth Token
+  field.
+  Pin: tests/adapters-ai-members.test.ts 'putAIMember
+       updates the agent document' (decides a Skill
+       Focus edit persists via a fresh read; the
+       fixture's description is `''` before and after,
+       so this same call decides nothing about
+       Description, and Model is not asserted here
+       either); exploratory — the live toast, read-mode
+       return, the Description and Model edits, and
+       reload persistence
 - [ ] **AA10** Navigate to Organization. Click the
   page-level Edit button (a single button at the page
   header, not per-card), change Domain (e.g.
   `acmecorp.io`), click Save. PASS: success toast
   "Organization saved" appears.
+  Pin: tests/presenter-projects-organization.test.ts
+       'OrganizationPresenter.buildPage renders the org
+       name, domain, and an Edit action' (decides the
+       read view's Edit affordance,
+       `data-org-action="edit"`);
+       tests/presenter-projects-organization.test.ts
+       'OrganizationEditPresenter.buildPage renders
+       editable name/domain inputs and Save/Cancel
+       actions' (decides the edit form's domain input,
+       `data-org-field="domain"`, and Save action);
+       tests/adapters-organizations.test.ts
+       'putOrganization then getOrganization
+       round-trips' (decides the write persists via a
+       fresh read); exploratory — the live toast
 - [ ] **AA11** Navigate away, return to Organization.
-  PASS: edited Domain persists with saved value, card is
-  back in read mode.
+  PASS: edited Domain persists with saved value, card
+  is back in read mode.
+  Pin: tests/adapters-organizations.test.ts
+       'putOrganization then getOrganization
+       round-trips'; exploratory — the live
+       navigate-away/return read-mode render
 - [ ] **AA-Obj** On the Organization page, locate the
-  Objectives box. Serial: 4 active objectives already
-  sit in that order — "Lower expenses", "Increase
+  Objectives box. Four active objectives already sit in
+  position order — "Lower expenses", "Increase
   incomes", "Raise customer NPS", "Improve employee
-  morale". Do not Add. PASS: all four appear in the
-  active list in that order. Parallel: Click `+ Add
-  objective` four times, creating in that same order.
-  PASS: all four appear in the active list in the
-  order created. End-state delivered to Phase 2: 4
-  active objectives — required by Agent-E's K9–K23
-  scoring lifecycle, which has a read-dependency on
-  the Organization Objectives produced here.
+  morale". Do not Add — a fifth would put K1's "4
+  seeded active objectives" premise (K runs later in
+  this same walk) out of true. PASS: all four appear in
+  the active list in that order.
+  Pin: tests/mock-data-objectives.test.ts 'seeds every
+       objective seed plus the org-2 objective' (pins
+       the seeded count at exactly
+       `OBJECTIVE_SEEDS.length`, 4);
+       tests/presenter-organization-objectives.test.ts
+       'renders active section with each active
+       objective' (renders each objective's name and
+       id); exploratory — the live position-ordered
+       placement
 
 ### AA4. Create Ideas
 
-- [ ] **AA12** Navigate to Ideas. Serial: open
-  seeded "AI-Powered Customer Segmentation"; do
-  not Create. PASS: the idea is on the list.
-  Parallel: Click "Create Idea". Fill in title,
-  problem, solution, and outcome for
-  "AI-Powered Customer Segmentation". Click
-  "Submit Idea". PASS: idea appears on ideas
-  list.
-- [ ] **AA13** Navigate to that idea's detail
-  page (Serial: the seeded idea. Parallel: the
-  idea just created). Click "Edit". Verify
-  title and text fields (problem, solution,
-  outcome) are editable. Click "Save". PASS:
-  toast confirms save, all fields persist.
-- [ ] **AA14** Serial: Stark Ideas list already
-  shows the 6 Stark mock titles — AI-Powered
-  Customer Segmentation, Predictive Maintenance
-  System, Smart Inventory Optimization,
-  AI-Powered Customer Support Chatbot,
-  Sustainability Dashboard for Operations,
-  Real-time Inventory Tracking System. Do not
-  Create. Do not claim 11 titles on one page.
-  Wayne holds the other 5; do not mint; do not
-  switch here. PASS: those six titles are
-  present. Parallel: Repeat creation and field
-  entry for all 11 ideas matching mock data
-  titles. PASS: ideas list shows all 11 with
-  correct titles.
+- [ ] **AA12** Navigate to Ideas. Open the seeded
+  "AI-Powered Customer Segmentation" — do not Create a
+  duplicate; all 11 mock idea titles already exist (6
+  on Stark, 5 on the second organization). PASS: the
+  idea is on the list.
+  Pin: exploratory — the live list render (no test
+       pins a single named idea's presence on the
+       rendered list)
+- [ ] **AA13** On that idea's detail page, click
+  "Edit". Verify title and text fields (problem,
+  solution, outcome) are editable. Change the Proposed
+  Solution text, click "Save". PASS: toast confirms
+  save, all fields persist. Reload; PASS: the edit
+  survives.
+  Pin: tests/adapters-ideas.test.ts 'putIdea persists
+       changes' (decides a field edit persists via a
+       fresh read); exploratory — the live toast, edit
+       form, and reload persistence
+- [ ] **AA14** Stark's Ideas list already shows its 6
+  mock titles — AI-Powered Customer Segmentation,
+  Predictive Maintenance System, Smart Inventory
+  Optimization, AI-Powered Customer Support Chatbot,
+  Sustainability Dashboard for Operations, Real-time
+  Inventory Tracking System. Do not Create duplicates.
+  Do not claim 11 titles on one page — the other 5 sit
+  on the second organization; do not switch here to
+  check them. PASS: those six titles are present.
+  Pin: exploratory — the live list render (no test
+       pins this exact six-title set as a single
+       assertion)
 
 ### AA5. Submit Ideas for Review
 
-- [ ] **AA15** Serial: seeded statuses already
-  match; do not Submit. PASS: "AI-Powered
-  Customer Segmentation" is already
-  `in_review`. Parallel: Navigate to idea #1
-  detail (status: active). Click "Submit for
-  Review". PASS: status changes to "In Review",
-  button disappears.
-- [ ] **AA16** Serial: do not Submit. PASS:
-  the four Stark `in_review` titles (AI-Powered
-  Customer Segmentation, AI-Powered Customer
-  Support Chatbot, Sustainability Dashboard
-  for Operations, Real-time Inventory Tracking
-  System). Do not name Wayne titles as already
-  `in_review` on this page. Parallel: Submit
-  ideas 1, 4, 7, 8, 9, 10, 11 for review
-  (matching mock data statuses). PASS: each
-  transitions from active to in_review.
-- [ ] **AA17** Navigate to Ideas list and
-  filter by "In Review" status badge. Serial:
-  PASS: 4 cards on Stark. Parallel: PASS: the
-  7 just submitted ideas appear.
+- [ ] **AA15** Of Stark's six ideas, four are already
+  `in_review` (AI-Powered Customer Segmentation,
+  AI-Powered Customer Support Chatbot, Sustainability
+  Dashboard for Operations, Real-time Inventory
+  Tracking System) and two are still `active`
+  (Predictive Maintenance System, Smart Inventory
+  Optimization) — do not submit the four already in
+  review. Navigate to Predictive Maintenance System's
+  idea detail (status: active). Click "Submit for
+  Review". PASS: status changes to "In Review", button
+  disappears.
+  Pin: tests/presenter-idea.test.ts
+       'Idea.canBeSubmittedForReview gates on both
+       lifecycle and readiness' (decides an `active`,
+       ready idea may submit); tests/adapters-ideas.test.ts
+       'postIdeaStateChange records a state event
+       without changing non-lifecycle entity fields on
+       GET' (decides the transition lands and other
+       fields survive it); exploratory — the live
+       button click and disappearance
+- [ ] **AA16** Smart Inventory Optimization, Stark's
+  other `active` idea, is seeded with an empty Expected
+  Outcome, so it is `incomplete`: its detail page shows
+  an "Incomplete" pill next to the Active badge and
+  renders no Submit for Review button yet (Edit is
+  still present). Click "Edit", fill in Expected
+  Outcome (any non-empty text), click "Save". PASS: the
+  Incomplete pill is gone and a Submit for Review
+  button now appears. Click it. PASS: it transitions
+  from active to in_review, button disappears.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter.buildCard renders the Incomplete
+       pill only for active ideas missing a required
+       field' (decides the Incomplete pill renders for
+       an `active` idea with `expected_outcome: ''` —
+       Smart Inventory Optimization's exact seeded
+       shape); tests/presenter-idea.test.ts
+       'Idea.canBeSubmittedForReview gates on both
+       lifecycle and readiness' (decides no Submit
+       button renders while incomplete, and one does
+       once every field, including Expected Outcome,
+       is filled); tests/adapters-ideas.test.ts 'putIdea
+       persists changes' (decides the Expected Outcome
+       edit itself persists via a fresh read — the same
+       merge-patch mechanism AA13/AA38 use on other
+       fields); tests/adapters-ideas.test.ts
+       'postIdeaStateChange records a state event
+       without changing non-lifecycle entity fields on
+       GET' (decides the transition lands and other
+       fields survive it); exploratory — the live
+       Incomplete pill's disappearance, the Edit form,
+       and the button's appearance/disappearance
+- [ ] **AA17** Navigate to Ideas list and filter by
+  "In Review" status badge. PASS: the six Stark titles
+  now in_review — the four originally seeded plus
+  Predictive Maintenance System and Smart Inventory
+  Optimization if AA15/AA16 held.
+  Pin: tests/presenter-idea.test.ts
+       'IdeaListPresenter.renderList in a filtered
+       view keeps only matching ideas and omits the
+       grip' (decides a status filter keeps only
+       matching-state ideas); exploratory — the live
+       badge click and the exact six-title membership
 
 ### AA7. Approve Ideas & Convert to Projects
 
-- [ ] **AA18** On Ideas list, filter by "In
-  Review". Click an `in_review` idea (Serial:
-  seeded "AI-Powered Customer Segmentation".
-  Parallel: idea #1). PASS: navigates to idea
-  detail with Send Back / Approve buttons in
-  the header next to Edit.
-- [ ] **AA19** Serial: PASS: Send Back / Approve
-  are visible; do not Approve. Parallel: Click
-  "Approve". PASS: idea status changes to
-  approved, confirmation shown.
-- [ ] **AA20** Serial: do not Approve. PASS on
-  Stark: 0 `approved`, 4 `in_review`, 2
-  `active`, 0 `sent_back`. The one seeded
-  `approved` idea (Automated Report Generation)
-  sits on Wayne. Parallel: Approve idea #4 as
-  well (it was submitted for review in AA16).
-  Leave others in their current status. PASS:
-  statuses match the AA walk (2 approved, rest
-  in_review/active).
-- [ ] **AA21** Serial: leftover Convert stays
-  Automated Report Generation
-  (`WurwPqXxGtLhRAoCEcPzfQ`) on Wayne. Select
-  Wayne Enterprises in the sidebar footer
-  `.org-switcher` (G36). Convert is visible;
-  click Convert. PASS: conversion form loads
-  with 4 required fields (Project Name, Time
-  with a "days" input suffix, Cost, Success
-  Criteria) — there is no Impact field — plus
-  a Scores box holding one required baseline
-  slider per active objective. Do not Create
-  Project. (D16 inherits this Wayne-switch.)
-  Parallel: Navigate to approved idea #1.
-  Click "Convert". PASS: the same form loads.
-- [ ] **AA22** Serial: do not Create Project.
-  PASS: Create Project is present on the form;
-  do not click it. Parallel: Fill the 4 required
-  fields (Project Name, Time with a "days"
-  input suffix, Cost, Success Criteria) and
-  drag every objective baseline slider in the
-  Scores box. PASS: Create Project stays
-  disabled until all required fields AND all
-  baselines are set, then enables; clicking it
-  navigates to project detail for the new
-  project (the baselines commit atomically
-  with project creation).
-- [ ] **AA22a** On the Convert form before
-  scoring, every baseline slider in the Scores
-  box reads as pending, not zero: the slider
-  is dimmed (~50% opacity) and its value shows
-  an em-dash "—" in muted text (unscored is
-  genuine absence — no score row is written —
-  not a measured 0). Serial: PASS: one pending
-  Wayne slider (Wayne demo objective), em-dash,
-  Create still disabled; inspect; do not drag;
-  then select Stark Industries in
-  `.org-switcher` before AA23–AA24a. Parallel:
-  PASS: four sliders; dragging a slider clears
-  only that row's pending styling (full
-  opacity, a signed value such as "+51", a
-  green check by the label) while untouched
-  rows stay dimmed, and Create Project stays
-  disabled until all four objectives are
-  scored.
-- [ ] **AA23** Serial: on a seeded project
-  (AI-Powered Customer Segmentation), click
-  "Edit". Set a field and Save. PASS: project
-  data persists. Parallel: On the newly
-  converted project detail, click "Edit". Set
-  fields (title, description, status, start
-  date, end date, cost baseline) to match mock
-  data. Save. PASS: project data persists.
-  (Impact is no longer a directly-editable
-  field — it is derived read-only from the
-  objective baseline scores.)
-- [ ] **AA24** Serial: do not Approve remaining
-  ideas; do not Convert. Hunter is on Stark
-  Industries after AA22a. PASS: Projects list
-  is the seeded Stark list (~16). Parallel:
-  Approve remaining ideas (7, 8, 9, 10) from
-  Ideas list (filter by "In Review"), then
-  convert all 6 approved ideas to projects.
-  PASS: Projects list shows all 6 with
-  correct status and progress.
+- [ ] **AA18** On Ideas list, filter by "In Review".
+  Click AI-Powered Customer Support Chatbot (already
+  `in_review`, and its title never collides with an
+  existing project name — unlike AI-Powered Customer
+  Segmentation, Predictive Maintenance System, or Smart
+  Inventory Optimization, which are already seeded
+  project titles too). PASS: navigates to idea detail
+  with Send Back / Approve buttons in the header next
+  to Edit.
+  Pin: exploratory — the live header action buttons on
+       an in_review idea
+- [ ] **AA19** Click "Approve". PASS: idea status
+  changes to approved, confirmation shown.
+  Pin: tests/adapters-ideas.test.ts
+       'postIdeaStateChange records a state event
+       without changing non-lifecycle entity fields on
+       GET' (decides an in_review→approved transition
+       lands and other fields survive it); exploratory
+       — the live confirmation
+- [ ] **AA20** Approve a second idea, Sustainability
+  Dashboard for Operations (also already `in_review`,
+  also collision-free with any project name), the same
+  way. PASS: idea status changes to approved,
+  confirmation shown; Stark now has two approved ideas
+  if AA19 held.
+  Pin: tests/adapters-ideas.test.ts
+       'postIdeaStateChange records a state event
+       without changing non-lifecycle entity fields on
+       GET'; exploratory — the live confirmation
+- [ ] **AA21** Navigate to the approved AI-Powered
+  Customer Support Chatbot idea. Click "Convert". PASS:
+  Convert is visible because the idea is approved;
+  conversion form loads with 4 required fields (Project
+  Name, Time with a "days" input suffix, Cost, Success
+  Criteria) — there is no Impact field — plus a Scores
+  box holding one required baseline slider per active
+  objective (4, matching AA-Obj).
+  Pin: tests/presenter-idea.test.ts
+       'IdeaPresenter.buildCard exposes a Convert
+       affordance only for approved ideas' (decides
+       Convert renders for `approved` and not for other
+       states); tests/presenter-idea.test.ts
+       'conversionRequiredCount adds active objectives
+       to the static field count' (decides the static
+       4-field count off `REQUIRED_FIELDS.length`,
+       independent of objectives);
+       tests/presenter-idea.test.ts
+       'IdeaConversionPresenter renders one baseline
+       row per active objective' (decides one slider
+       row per active objective); exploratory — the
+       live field layout and the absence of an Impact
+       field
+- [ ] **AA22** Fill the 4 required fields, then drag
+  only the "Lower expenses" and "Increase incomes"
+  baseline sliders off their pending position — leave
+  "Raise customer NPS" and "Improve employee morale"
+  untouched. PASS: Create Project stays disabled (two
+  objectives remain unscored).
+  Pin: exploratory — the live partial drag and the
+       disabled button (no test exercises 2+ active
+       objectives with only some baselined; see
+       Unpinned but pinnable)
+- [ ] **AA22a** Inspect the Scores box: every baseline
+  slider reads as pending, not zero, until dragged — a
+  pending slider is dimmed (~50% opacity) with an
+  em-dash "—" in muted text (unscored is genuine
+  absence — no score row is written — not a measured
+  0); a dragged slider shows full opacity, a signed
+  value, and a green check by the label. PASS: "Raise
+  customer NPS" and "Improve employee morale" (AA22's
+  untouched pair) still read pending while "Lower
+  expenses" and "Increase incomes" read scored. Drag
+  the remaining two sliders. PASS: Create Project
+  enables now that every objective is scored; click it
+  — PASS: navigates to project detail for the new
+  project (the baselines commit atomically with project
+  creation).
+  Pin: tests/presenter-idea.test.ts
+       'IdeaConversionPresenter enables Create once
+       every field and baseline is set' (decides
+       `data-ready="true"` and "Ready to Create
+       Project" render once every field and every
+       objective's baseline in a multi-objective draft
+       is set); tests/adapters-ideas.test.ts
+       'postIdeaConversion commits project, idea, two
+       state events, and N baseline rows in one atomic
+       batch' (decides the project, the idea's
+       `promoted` state, and both baseline scores land
+       together — this case's "baselines commit
+       atomically with project creation" clause);
+       exploratory — the live pending/scored styling
+       contrast, the drag, and the navigation to
+       project detail
+- [ ] **AA23** On the newly converted project (state
+  `submitted`), click "Edit". Change Status to
+  `under_review` and change the description, click
+  "Save". PASS: both edits persist. (Impact is no
+  longer a directly-editable field — it is derived
+  read-only from the objective baseline scores.)
+  Pin: tests/adapters-ideas.test.ts 'postIdeaConversion
+       commits project, idea, two state events, and N
+       baseline rows in one atomic batch' (decides a
+       converted project's first state event is
+       `submitted` — this case's opening premise);
+       tests/adapters-projects.test.ts
+       'putProjectFields merges the camel patch onto
+       the stored row, keeping untouched columns'
+       (decides a description edit persists via a
+       fresh read); exploratory — the live
+       status-select edit and Save
+- [ ] **AA24** Navigate to Projects list. PASS: the
+  seeded 16 projects are present, plus the project
+  converted in AA22a (17 total) if that Create held.
+  Pin: tests/adapters-ideas.test.ts 'postIdeaConversion
+       commits project, idea, two state events, and N
+       baseline rows in one atomic batch' (decides
+       AA22a's conversion writes a real project row —
+       not the list's exact 17-total count);
+       exploratory — the live list count
 
 ### AA8. Score and Approve Projects
 
-- [ ] **AA24a** From the Projects list, click
-  into a `submitted` project. Serial: seeded
-  Market Sentiment Analyzer
-  (`PIfhHMLQQxTxKFDdabXbOw`), the only Stark
-  `submitted` — not a K26 `under_review` title
-  (Workforce Capacity Forecasting, Predictive
-  Maintenance System, Employee Training
-  Assistant). Parallel: project #1 (the first
-  converted project, status `submitted`).
-  Click Edit, change Status to `under_review`,
-  Save. PASS: toast confirms. The objectives
-  section's baseline sliders are now editable
-  INLINE (no Score button, no modal). Serial:
-  this project was seeded `submitted` with no
-  baselines — move each baseline slider off
-  its initial value and click Save; Approve
-  enables only once every objective is scored.
-  Parallel: because this project was converted
-  through the UI its baselines were committed
-  at convert time, so the Approve button is
-  already enabled. Click Approve; confirm.
-  PASS: status flips to `approved`; the action
-  bar re-renders with `Archive` / `View
-  history`, and the per-objective actual
-  sliders become editable. Parallel: the
-  project is now eligible for the New Flow
-  gate in AA25. (Without approving, projects
-  remain at `submitted` and the New Flow
-  button stays hidden behind the `Approve to
-  add flows` info badge.)
+- [ ] **AA24a** From the Projects list, click into
+  Market Sentiment Analyzer (`PIfhHMLQQxTxKFDdabXbOw`),
+  the only Stark `submitted` project — not a K26
+  `under_review` title (Workforce Capacity Forecasting,
+  Predictive Maintenance System, Employee Training
+  Assistant), and not AA22a's freshly converted
+  project. Click Edit, change Status to `under_review`,
+  Save. PASS: toast confirms. The objectives section's
+  baseline sliders are now editable INLINE (no Score
+  button, no modal) — this project was seeded
+  `submitted` with no baselines. Move each baseline
+  slider off its initial value and click Save; Approve
+  enables only once every objective is scored. Click
+  Approve; confirm. PASS: status flips to `approved`;
+  the action bar re-renders with `Archive` / `View
+  history`, and the per-objective actual sliders become
+  editable. The project is now eligible for the New
+  Flow gate in AA25. (Without approving, a project
+  stays hidden behind the `Approve to add flows` info
+  badge.)
+  Pin: tests/adapters-project-publish.test.ts
+       'postProjectApproval moves state to approved'
+       (decides the write itself lands `approved`);
+       tests/presenter-project-action-bar.test.ts
+       'under_review with no scores: Approve disabled'
+       and 'under_review with full scoring: Approve
+       enabled' (decide the Approve gate: disabled
+       while any objective is unscored, enabled once
+       every objective is scored);
+       tests/presenter-project-action-bar.test.ts
+       'approved project: Archive shown' (decides the
+       re-rendered bar shows Archive once approved);
+       tests/presenter-project-objectives.test.ts
+       'baseline sliders enabled while under_review'
+       (decides the objectives section's baseline
+       sliders are not disabled while under_review);
+       exploratory — the live Edit-to-under_review
+       step, the no-Score-button/no-modal rendering,
+       View history, and the confirm dialogs
 
 ### AA9. Create Flows
 
-- [ ] **AA25** Navigate to Projects. Click into
-  an approved project's detail. Serial: an
-  approved project that already has flows —
-  Sales Pipeline Modernization (Lead-to-Close)
-  or AI-Powered Customer Segmentation
-  (Customer Onboarding and Layout Test). PASS:
-  a "Flows" section is visible listing those
-  flows (not "No flows yet") and a "New Flow"
-  button. Parallel: project #1 detail (status:
-  approved). PASS: a "Flows" section is
-  visible showing "No flows yet" empty state
-  and a "New Flow" button. Non-approved
-  projects show an info badge "Approve to add
-  flows" instead of the button, and empty
-  state reads "Flow creation limited to
-  approved projects only".
-- [ ] **AA26** Click "New Flow". PASS: a "New
-  Flow" dialog opens with a Flow Name input
-  and Create/Cancel buttons. Serial: PASS:
-  Cancel; do not Create. Parallel: Enter a
-  name and click Create. PASS: navigates to
-  the flow designer page. The SVG canvas
-  shows two nodes:
-  "Create" (start, top-left with green
-  border) and "Archive" (end, bottom-right
-  with red 3-px border) connected by no
-  edges. Toolbar shows Undo, Redo, Zoom −/+,
-  Copy Mermaid, Export ZIP, and Delete (trash
-  icon); the header above the canvas hosts
-  the Locked, Auto Layout, and Auto Fit
-  switches. Changes auto-save (no explicit
-  Save button).
-- [ ] **AA27** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: Drag the port circle on the start
-  node into empty canvas past 20 pixels. PASS:
-  during the drag a ghost "New State" card
-  follows the cursor along with a faint bezier
-  preview. On release, a new node appears at the
-  drop position with a blue border,
-  auto-connected from the start by an edge with
-  a default name. The start node is also
-  draggable by its body.
-  (The node-creation + auto-edge logic — including
-  the start-node-single-outgoing rule — is now
-  covered by `tests/flow-operations.test.ts`
-  (`performAddNodeAtPosition` + `performAddEdge`).
-  Drive the port-drag with compositor mouse.)
-  Activate the tab first (prompt rule): a hidden
-  tab lands every `mouseMoved` past the daemon
-  timeout and paints no ghost.
-- [ ] **AA28** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: Double-click the new blue-bordered
-  node. PASS: properties panel appears with a
-  "State Properties" title and close button on
-  the right, then a `<fieldset>` labeled "Members"
-  containing two groups — HUMANS and AIs — each
-  with a labeled checkbox per member (no checkbox
-  ticked yet), then a Name input, a Task Instructions
-  textarea, an empty Attributes list, and outgoing
-  transitions. The node gets a gold glow selection
-  effect on the canvas.
-  Drive the double-click with compositor mouse.
-- [ ] **AA29** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: Edit the state name in the
-  properties panel to "Data Capture". PASS: the
-  node label updates on the canvas immediately
-  (auto-saves via 800ms debounce).
-- [ ] **AA30** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: Double-click the edge between
-  start and "Data Capture". PASS: no properties
-  panel opens — the outgoing edge from Create is
-  intentionally not interactive. The edge has no
-  name label visible on the canvas, just a plain
-  blue arrow.
-- [ ] **AA31** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: Drag from "Data Capture"'s port
-  into empty canvas past 20 pixels to create a
-  new middle node; rename it "Review" via its
-  properties panel. Rename the new edge
-  "submit".
-  (The add-node-at-position + auto-edge logic is
-  now covered by `tests/flow-operations.test.ts`.
-  Drive the port-drag with compositor mouse.)
-- [ ] **AA32** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: Hold Shift and drag from "Review"
-  onto "Data Capture". PASS: during the drag the
-  preview redraws as a dashed-orange curved
-  bezier because a forward path "Data Capture" →
-  "Review" already exists, and the reachability
-  check recognises the release would close a
-  loop. Release to create the cycle edge; rename
-  it "needs revision". Hold Shift and drag from
-  "Review" onto "Archive". PASS: preview is a
-  solid-blue curved bezier (no return path).
-  Release to create the edge; rename it
-  "approve".
-  (The connection-validation rules this would
-  check — no edge to a start node, none from an
-  end node, no duplicate, start-node-single-
-  outgoing, and the cycle-vs-forward
-  classification via the reachability check — are
-  now covered by `tests/flow-operations.test.ts`
-  (`performAddEdge`). Drive the shift-drag with
-  compositor mouse.)
-- [ ] **AA33** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: In the flow header, set the
-  "Record:" dropdown to "Customer Profile"
-  (seeded in the AA slice). Then in the "Data
-  Capture" properties panel, open the
-  "Attributes" fieldset. Click the
-  "+ Add Attribute…" dropdown. PASS: the picker
-  lists available record attributes pre-defined
-  in the bound Record. Select an attribute (e.g.
-  "Company Name"). PASS: the attribute appears in
-  the attributes list with mode (Editable /
-  Read-only) and required toggles plus a remove
-  control. (The add-attribute logic is covered by
-  `tests/flow-operations.test.ts`
-  (`performAddAttributeRef`) — this case verifies
-  the picker rendering and attribute-binding UI
-  only.)
-- [ ] **AA34** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: Add more attributes to "Data
-  Capture": select 2–3 attributes from the
-  picker, each with a distinct mode (Editable /
-  Read-only) and required toggle. PASS: all
-  attributes appear in the list with correct
-  mode (Editable / Read-only) and toggle state.
-- [ ] **AA35** Serial: N/A — requires the empty
-  Create+Archive graph that serial must not
-  mint; do not add nodes; do not JSON-inject.
-  Parallel: Wait for auto-save (800ms
-  debounce). Navigate away and back. PASS: all
-  nodes, edges, and attributes persist.
+- [ ] **AA25** Navigate to Projects. Click into Sales
+  Pipeline Modernization (approved, seeded with the
+  Lead-to-Close flow). PASS: a "Flows" section lists
+  Lead-to-Close (not "No flows yet") and a "New Flow"
+  button. Click into Market Sentiment Analyzer
+  (approved by AA24a, no flows yet). PASS: the Flows
+  section shows a "No flows yet" empty state and a "New
+  Flow" button. Click into Smart Inventory Optimization
+  (`sent_back`, not approved — view only, do not
+  Approve or Archive it: K's audit reserves it). PASS:
+  an info badge reads "Approve to add flows" in place
+  of the button, and empty state reads "Flow creation
+  limited to approved projects only".
+  Pin: tests/presenter-projects-organization.test.ts
+       'ProjectDetailPresenter renders a flow card with
+       the flow name and node/edge counts' (decides the
+       populated Flows section renders a flow's name
+       and counts); tests/presenter-projects-organization.test.ts
+       'ProjectDetailPresenter offers a New Flow button
+       for approved projects and a gating message
+       otherwise' (decides "New Flow" renders and
+       "Approve to add flows" does not for `approved`,
+       and "Approve to add flows" renders for a
+       non-approved state); exploratory — the live "No
+       flows yet" copy and the exact "Flow creation
+       limited to..." string
+- [ ] **AA26** On Market Sentiment Analyzer's detail
+  page (from AA25), click "New Flow". PASS: a "New
+  Flow" dialog opens with a Flow Name input and
+  Create/Cancel buttons. Enter a name (e.g. "Sentiment
+  Review") and click Create — AA27–AA35 need this
+  flow's Create+Archive graph to drive, and minting it
+  here is free (the walk's database is discarded at J).
+  PASS: navigates to the flow designer page. The SVG
+  canvas shows two nodes: "Create" (start, top-left
+  with green border) and "Archive" (end, bottom-right
+  with red 3-px border) connected by no edges. Toolbar
+  shows Undo, Redo, Zoom −/+, Copy Mermaid, Export ZIP,
+  and Delete (trash icon); the header above the canvas
+  hosts the Locked, Auto Layout, and Auto Fit switches.
+  Changes auto-save (no explicit Save button).
+  Pin: tests/api-flows-create-relations.test.ts
+       'postFlowCreation: message-plane graph equals
+       the default graph' (decides the freshly created
+       flow's graph has exactly 2 nodes and 0 edges,
+       with one `isCreate` node named "Create" and one
+       `isArchive` node named "Archive"); exploratory —
+       the live dialog, the border colors, and the
+       toolbar/header chrome
+- [ ] **AA27** Drag the port circle on the start node
+  into empty canvas past 20 pixels. PASS: during the
+  drag a ghost "New State" card follows the cursor
+  along with a faint bezier preview. On release, a new
+  node appears at the drop position with a blue border,
+  auto-connected from the start by an edge with a
+  default name. The start node is also draggable by its
+  body. Drive the port-drag with compositor mouse.
+  Pin: tests/flow-operations.test.ts
+       'performAddNodeAtPosition: returns node, edge,
+       selectId and centers on the point' (decides the
+       new node is centered on the drop point and
+       auto-connected from the dragged node);
+       tests/flow-fsm-scenarios.test.ts 'port drag
+       far-drop emits add-node (AA27/AA31/F15)' (decides
+       a far port-drag emits exactly one add-node,
+       auto-connected from the dragged node, and zero
+       add-edge actions); tests/flow-fsm-scenarios.test.ts
+       'port drag close-drop (under 20px) emits no
+       add-node (AA27 negative)' (decides the "past 20
+       pixels" threshold — a close drop emits neither
+       add-node nor add-edge); exploratory — the live
+       ghost card, bezier preview, and blue border
+- [ ] **AA28** Double-click the new blue-bordered node.
+  PASS: properties panel appears with a "State
+  Properties" title and close button on the right, then
+  a `<fieldset>` labeled "Members" containing two
+  groups — HUMANS and AIs — each with a labeled
+  checkbox per member (no checkbox ticked yet), then a
+  Name input, a Task Instructions textarea, an empty
+  Attributes list, and an outgoing-transitions list
+  (reads "None" until an edge exists). The node gets a
+  gold glow selection effect on the canvas. Drive the
+  double-click with compositor mouse.
+  Pin: tests/flow-fsm-scenarios.test.ts 'double-click
+       node opens panel; second tap within window flips
+       open=true (AA28/F13)' (decides two pointerdowns
+       within the dblclick window on one node emit
+       exactly one open-panel action with open=true —
+       that the double-click itself opens the panel);
+       tests/presenter-misc.test.ts 'buildNodePanel for
+       a regular node lists the member checkboxes
+       grouped Humans / AIs' (decides the State
+       Properties title, the Members fieldset, and the
+       HUMANS/AIs group labels); tests/presenter-misc.test.ts
+       'buildNodePanel renders outgoing transitions by
+       name and falls back to None when empty' (decides
+       the None fallback for a node with no outgoing
+       edge yet); exploratory — the gold glow selection
+       effect and that no checkbox is pre-ticked on a
+       brand-new node
+- [ ] **AA29** Edit the state name in the properties
+  panel to "Data Capture". PASS: the node label updates
+  on the canvas immediately (auto-saves via 800ms
+  debounce).
+  Pin: tests/flow-designer-actions.test.ts
+       'applyUpdateNode patches matching id' (decides a
+       name patch lands on the matching node);
+       tests/adapters-flow-mutations.test.ts 'putFlow
+       persists every FlowSaveShape field' (decides a
+       flow save survives a fresh read, checked here by
+       the flow's own name and node/edge counts — not a
+       node's own name, which no test asserts
+       post-reread; see Unpinned but pinnable);
+       exploratory — the live immediate canvas-label
+       update and the 800ms debounce timing
+- [ ] **AA30** Double-click the edge between start and
+  "Data Capture". PASS: no properties panel opens — the
+  outgoing edge from Create is intentionally not
+  interactive. The edge has no name label visible on
+  the canvas, just a plain blue arrow.
+  Pin: exploratory — no CLI or browser test exercises
+       this double-click specifically
+- [ ] **AA31** Drag from "Data Capture"'s port into
+  empty canvas past 20 pixels to create a new middle
+  node; rename it "Review" via its properties panel.
+  Rename the new edge "submit". Drive the port-drag
+  with compositor mouse.
+  Pin: tests/flow-operations.test.ts
+       'performAddNodeAtPosition: returns node, edge,
+       selectId and centers on the point';
+       tests/flow-fsm-scenarios.test.ts 'port drag
+       far-drop emits add-node (AA27/AA31/F15)' (decides
+       the same far-drop add-node/auto-connect
+       mechanism for this second port-drag);
+       tests/flow-designer-actions.test.ts
+       'applyUpdateNode patches matching id' (decides
+       the "Review" node-rename mechanics);
+       tests/flow-designer-actions.test.ts
+       'applyUpdateEdge patches matching id' (decides
+       the "submit" edge-rename mechanics — a name
+       patch lands on the matching edge only);
+       exploratory — the live port-drag
+- [ ] **AA32** Hold Shift and drag from "Review" onto
+  "Data Capture". PASS: during the drag the preview
+  redraws as a dashed-orange curved bezier because a
+  forward path "Data Capture" → "Review" already
+  exists, and the reachability check recognises the
+  release would close a loop. Release to create the
+  cycle edge; rename it "needs revision". Hold Shift
+  and drag from "Review" onto "Archive". PASS: preview
+  is a solid-blue curved bezier (no return path).
+  Release to create the edge; rename it "approve".
+  Drive the shift-drag with compositor mouse.
+  Pin: tests/flow-cycle-edges.test.ts 'a back-edge to
+       an ancestor is a cycle edge' (decides
+       "Review"→"Data Capture" classifies as a cycle
+       edge given the existing forward path);
+       tests/flow-fsm-scenarios.test.ts 'shift-drag
+       from port onto different node emits add-edge
+       (AA32/F19)' (decides a shift-drag onto another
+       node emits exactly one add-edge and zero
+       add-node actions); tests/flow-operations.test.ts
+       'performAddEdge: success returns the new edge
+       and persists it' (decides a forward edge, e.g.
+       "Review"→"Archive", is added and persisted);
+       tests/flow-designer-actions.test.ts
+       'applyUpdateEdge patches matching id' (decides
+       the "needs revision" and "approve" edge-rename
+       mechanics); exploratory — the live
+       dashed-orange vs. solid-blue preview rendering
+- [ ] **AA33** In the flow header, set the "Record:"
+  dropdown to "Customer Profile" (Stark's seeded record
+  type, already bound to Customer Onboarding and
+  Lead-to-Close). Then in the "Data Capture" properties
+  panel, open the "Attributes" fieldset. Click the
+  "+ Add Attribute…" dropdown. PASS: the picker lists
+  available record attributes pre-defined in the bound
+  Record. Select an attribute (e.g. "Company Name").
+  PASS: the attribute appears in the attributes list
+  with mode (Editable / Read-only) and required toggles
+  plus a remove control.
+  Pin: tests/adapters-flow-records.test.ts
+       'putFlowRecord then getRecordForFlow round-trips
+       the binding' (decides the Record: dropdown's
+       binding persists); tests/flow-operations.test.ts
+       'performAddAttributeRef: appends a ref to the
+       single selected node' (decides the
+       attribute-ref write); exploratory — the picker
+       rendering and the mode/required-toggle UI only
+- [ ] **AA34** Add more attributes to "Data Capture":
+  select 2–3 attributes from the picker, each with a
+  distinct mode (Editable / Read-only) and required
+  toggle. PASS: all attributes appear in the list with
+  correct mode (Editable / Read-only) and toggle state.
+  Pin: tests/flow-operations.test.ts
+       'performAddAttributeRef: appends a ref to the
+       single selected node';
+       tests/flow-designer-actions.test.ts
+       'applyUpdateAttributeMode updates the one ref'
+       (decides a mode toggle lands on the matching
+       attribute ref); tests/flow-designer-actions.test.ts
+       'applyUpdateAttributeRequired flips the flag'
+       (decides a required toggle lands on the matching
+       attribute ref); exploratory — the live rendering
+       of distinct mode/toggle state across multiple
+       attributes
+- [ ] **AA35** Wait for auto-save (800ms debounce).
+  Navigate away and back. PASS: all nodes, edges, and
+  attributes persist.
+  Pin: tests/adapters-flow-mutations.test.ts 'putFlow
+       persists every FlowSaveShape field' (decides the
+       node/edge counts and the edge id survive a
+       save+reread — this fixture's nodes carry
+       `attributes: []`, so it decides nothing about
+       attribute refs); tests/flow-graph-relations.test.ts
+       'an added attribute is current with its payload'
+       (decides an added attribute ref's full payload —
+       attributeId, mode, isRequired — is current);
+       exploratory — the live 800ms debounce and the
+       navigate-away/back cycle
 
 ### AA10. Verify Dashboard
 
-- [ ] **AA36** Navigate to Dashboard. PASS:
-  gauge cards (Time, Cost, Impact) show
-  aggregated values. Serial: computed from
-  the seeded project data. Parallel: computed
-  from the entered project data.
-- [ ] **AA37** Header stats reflect data
-  counts (ideas, projects, flows). PASS:
-  counts are non-zero and match. Serial:
-  seeded Stark counts. Parallel: the entered
-  garden counts.
+- [ ] **AA36** Navigate to Dashboard. PASS: gauge cards
+  (Time, Cost, Impact) render aggregated values
+  computed from Stark's `approved` projects only.
+  AA22a's converted project does NOT appear — AA23
+  left it `under_review` and nothing later re-approves
+  it; AA24a's newly approved Market Sentiment Analyzer
+  does, if that held.
+  Pin: tests/adapters-dashboard.test.ts
+       'getDashboardGauges returns the three sibling
+       gauges'; tests/adapters-dashboard.test.ts
+       'getDashboardGauges sums approved projects only'
+       (decides which projects feed Time/Cost —
+       `approved` only, exactly why AA22a's project is
+       excluded); exploratory — the live rendered
+       values
+- [ ] **AA37** Header stats reflect data counts (ideas,
+  projects, flows). PASS: counts are ≥ Stark's seeded
+  totals plus this walk's mutations — Ideas ≥ 6,
+  Projects ≥ 17, Flows ≥ 5.
+  Pin: tests/adapters-dashboard.test.ts
+       'getDashboardStats labels Ideas, Projects,
+       Flows'; tests/adapters-dashboard.test.ts
+       'getDashboardStats counts seeded entities'
+       (decides the three counts reflect live
+       idea/project/flow rows); exploratory — the live
+       floor comparison
 
 ### AA11. Edit & Verify Cycle
 
-- [ ] **AA38** Edit idea #1: change title. Save,
-  navigate to ideas list, return to detail. PASS:
-  changed title persists. Serial: seeded
-  "AI-Powered Customer Segmentation". Parallel:
-  idea #1 from AA12.
-- [ ] **AA39** Edit project #1: change
-  description. Save, navigate away, return.
-  PASS: changed description persists. Serial:
-  seeded AI-Powered Customer Segmentation.
-  Parallel: the first converted project.
-- [ ] **AA40** Edit flow: navigate to flow
-  designer, rename a state (auto-saves).
-  Navigate away, return. PASS: changed state
-  name persists. Serial: a seeded flow (Layout
-  Test or Lead-to-Close). Parallel: the AA26
-  flow.
-- [ ] **AA41** Edit human member: navigate to a human
-  member's detail page, click Edit, change phone number,
-  Save. Navigate away, return. PASS: changed phone
-  persists.
+- [ ] **AA38** Edit the seeded "AI-Powered Customer
+  Segmentation" idea (AA12/AA13's subject): change
+  title. Save, navigate to ideas list, return to
+  detail. PASS: changed title persists.
+  Pin: tests/adapters-ideas.test.ts 'putIdea persists
+       changes'; exploratory — the live
+       navigate-away/return cycle
+- [ ] **AA39** Edit the project converted in AA22a:
+  change description. Save, navigate away, return.
+  PASS: changed description persists.
+  Pin: tests/adapters-projects.test.ts
+       'putProjectFields merges the camel patch onto
+       the stored row, keeping untouched columns';
+       exploratory — the live navigate-away/return
+       cycle
+- [ ] **AA40** Edit flow: navigate to the "Sentiment
+  Review" flow designer (AA26), rename the "Review"
+  state (auto-saves). Navigate away, return. PASS:
+  changed state name persists.
+  Pin: tests/flow-designer-actions.test.ts
+       'applyUpdateNode patches matching id' (decides a
+       name patch lands on the matching node — the
+       reducer mechanics behind this rename, not the
+       flow's OWN name editor, which
+       `applyUpdateFlowName` covers and this case never
+       touches); tests/adapters-flow-mutations.test.ts
+       'putFlow persists every FlowSaveShape field'
+       (decides a flow save survives a fresh read,
+       checked here by node/edge counts — no test
+       asserts a node's own name after a save+reread;
+       see Unpinned but pinnable); exploratory — the
+       live navigate-away/return cycle
+- [ ] **AA41** Edit human member: navigate to Jordan
+  Rivera's (AA5) detail page, click Edit, change phone
+  number, Save. Navigate away, return. PASS: changed
+  phone persists.
+  Pin: tests/members-detail-reduce.test.ts 'a changed
+       field returns the full four-field patch'
+       (decides an edited field produces a PII patch
+       carrying the new value); exploratory — the live
+       navigate-away/return cycle
 - [ ] **AA42** Edit organization: click the page-level
-  Edit button, change Domain in the overview card. Save,
-  navigate away, return. PASS: changed Domain persists.
+  Edit button, change Domain in the overview card.
+  Save, navigate away, return. PASS: changed Domain
+  persists.
+  Pin: tests/adapters-organizations.test.ts
+       'putOrganization then getOrganization
+       round-trips'; exploratory — the live
+       navigate-away/return cycle
 
 ---
 
