@@ -1865,13 +1865,16 @@ covering the D20–D24 run between them.
        badge renders per present status from the
        four candidates — active/in_review/sent_back/
        approved — proven here with two present, two
-       absent); exploratory — the live current status
-       mix, and that `promoted`/`archived` get no
-       badge even when present (source-confirmed at
-       `web-app/app/presenters/idea.ts:926`'s
-       hardcoded candidate list; no fixture in the
-       cited test uses a `promoted` or `archived`
-       idea, so this half is not test-decided)
+       absent); tests/presenter-idea.test.ts
+       'IdeaListPresenter.renderBadges omits promoted
+       and archived even when those ideas exist'
+       (decides promoted and archived never become
+       filter badges); tests/list-choreography.test.ts
+       'buildStateFilterBadges omits groups outside
+       order' (decides the shared helper honors
+       `order` as the candidate list, not as a
+       prefix); exploratory — the live current status
+       mix
 - [ ] **D26** Click a status badge. PASS: list filters to show only ideas with that status, badge is highlighted (`aria-pressed="true"`), others are dimmed (`data-dimmed="true"`); badges carry label + icon only (no per-badge count).
   Pin: tests/presenter-idea.test.ts
        'applyIdeaFilterToggle sets, replaces, and
