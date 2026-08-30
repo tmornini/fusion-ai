@@ -3293,87 +3293,140 @@ the prerequisite in time".
 
 ## R. Records
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
-Sidebar entry plus list/detail pages, attribute editor with
-constraint sub-editor, flow binding, per-node attribute
-panel, and the property-test gate.
-
-Owner agent: Agent-F2 (Phase 2). The property-test gate
-(R13–R14a) rides Agent-F2's own work orders, and the record
-CRUD mutates message-plane document/join families —
-`record-types` (+ nested attributes), `flows/:id/records`
-bindings, and `record-types/:id/instances` — disjoint from
-every other agent, so no write-domain collision.
-
 - [ ] **R1** Sidebar shows a Records entry; click navigates
   to `records/`. PASS: under the active org (Stark, org 1)
   the list renders Customer Profile; Project Brief is
   seeded under org 2 and is correctly hidden here.
-  Serial (A3 `--mock-data`, demo admin's active
-  organization Stark): Customer Profile visible;
-  Project Brief is org 2 and hidden. Parallel
-  (A3 `--test-plan-slices`): Customer
-  Profile and Account Review (the R21 subject;
-  never edit it).
+  Pin: exploratory — the sidebar entry, the live
+       navigation, and the org-scoped list contents
 - [ ] **R2** Click "Add Record" (desktop) / "New Record"
   (mobile) → navigates to a create page
   (`records/create.html`) with Name and Description
   fields (not a dialog). Type values, click "Create Record".
   PASS: new Record appears at the bottom of the list and the
   app navigates to its detail page.
+  Pin: tests/adapters-records.test.ts 'postRecordChange
+       create writes the row and the initial state
+       event'; exploratory — the create page's fields,
+       the live navigation, and the new card's position
+       at the bottom of the list
 - [ ] **R3** Open Customer Profile detail. PASS: read mode
   shows name + description + attribute table sorted by
   sort_order + Bound flows (Customer Onboarding, Lead-to-
   Close) + Work orders using this Record list.
-  Serial (A3 `--mock-data`, demo admin's active
-  organization Stark): Bound flows are Customer
-  Onboarding and Lead-to-Close. Parallel (A3
-  `--test-plan-slices`): Bound flows list Customer
-  Onboarding only; work orders are `#r1`–`#r3`.
+  Pin: tests/adapters-record-attributes.test.ts
+       'getRecordAttributesByRecord returns rows in
+       sortOrder ascending';
+       tests/adapters-flow-records.test.ts
+       'getFlowSummariesForRecord returns id and name
+       for every flow bound to a record';
+       tests/adapters-flow-records.test.ts
+       'getWorkOrdersForRecord walks flow_records →
+       flow_work_orders → work_orders correctly for a
+       record bound to multiple flows';
+       tests/mock-data-records.test.ts 'at least one
+       seeded Record is bound to multiple flows via
+       flow_records'; exploratory — the rendered
+       read-mode layout
 - [ ] **R4** Click Edit. PASS: edit mode renders name input,
   description textarea, and one editable row per attribute
   with name input, type picker, options textarea (for
   select-typed), and constraint editor.
+  Pin: exploratory — the whole edit-mode form;
+       `RecordDetailEditPresenter` carries no CLI test
+       today
 - [ ] **R5** Type a name into the pending-attribute input,
   then click "+ Add Attribute". PASS: a row is appended with
   default type `text`; an empty-name click is a no-op.
+  Pin: exploratory — the live add-attribute interaction
+       and the empty-name no-op
 - [ ] **R6** Change a text attribute to `select`. PASS: the
   options textarea appears; the constraint picker offers
   only kinds applicable to `select` (i.e. nothing in the
   toy).
-- [ ] **R6a** Add an attribute and change its type to `radio`. PASS: the type picker offers `radio` alongside text/number/select/date/checkbox, and selecting it reveals the same "Options (one per line)" textarea that `select` shows; `checkbox` and the scalar types show no options field.
-- [ ] **R6b** Give a `select` or `radio` attribute zero options and click Save. PASS: the save is rejected — a "Failed to save Record" toast appears and the editor stays open, because the API validator requires at least one option for choice fields (the gate, not merely a disabled button). Add one or more options and Save; PASS: it persists and read mode shows the attribute's type.
+  Pin: exploratory — the live type-change reveal and
+       the constraint picker's filtered options
+- [ ] **R6a** Add an attribute and change its type to
+  `radio`. PASS: the type picker offers `radio` alongside
+  text/number/select/date/checkbox, and selecting it
+  reveals the same "Options (one per line)" textarea that
+  `select` shows; `checkbox` and the scalar types show no
+  options field.
+  Pin: exploratory — the type picker's live options and
+       the textarea reveal
+- [ ] **R6b** Give a `select` or `radio` attribute zero
+  options and click Save. PASS: the save is rejected — a
+  "Failed to save Record" toast appears and the editor
+  stays open, because the API validator requires at least
+  one option for choice fields (the gate, not merely a
+  disabled button). Add one or more options and Save;
+  PASS: it persists and read mode shows the attribute's
+  type.
+  Pin: tests/validators.test.ts
+       'validateRecordAttributeEntity rejects a select
+       with zero options'; tests/validators.test.ts
+       'validateRecordAttributeEntity rejects a radio
+       with zero options'; exploratory — the toast text,
+       the editor staying open, and the live persisted
+       save
 - [ ] **R7** Add a `regex` constraint on a text attribute,
   set the pattern. PASS: constraint row appears with the
   pattern editable; the picker no longer offers `regex`
   for that attribute (toy implementation may always offer
   it — accept).
+  Pin: exploratory — the constraint editor's row and
+       the picker's post-add filtering
 - [ ] **R8** Open record edit. PASS: each
   `.record-attribute-edit-row` has no
   `.drag-handle`. Attribute drag-reorder is
   later work (TODO.md), not a driver limit.
   Do not score BLOCKED. Do not attempt a
   synthetic DataTransfer here.
+  Pin: exploratory — the absence of a drag-handle on
+       each attribute row
 - [ ] **R9** Remove an attribute via its trash button.
   PASS: row removed from the editor; not persisted until
   Save.
+  Pin: exploratory — the live remove interaction and
+       the unsaved-editor state
 - [ ] **R10** Click Save. PASS: returns to read mode; the
   list reflects the new attribute set and constraint
   summaries.
-- [ ] **R10a** Save a Record edit and watch the toast. PASS: exactly one "Record saved" toast appears — never a stack — and re-entrant saves are guarded (clicking Save repeatedly does not fire multiple saves or stack toasts). NOTE: the original 5-stacked-toast defect needed a slow save to open the race; the multi-attribute write is now a single batched table write, so the window is effectively closed and exercising the race deterministically may require artificially throttling storage.
+  Pin: tests/adapters-records.test.ts 'postRecordChange
+       edit replaces removed attributes with new ones';
+       tests/adapters-records.test.ts 'putRecord
+       overwrites an existing row'; exploratory — the
+       live return to read mode and the rendered
+       constraint summaries
+- [ ] **R10a** Save a Record edit and watch the toast.
+  PASS: exactly one "Record saved" toast appears — never
+  a stack — and re-entrant saves are guarded (clicking
+  Save repeatedly does not fire multiple saves or stack
+  toasts). NOTE: the original 5-stacked-toast defect
+  needed a slow save to open the race; the multi-attribute
+  write is now a single batched table write, so the window
+  is effectively closed and exercising the race
+  deterministically may require artificially throttling
+  storage.
+  Pin: exploratory — the live toast count and the
+       re-entrant-save guard
 - [ ] **R11** Open a flow (Customer Onboarding). PASS: flow
   header shows `Record: Customer Profile` dropdown
   selected.
+  Pin: tests/adapters-flow-records.test.ts 'putFlowRecord
+       then getRecordForFlow round-trips the binding';
+       exploratory — the painted header dropdown and its
+       selection
 - [ ] **R12** Open the Data Capture node panel. PASS: each
   ref row shows attribute name + Editable/Read-only picker
   + Required checkbox + remove (×) button; picker dropdown
   lists unreferenced attributes only.
+  Pin: exploratory — the whole node-panel ref-row
+       rendering; `buildAttributeRefRow` carries no CLI
+       test today
 - [ ] **R13** From workbox, open the gate-violation work
-  order (`#gate0001`). PASS: current node is Data Capture;
+  order (`#gate0001`, `eOlNZpGQfmCdpSFWXGkzFQ`) at Data
+  Capture, unbound. PASS: current node is Data Capture;
   the action screen shows Company Name and Contact Email
   inputs (fillable path); empty submit is blocked — the
   page-module empty-required pre-check toasts "Please fill
@@ -3381,39 +3434,50 @@ every other agent, so no write-domain collision.
   gate (`validateRecordTransition` on CURRENT-node refs)
   is the durable covenant; CLI pins it; constraint
   failures still surface via
-  `WorkboxDetailPresenter.buildViolations` banner.
-  Serial (A3 `--mock-data`): the work order is
-  `#gate0001` (`eOlNZpGQfmCdpSFWXGkzFQ`) at
-  Data Capture, unbound. Only WO01 (`a7c3e1f9`
-  / `xqcXYHXBJJXcLkRYkRngKA`) is
-  instance-bound. Do not bind — leftover
-  stays unbound so empty submit still toasts
-  "Please fill all required attributes"
-  (the seeded Customer Profile instance is
-  Acme, values already set). Parallel (A3
-  `--test-plan-slices`): the work order is
-  `#r1` (already bound).
+  `WorkboxDetailPresenter.buildViolations` banner. Only
+  WO01 (`a7c3e1f9`) is instance-bound — do not bind
+  `#gate0001` here (the seeded Customer Profile instance,
+  Acme, already has values set), or the empty-submit toast
+  can no longer be observed.
+  Pin: tests/adapters-record-transitions.test.ts
+       'validateRecordTransition returns a required
+       violation when the CURRENT node has a required
+       attribute with no stored value';
+       tests/presenter-workbox-detail.test.ts
+       'buildViolations names each failed attribute,
+       phrasing range bounds by attribute type';
+       tests/mock-data-records.test.ts 'the
+       gate-violation work order has a current node
+       with at least one required attribute with a
+       null stored value'; exploratory — the action
+       screen's rendered inputs and the pre-check
+       toast text
 - [ ] **R14** Fill Company Name + Contact Email, click
   submit. PASS: transition succeeds; work order advances
   to Review (does NOT demand Reviewer Notes — that is
-  current-node only when leaving Review).
-  Serial (A3 `--mock-data`): the work order is
-  `#gate0001`. If still unbound, bind the
-  seeded Customer Profile instance via the
-  bind picker (existing instance, not mint),
-  then fill and submit. Parallel (A3
-  `--test-plan-slices`): the work order is
-  `#r1` (already bound). Bind picker "No
-  instances available" or toast "work order
-  has no instance binding" with this slice's
-  own admin chip is FAIL. Clear this
-  alias's cookies, sign in as this slice's
-  admin, wait ≥14s, then assert. If the
-  chip names another section's admin:
-  FAIL (wrong alias). No
-  mint+bind of a new instance. No extra
-  seed row.
-- [ ] **R14a** When a node references a `radio`-typed Record attribute, the workbox work-order detail renders it as a radio group — one `<input type="radio">` per option, all sharing the attribute name so only one is selectable — rather than a dropdown; selecting an option and transitioning records that value. NOTE: seeded mock data predates `radio`, so add a radio attribute, reference it Editable on a working node, and create a work order to exercise this.
+  current-node only when leaving Review). The work order
+  is still `#gate0001`; if it is still unbound, bind the
+  seeded Customer Profile instance (Acme) via the bind
+  picker — an existing instance, never a minted one.
+  Pin: tests/adapters-record-transitions.test.ts
+       'validateRecordTransition does not require
+       TARGET-node attributes when the current node is
+       clean'; exploratory — the live fill, submit, and
+       bind-picker interactions
+- [ ] **R14a** When a node references a `radio`-typed
+  Record attribute, the workbox work-order detail renders
+  it as a radio group — one `<input type="radio">` per
+  option, all sharing the attribute name so only one is
+  selectable — rather than a dropdown; selecting an option
+  and transitioning records that value. NOTE: seeded mock
+  data predates `radio`, so add a radio attribute,
+  reference it Editable on a working node, and create a
+  work order to exercise this.
+  Pin: tests/presenter-workbox-detail.test.ts
+       'buildAttributeInputHtml renders a radio group
+       with one collectable input per option';
+       exploratory — the live selection and the
+       transition that records the value
 - [ ] **R15** Open the R2-created Record's detail
   page — never Customer Profile (R16–R20 read it).
   Click Archive; confirm in the house dialog
@@ -3424,43 +3488,109 @@ every other agent, so no write-domain collision.
   chip appears beside Active, and toggling the
   Active chip hides the card. There are no numeric
   counts on the chips.
+  Pin: tests/presenter-record-detail.test.ts 'an
+       archived record hides Archive and reads
+       Archived'; tests/adapters-records.test.ts
+       'postRecordStateChange records a new event
+       without changing non-lifecycle entity fields
+       on GET'; exploratory — the toast, the
+       records/ card and chip rendering, and the
+       chip's live toggle
 - [ ] **R16** Open Customer Profile detail. PASS: an
-  Instances section lists instances (id + readable values)
-  or "No instances yet", with a "New instance" control.
-  (mutation domain: `records` / instances under the type —
-  Agent-F2 exclusive.)
+  Instances section lists the seeded instances (id +
+  readable values) — at least one seeded instance
+  (Company Name "Acme Corp") — with a "New instance"
+  control. The empty "No instances yet" state is a
+  real UI branch the CLI pin below decides; Customer
+  Profile is never empty on this seed, so the
+  explorer will not see it live.
+  Pin: tests/presenter-record-instances.test.ts
+       'empty instances section shows empty state';
+       tests/presenter-record-instances.test.ts
+       'list renders instance id and projected
+       values'; exploratory — the live section's
+       rendering on Customer Profile
 - [ ] **R17** Click "New instance". PASS: an identifier is
   minted, PATCH creates an empty instance (201, etag
   consumed; the adapter is `putRecordInstance`, the wire
   verb is PATCH), and the section enters edit mode with
   writable attribute inputs (readable non-writable
   attributes render read-only; unreadable omitted).
+  Pin: tests/adapters-record-instances.test.ts 'instance
+       create → list → patch → 412 → retry → delete →
+       history'; tests/presenter-record-instances.test.ts
+       'edit form: writable input, readonly text,
+       unreadable omitted' (the writable/readonly
+       halves); tests/presenter-record-instances.test.ts
+       'projectInstanceFields drops unreadable and
+       marks write vs read' (the omission itself — the
+       edit-form test's own "unreadable omitted"
+       assertion never supplies an unreadable field, so
+       it cannot fail); exploratory — the live click
+       and the minted identifier
 - [ ] **R18** Fill a writable field and click Save. PASS:
   `patchRecordInstance` succeeds with the held etag; the
   section returns to list mode and the new value appears.
+  Pin: tests/adapters-record-instances.test.ts 'instance
+       create → list → patch → 412 → retry → delete →
+       history'; exploratory — the live return to list
+       mode and the rendered new value
 - [ ] **R19** Concurrent-tab 412 recovery: open the same
   instance editor in two tabs; save a different value in
   tab B; then save in tab A. PASS: tab A surfaces "This
   instance changed underneath you — values refreshed;
   re-apply your edit", re-GETs fresh values + etag, and
   stays in edit so the operator can re-apply.
+  Pin: tests/adapters-record-instances.test.ts 'instance
+       create → list → patch → 412 → retry → delete →
+       history'; tests/presenter-record-instances.test.ts
+       'edit form surfaces 412 conflict notice' (decides
+       that a supplied notice renders with warning tone
+       while staying in edit — the test hardcodes its
+       own literal rather than importing
+       `INSTANCE_CONFLICT_NOTICE`, so it does not decide
+       the exact wording); exploratory — the live
+       two-tab race, the re-apply flow, and the notice's
+       exact production text
 - [ ] **R20** Click Delete on an instance; confirm in the
   house dialog (`data-dialog-open` /
   `confirm-delete-instance`). PASS: instance disappears
   from the list; reopening the address is not available
   (spent id).
-- [ ] **R21** ACL projection (member vs admin) on
-  Account Review. As the R admin, click New instance:
-  Owner Notes and Credit Limit both render
-  `data-access="writable"`. Sign in as the R
-  `member_*` credentials, open New instance: Owner
-  Notes renders `data-access="readonly"`; Credit
-  Limit is absent (`read_roles: ['admin']`). PASS:
-  projection matches held roles; no ACL editing UI on
-  this page (ACLs are set only by
-  `PUT …/attributes/:id`). Serial (A3 `--mock-data`):
-  set the roles by the nested PUT on a record no case
-  edits.
+  Pin: tests/adapters-record-instances.test.ts 'instance
+       create → list → patch → 412 → retry → delete →
+       history'; exploratory — the live confirm dialog
+       and the list's removal
+- [ ] **R21** ACL projection (member vs admin). The New
+  instance form's per-attribute access
+  (`data-access="writable"` / `"readonly"` / omitted)
+  follows each attribute's `read_roles`/`write_roles`,
+  with admin bypassing both. The mock seed sets no Record
+  attribute's ACL away from the default
+  (`['member','admin']` for both read and write), so on
+  Customer Profile every attribute already renders
+  identically for admin and member. As the demo admin,
+  click New instance on Customer Profile: every field
+  renders `data-access="writable"`. Sign in as Sarah Chen
+  (`sarah.chen@company.com`, a Stark member) and open New
+  instance: PASS if every field still renders
+  `data-access="writable"` (the default-ACL case). Setting
+  a restricted ACL (e.g. `read_roles: ['admin']`) is
+  `PUT …/attributes/:id` only — no UI reaches it, and the
+  explorer may not script the API — so the readonly/absent
+  branches are not walk-driveable; BLOCKED (reason: no
+  ACL-editing UI, API-only write) is correct if attempted,
+  and the CLI pin below is the sole record of that branch.
+  Pin: tests/presenter-record-instances.test.ts
+       'projectInstanceFields drops unreadable and
+       marks write vs read';
+       tests/presenter-record-instances.test.ts
+       'projectInstanceFields: admin bypasses ACL';
+       tests/adapters-record-attributes.test.ts
+       'getRecordAttributesByRecord maps storage rows
+       to the camelCase domain shape'; exploratory —
+       the live default-ACL comparison across the two
+       sign-ins
 
 ## J. Teardown
 
