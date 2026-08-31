@@ -3,7 +3,7 @@
 // ./postgres-seed.
 // One mint process: do not run two of these.
 
-import { fileURLToPath } from 'node:url';
+import { fromFileUrl } from '@std/path';
 import { BackedDbAdapter } from '../api/db-backed.ts';
 import { PostgresBackend } from
     '../api/backend-postgres.ts';
@@ -27,6 +27,8 @@ import {
     scryptHash,
     scryptDerive,
 } from './scrypt-hash.ts';
+
+const enc = new TextEncoder();
 
 export {
     STATEMENT_TIMEOUT_MS,
@@ -132,10 +134,10 @@ export async function boot(
 function installSigterm(
     close: () => Promise<void>,
 ): void {
-    process.once('SIGTERM', () => {
+    Deno.addSignalListener('SIGTERM', () => {
         void close().then(
-            () => process.exit(0),
-            () => process.exit(1),
+            () => Deno.exit(0),
+            () => Deno.exit(1),
         );
     });
 }
@@ -145,16 +147,18 @@ export async function main(
     args: readonly string[],
 ): Promise<void> {
     const running = await boot(
-        (name) => process.env[name],
+        (name) => Deno.env.get(name),
         args,
-        fileURLToPath(siteRoot),
+        fromFileUrl(siteRoot),
     );
-    process.stdout.write(JSON.stringify({
-        at: new Date().toISOString(),
-        level: 'info',
-        message: 'listening',
-        port: running.port,
-    }) + '\n');
+    Deno.stdout.writeSync(enc.encode(
+        JSON.stringify({
+            at: new Date().toISOString(),
+            level: 'info',
+            message: 'listening',
+            port: running.port,
+        }) + '\n',
+    ));
     installSigterm(() => running.close());
     // Returning would Deno.exit the compiled binary.
     await new Promise<never>(() => {});
