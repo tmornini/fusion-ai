@@ -75,6 +75,7 @@ Deno.exit(await dispatch(
 ENTRY
 
 deno compile --frozen --exclude-unused-npm \
+    --config "$ROOT/deno.json" \
     --include "$BUILD_DIR/site" \
     --allow-net \
     --allow-env=POSTGRES_URL,PGSSL,PGSSLNEGOTIATION,PGIDLE_TIMEOUT,\
