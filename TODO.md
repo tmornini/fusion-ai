@@ -1224,6 +1224,16 @@ Off the critical path; each with its oracle.
   `invitations/index.html` at next boot (TEST-PLAN
   B25–B29 driven live); restores B28's original
   "restore the deleted membership row" branch
+- The browser fence is now a per-file contingency, not a
+  hard switch. Deno's npm-interop unlocks ambient Node
+  globals for any file whose own transitive graph reaches
+  an `npm:` specifier, so a `web-app/` or `shared/` module
+  that gains one silently reopens the fence for real
+  files. `tests/browser-fence.test.ts` checks a
+  hermetically isolated file and cannot see that; the
+  retired `types: []` project could not miss it. Oracle: a
+  test asserting no `web-app/` or `shared/` module's
+  `deno info` graph contains an `npm:` specifier.
 
 ## Sequencing
 
