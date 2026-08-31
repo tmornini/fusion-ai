@@ -491,6 +491,9 @@ export async function signIn(
 // legitimate wait (the 60s page:ready) twice over, so
 // an internal timeout fires first and reports itself
 // by name. deno test has no per-test timeout flag.
+// The race wraps startOrigin, newPage, signIn, the
+// body, and cleanup: dispose on a dead socket must
+// not pin withAdminPage's await.
 export const TEST_BODY_TIMEOUT_MS = 120_000;
 
 export async function withTimeout<T>(
@@ -519,23 +522,25 @@ export async function withAdminPage(
     browser: Browser,
     fn: (page: Page, origin: Origin) => Promise<void>,
 ): Promise<void> {
-    const origin = await startOrigin();
-    const page = await browser.newPage();
-    try {
-        await signIn(page, origin, ADMIN_EMAIL);
-        await withTimeout(fn(page, origin), 'withAdminPage');
-    } finally {
-        // disposeBrowserContext closes every target in
-        // the context, so page.close() is redundant —
-        // and a redundant reject would strand both the
-        // releases below. Nest them so the listener
-        // closes even if the context does not.
+    await withTimeout((async () => {
+        const origin = await startOrigin();
+        const page = await browser.newPage();
         try {
-            await browser.disposeContext(page.contextId);
+            await signIn(page, origin, ADMIN_EMAIL);
+            await fn(page, origin);
         } finally {
-            await origin.close();
+            // disposeBrowserContext closes every target in
+            // the context, so page.close() is redundant —
+            // and a redundant reject would strand both the
+            // releases below. Nest them so the listener
+            // closes even if the context does not.
+            try {
+                await browser.disposeContext(page.contextId);
+            } finally {
+                await origin.close();
+            }
         }
-    }
+    })(), 'withAdminPage');
 }
 
 // A bounded negative assertion: the expression keeps

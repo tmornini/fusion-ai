@@ -38,6 +38,7 @@ export FUSION_ANGLE_STATIC_ROOT="$BUNDLE"
 
 # Per-test bound lives in tests/browser/fixtures.ts
 # (withTimeout). deno test has no per-test timeout flag.
+# --allow-env is unscoped: Chrome spawn copies the env bag.
 TZ=UTC deno test --frozen --no-check \
     --allow-env --allow-read --allow-write \
     --allow-net --allow-run \
