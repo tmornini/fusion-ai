@@ -28,3 +28,11 @@ Object.defineProperty(globalThis, 'localStorage', {
     writable: true,
     configurable: true,
 });
+
+// Force module scope: this file and
+// session-storage-stub.ts both declare a top-level
+// `store` with no import/export of their own, so
+// without this, tsc's default module detection treats
+// both as one shared global script and rejects the
+// second `store` as a redeclaration.
+export {};
