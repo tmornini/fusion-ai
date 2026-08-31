@@ -54,6 +54,7 @@ import {
     DEFAULT_BUDGET_SIGMAS,
     MEASURE_DEMO_EMAIL,
     MEASURE_SEED_COMMAND,
+    MEASURE_SERVER_ENTRY,
     isVisualizeOnly,
     lastJsonLogMessage,
     measureSeedArgs,
@@ -530,7 +531,7 @@ async function main(): Promise<void> {
             }
 
             // 2. Seed via ./postgres-seed, then spawn
-            //    node server.mjs
+            //    ./fusion-angle serve
             if (localServe === null) {
                 throw new Error(
                     'missing required env POSTGRES_URL',
@@ -593,11 +594,11 @@ async function main(): Promise<void> {
             const port = await freePort();
             baseUrl = `http://127.0.0.1:${port}`;
             process.stderr.write(
-                `Starting node server.mjs on ${baseUrl}`
+                `Starting ${MEASURE_SERVER_ENTRY} serve on ${baseUrl}`
                 + ' …\n',
             );
             serverProc = spawn(
-                'node',
+                MEASURE_SERVER_ENTRY,
                 measureServerArgs(),
                 {
                     cwd: buildDir ?? undefined,
