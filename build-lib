@@ -67,16 +67,23 @@ bundle_client() {
         web-app/app/styles/utilities.css \
         web-app/app/styles/responsive.css \
         web-app/app/styles/command-palette.css \
-        | npx --no-install esbuild --loader=css --minify \
-        > "$dest/assets/styles.css"
+        > "$dest/styles.concat.css"
+
+    deno bundle --frozen --minify \
+        --external '*.woff2' \
+        -o "$dest/assets/styles.css" \
+        "$dest/styles.concat.css"
+
+    rm -f "$dest/styles.concat.css"
 
     emitted "Styles created" "$dest/assets/styles.css"
 
     for f in web-app/app/styles/pages-*.css; do
         [ -f "$f" ] || continue
         name=$(basename "$f" .css)
-        npx --no-install esbuild --minify "$f" \
-            --outfile="$dest/assets/$name.css"
+        deno bundle --frozen --minify \
+            --external '*.woff2' \
+            -o "$dest/assets/$name.css" "$f"
         emitted "Styles created" "$dest/assets/$name.css"
     done
     cp web-app/assets/*.woff2 "$dest/assets/"
