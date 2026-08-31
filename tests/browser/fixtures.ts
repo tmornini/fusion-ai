@@ -482,6 +482,39 @@ export async function signIn(
     );
 }
 
+// A dead CDP socket strands every in-flight send —
+// CdpClient never rejects its pending map on close.
+// ./test-browser gates ./crank, where a hang is
+// strictly worse than a failure: a failure names the
+// test, a hang names nothing and takes the whole
+// checkpoint with it. 120s clears the largest single
+// legitimate wait (the 60s page:ready) twice over, so
+// an internal timeout fires first and reports itself
+// by name. deno test has no per-test timeout flag.
+export const TEST_BODY_TIMEOUT_MS = 120_000;
+
+export async function withTimeout<T>(
+    work: Promise<T>,
+    name: string,
+    timeoutMs = TEST_BODY_TIMEOUT_MS,
+): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const bound = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+            reject(new Error(
+                `${name} timed out after ${timeoutMs}ms`,
+            ));
+        }, timeoutMs);
+    });
+    try {
+        return await Promise.race([work, bound]);
+    } finally {
+        if (timer !== undefined) {
+            clearTimeout(timer);
+        }
+    }
+}
+
 export async function withAdminPage(
     browser: Browser,
     fn: (page: Page, origin: Origin) => Promise<void>,
@@ -490,7 +523,7 @@ export async function withAdminPage(
     const page = await browser.newPage();
     try {
         await signIn(page, origin, ADMIN_EMAIL);
-        await fn(page, origin);
+        await withTimeout(fn(page, origin), 'withAdminPage');
     } finally {
         // disposeBrowserContext closes every target in
         // the context, so page.close() is redundant —
