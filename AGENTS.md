@@ -277,6 +277,9 @@ type-only `import type … from 'node:fs'` is enough.
 is `process.env.HOME`. Nothing under `web-app/` is
 type-fenced against `process` today, and `Deno.*` never
 was: `deno.ns` sits in the lib array.
+`tests/browser-fence.test.ts` checks a hermetically
+isolated file, so it passes whatever the real property
+is — a green run is not evidence of a fence.
 
 The browser is what catches a stray `process` or `Deno.*`
 in client code now — a runtime `ReferenceError` that
