@@ -20,7 +20,9 @@ emitted() {
 
 bundle_client() {
     local dest="$1"
-    node --strip-types web-app/app/compose.ts "$dest"
+    deno run --frozen --allow-read \
+        --allow-write="$dest" \
+        web-app/app/compose.ts "$dest"
 
     mkdir -p "$dest/assets"
     npx --no-install esbuild \
