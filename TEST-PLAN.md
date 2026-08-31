@@ -256,22 +256,26 @@ them separately. Abort on any AT red.
   Postgres-free.
   Pin: exploratory — the command is its own witness
 - [ ] **AT5** Crank runs `./test-browser` after AT4 and
-  before `./build --no-zip`. It bundles the client into
-  `$TMPDIR` and runs `tests/browser/*.test.ts` serially
-  against an in-process origin on the memory backend,
-  one Chrome browser context per test. Needs Chrome
-  (`CHROME` or `CHROME_DEBUG_URL`). PASS: exits 0,
-  `fail 0`. `./test-all` runs AT1–AT3 then AT5.
+  before `./build --no-zip`. It bundles the client with
+  `deno bundle` into `$TMPDIR` and runs `TZ=UTC deno
+  test --frozen --no-check --allow-env --allow-read
+  --allow-write --allow-net --allow-run --preload
+  ./tests/hmac-test-key.ts --preload
+  ./tests/local-storage-stub.ts tests/browser/*.test.ts`
+  serially against an in-process origin on the memory
+  backend, one Chrome browser context per test. Needs
+  Chrome (`CHROME` or `CHROME_DEBUG_URL`). PASS: exits
+  0, `fail 0`. `./test-all` runs AT1–AT3 then AT5.
   Pin: exploratory — the command is its own witness
 
 ---
 
 ## A. Build & Setup
 
-- [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-angle-server-${SHA}.zip`.
+- [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-angle-${SHA}.zip`.
   Pin: exploratory — the exit code and the ZIP
        file appearing on disk
-- [ ] **A2** Unzip the A1 ZIP (or run `./build --no-zip /tmp/fusion-test/`). PASS: the temp dir contains `server.mjs`, `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 18 page directories (`api-documentation`, `auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `identities`, `identity-providers`, `identity-tokens`, `invitations`, `landing`, `members`, `not-found`, `organization`, `projects`, `records`, `workbox`) with 29 HTML page files (including `api-documentation/index.html`, `flows/stats.html`, `records/detail.html`, `identities/index.html`, `identities/detail.html`, `identity-providers/index.html`, `identity-tokens/index.html`, and `invitations/index.html`), plus root `index.html`. Verb/status rooms under `api-documentation/` are generated, not PAGE_REGISTRY pages — do not count them as the 29.
+- [ ] **A2** Unzip the A1 ZIP (or run `./build --no-zip /tmp/fusion-test/`). PASS: the temp dir contains the `fusion-angle` executable and `site/` with `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 18 page directories (`api-documentation`, `auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `identities`, `identity-providers`, `identity-tokens`, `invitations`, `landing`, `members`, `not-found`, `organization`, `projects`, `records`, `workbox`) with 29 HTML page files (including `api-documentation/index.html`, `flows/stats.html`, `records/detail.html`, `identities/index.html`, `identities/detail.html`, `identity-providers/index.html`, `identity-tokens/index.html`, and `invitations/index.html`), plus root `index.html`. Verb/status rooms under `api-documentation/` are generated, not PAGE_REGISTRY pages — do not count them as the 29.
   The 29 are the `PAGE_REGISTRY` HTML files; do
   **not** count root `index.html` inside the 29
   (it stays the separate "plus root `index.html`");
@@ -280,10 +284,10 @@ them separately. Abort on any AT red.
        HTML page files including the api-documentation
        index'; exploratory — that a real `./build` run
        actually emits those 29 files (the eight named
-       above included) into the artifact, the 18
-       directories, `server.mjs`, `assets/app.js`,
-       `assets/styles.css`, the fonts, and the
-       generated verb/status rooms
+       above included) into `site/`, the 18
+       directories, the `fusion-angle` executable,
+       `site/assets/app.js`, `site/assets/styles.css`,
+       the fonts, and the generated verb/status rooms
 - [ ] **A3** `./crank --mock-data 8080`. Crank
   validates, mints secrets, starts postgres
   only, runs `./test-postgres`, `./build
@@ -5877,8 +5881,8 @@ document order with the rest of this section.
 - [ ] **K8** Empty state: stop the A3 process.
   `./postgres-wipe --postgres local` then
   `./postgres-seed --postgres local --bootstrap` then
-  start `node server.mjs`. Sign in with the stdout admin
-  credential. Open Organization. PASS: the empty-state
+  start `./fusion-angle serve`. Sign in with the stdout
+  admin credential. Open Organization. PASS: the empty-state
   copy "No objectives yet. Add one to get started."
   renders (bootstrap seeds org 1 with no objectives).
   Restore the mock garden by stopping again,
@@ -6616,7 +6620,7 @@ them after K8, once the explorer has returned.
        absence on disk after teardown
 - [ ] **J3** Verify the ZIP file remains on
   `~/Desktop` for archival. PASS:
-  `fusion-angle-server-${SHA}.zip` exists.
+  `fusion-angle-${SHA}.zip` exists.
   Pin: exploratory — the ZIP file's presence on disk
 
 ## SV. Server (Node + Postgres)
