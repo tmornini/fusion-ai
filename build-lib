@@ -25,14 +25,13 @@ bundle_client() {
         web-app/app/compose.ts "$dest"
 
     mkdir -p "$dest/assets"
-    npx --no-install esbuild \
-        web-app/app/server-core.ts \
-        --bundle \
+    deno bundle --frozen \
+        --platform browser \
+        --format iife \
         --minify \
         --keep-names \
-        --target=es2024 \
-        --format=iife \
-        --outfile="$dest/assets/app.js"
+        -o "$dest/assets/app.js" \
+        web-app/app/server-core.ts
 
     emitted "Server bundle created" \
         "$dest/assets/app.js"
@@ -40,21 +39,21 @@ bundle_client() {
     # Pre-app bootstrap scripts: extracted from former inline
     # <script> blocks so the page can run with a strict
     # Content-Security-Policy (script-src 'self').
-    npx --no-install esbuild web-app/app/theme-init.ts \
-        --bundle \
+    deno bundle --frozen \
+        --platform browser \
+        --format iife \
         --minify \
-        --target=es2024 \
-        --format=iife \
-        --outfile="$dest/assets/theme-init.js"
+        -o "$dest/assets/theme-init.js" \
+        web-app/app/theme-init.ts
 
     emitted "Bundle created" "$dest/assets/theme-init.js"
 
-    npx --no-install esbuild web-app/app/root-redirect.ts \
-        --bundle \
+    deno bundle --frozen \
+        --platform browser \
+        --format iife \
         --minify \
-        --target=es2024 \
-        --format=iife \
-        --outfile="$dest/assets/root-redirect.js"
+        -o "$dest/assets/root-redirect.js" \
+        web-app/app/root-redirect.ts
 
     emitted "Bundle created" "$dest/assets/root-redirect.js"
 
