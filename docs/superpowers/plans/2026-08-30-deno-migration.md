@@ -19,7 +19,7 @@ while every artifact stays Node. Part 2 replaces the ZIP of
 `package.json`. Part 3 ports `server/` from `node:http` to
 `Deno.serve`. Part 4 ports the seven Node-only modules under
 `web-app/app/` and `postgres-lib`'s eight inline programs.
-Part 5 converts 408 test files from `node:test` to
+Part 5 converts 409 test files from `node:test` to
 `Deno.test`. Part 6 is optional and opens only if its
 decision gate says so. Each part ends green: `./validate`,
 `./test-postgres`, and `./test-all` all pass before the next
@@ -51,7 +51,7 @@ git show 9620d38c:docs/superpowers/specs/\
 
 ## Global Constraints
 
-- **Base:** master at `e1cbeac9`. Ride
+- **Base:** master at `86b079e6`. Ride
   `.worktrees/2026-08-30-deno-migration`; never merge,
   never push (AGENTS.md § Worktrees). Subagents work in
   that worktree and never create their own.
@@ -60,21 +60,25 @@ git show 9620d38c:docs/superpowers/specs/\
   always named. The operator ruled 2.9.6 acceptable on
   2026-08-30. Specs 1 and 2 name 2.9.5 and are frozen, so
   this pin supersedes them.
-- **The oracle.** Measured at `e1cbeac9` under Node
-  v26.7.0, `./test`:
+- **The oracle.** Measured at `86b079e6` under Node
+  v26.8.1, `./test`:
 
   | Suite | tests | pass | fail | skipped | duration |
   |---|--:|--:|--:|--:|--:|
-  | `tests/*.test.ts` (TZ=UTC) | 3476 | 3469 | 0 | 7 | 17.2 s |
+  | `tests/*.test.ts` (TZ=UTC) | 3484 | 3477 | 0 | 7 | 16.2 s |
   | `tests/tz/*.test.ts` (Honolulu) | 8 | 8 | 0 | 0 | 0.16 s |
 
   Under Deno the skipped tests report as **ignored** and the
-  summary reads `ok | 3469 passed | 0 failed | 7 ignored`.
+  summary reads `ok | 3477 passed | 0 failed | 7 ignored`.
   A count that moves is a finding, never a rounding. Task 1
   re-measures and any later task that changes the counts
   must name which tests moved and why.
-  `./test-browser`'s ten files are green at `e1cbeac9` and
-  must stay green.
+  `./test-browser`'s ten files are green at `86b079e6` and
+  must stay green. Re-cut from `e1cbeac9` (3476 / 3469) on
+  2026-08-30: master advanced 20 commits, five of which add
+  8 tests and remove none; `skipped` is unchanged. The R6
+  family split is corrected too — it was miscounted, not
+  moved (`api-*` and `validators-*` total 113 at both).
 - **One concern per commit.** Subject one line, ≈50 chars,
   present-tense imperative, no body prose. Every commit
   message ends with exactly these two trailer lines:
@@ -155,7 +159,7 @@ it.
 | R3 | **Spec 3, the 500 body:** an explicit `onError` handler, never `Deno.serve`'s default. `http-server.test.ts` pins `{"error":"internal error"}` with `Cache-Control: no-store`; a framework default is not a covenant. | None. The explicit handler is strictly more controlled than the default. |
 | R4 | **Spec 3, the navigate tests:** `http-static-directory-index.test.ts` keeps `node:http` until Part 5. `Sec-*` is a forbidden request header name, so `fetch` cannot set `sec-fetch-mode`. Task 29 probes it; if Deno permits it, the change is Part 5's, not Part 3's. | One test file ports a part later than it could have. |
 | R5 | **Spec 4, `jsr:@std/path`:** adopt it — the repository's first `jsr:` dependency, pinned in the import map and `deno.lock`. `measure.ts` and `cdp-client.ts` do real path work (`join`, `dirname`, `resolve`, `extname`, `relative`); hand-rolled `URL` arithmetic for `relative` and `extname` is string code nobody asked for. | One dependency. Removing it means hand-rolling five helpers in one module. |
-| R6 | **Spec 5, codemod commits:** one commit per test family, each green. The spec recommends this. The families measured at `e1cbeac9` are `api-*` 109, `adapters-*` 50, `flow-*` 26, `presenter-*` 24, `http-*` 17, `drift-*` 16, `mock-*` 13, `derive-*` 13, `validators-*` 6, `pg-*` 6, `backend-*` 5, and 111 unprefixed. | Eleven review surfaces instead of one. Reversible by squashing. |
+| R6 | **Spec 5, codemod commits:** one commit per test family, each green. The spec recommends this. The families measured at `86b079e6` are `api-*` 108, `adapters-*` 50, `flow-*` 26, `presenter-*` 24, `http-*` 17, `drift-*` 16, `mock-*` 13, `derive-*` 13, `validators-*` 5, `pg-*` 6, `backend-*` 5, and 114 unprefixed. | Eleven review surfaces instead of one. Reversible by squashing. |
 | R7 | **Spec 5, `hmac-test-key.ts`:** survives as a preload. Converting 400 files to import it explicitly is churn against a preload that already works under both runtimes. | The preload stays where an explicit import would have been clearer. One later commit converts it. |
 | R8 | **Spec 6, whether at all:** not pre-committed. Task 56 is a decision gate with named criteria, run after Part 5. If it says no, this plan ends at Task 55 and the spec stays an outline. | None. The gate is the spec's own instruction. |
 | R9 | **TODO.md placement:** the migration appends as critical-path **item 13**, and one `## Sequencing` line records that it runs ahead of items 1–12. Items are NOT renumbered: `## Sequencing` cross-references items by number (`8 → 6`, `5 → 10`, `Item 3's token-at-rest hashing`), and inserting at position 1 would silently break all three. | The critical path reads in an order it is not executed in, corrected only by the Sequencing line. A renumber pass touching `## Sequencing` undoes it. |
@@ -299,18 +303,18 @@ measurement in this plan is against 2.9.6.
 Expected, and what the report must contain verbatim:
 
 ```
-ℹ tests 3476
-ℹ pass 3469
+ℹ tests 3484
+ℹ pass 3477
 ℹ fail 0
 ℹ skipped 7
-ℹ duration_ms 17210.856625      (yours will differ)
+ℹ duration_ms 16226.231      (yours will differ)
 ℹ tests 8
 ℹ pass 8
 ℹ fail 0
 ℹ skipped 0
 ```
 
-If `tests` is not 3476 or `pass` is not 3469, STOP and
+If `tests` is not 3484 or `pass` is not 3477, STOP and
 report: the tree moved since this plan was written, and the
 oracle in Global Constraints must be re-cut before any task
 proceeds.
@@ -388,14 +392,14 @@ Append after item 12, before the `## Later work` heading:
     deletes `package.json`; Spec 3 puts `server/` on
     `Deno.serve`; Spec 4 ports the seven Node-only
     modules under `web-app/app/` and `postgres-lib`'s
-    eight inline programs; Spec 5 moves 408 test files
+    eight inline programs; Spec 5 moves 409 test files
     to `Deno.test`; Spec 6 would replace
     `npm:postgres@3.4.9` with `jsr:@db/postgres`. The
     six specs are `docs/superpowers/specs/2026-08-21-deno-*`;
     the plan is
     `docs/superpowers/plans/2026-08-30-deno-migration.md`;
     the roadmap they inherit is `9620d38c`. Oracle: the
-    suite counts hold at every step — 3469 passing,
+    suite counts hold at every step — 3477 passing,
     7 ignored, `tests/tz/` 8, `./test-browser` ten files
     green.
 ```
@@ -1176,12 +1180,12 @@ time ./test 2>&1 | tail -20
 Expected, from Global Constraints:
 
 ```
-ok | 3469 passed | 0 failed | 7 ignored
+ok | 3477 passed | 0 failed | 7 ignored
 ```
 
 for the main suite, and `8 passed | 0 failed` for
 `tests/tz/`. Record the wall time — Task 15 puts it in
-AGENTS.md beside Node's 17.2 s.
+AGENTS.md beside Node's 16.2 s.
 
 **If any count differs from the oracle, STOP.** Name every
 test that moved. Do not weaken a test to reach the number:
@@ -1662,7 +1666,7 @@ paragraph (lines 67–70) with
 Name `./test` as `deno test --parallel` with the two
 preloads and `--no-check`, and both generator gates as
 `deno run`. Add the measured wall time from Task 9 beside
-Node's 17.2 s baseline.
+Node's 16.2 s baseline.
 
 - [ ] **Step 3: AGENTS.md — § `noUncheckedIndexedAccess`**
 
@@ -1775,7 +1779,7 @@ grep -c node validate test test-postgres \
   boot under Node (operator).
 - `./test-browser` still passes under Node — ten files
   green (operator, `!`).
-- The oracle holds: `3469 passed | 0 failed | 7 ignored`,
+- The oracle holds: `3477 passed | 0 failed | 7 ignored`,
   `tests/tz/` 8 passed. If Task 13 took branch 2b, the
   count is 3 lower and the controller has recorded the new
   oracle.
@@ -5305,7 +5309,7 @@ Operator, with `!`:
 
 **Spec:** `docs/superpowers/specs/2026-08-21-deno-test-idiom-design.md`
 
-The 408 test files speak Deno: `Deno.test` and
+The 409 test files speak Deno: `Deno.test` and
 `jsr:@std/assert` replace `node:test` and `node:assert`;
 per-test fixtures that restore replace module-level stubs;
 the resource and op sanitizers are on.
@@ -5318,16 +5322,16 @@ explicitly added (Tasks 17, 22, and possibly 21) or removed
 reason is a finding.
 
 **Ruling R6 applies:** one commit per family, each green.
-The families measured at `e1cbeac9`:
+The families measured at `86b079e6`:
 
 | Family | Files | Family | Files |
 |---|--:|---|--:|
-| `api-*` | 109 | `mock-*` | 13 |
+| `api-*` | 108 | `mock-*` | 13 |
 | `adapters-*` | 50 | `derive-*` | 13 |
-| `flow-*` | 26 | `validators-*` | 6 |
+| `flow-*` | 26 | `validators-*` | 5 |
 | `presenter-*` | 24 | `pg-*` | 6 |
 | `http-*` | 17 | `backend-*` | 5 |
-| `drift-*` | 16 | unprefixed | 111 |
+| `drift-*` | 16 | unprefixed | 114 |
 
 Plus `tests/tz/` (2) and `tests/browser/` (10).
 
@@ -5558,11 +5562,11 @@ Expected: the oracle, unchanged.
 
 ---
 
-### Task 47: Convert the 111 unprefixed files and `tests/tz/`
+### Task 47: Convert the 114 unprefixed files and `tests/tz/`
 
 **Files:**
 - Modify: every `tests/*.test.ts` not matched by a family
-  prefix (111), and `tests/tz/*.test.ts` (2)
+  prefix (114), and `tests/tz/*.test.ts` (2)
 
 **Interfaces:**
 - Consumes: Task 45's codemod.
@@ -5593,11 +5597,11 @@ ls tests/*.test.ts | grep -vE \
 wc -l "$TMPDIR/unprefixed.txt"
 ```
 
-Expected: 111.
+Expected: 114.
 
 - [ ] **Step 2: Convert in three batches of about 37**
 
-A 111-file diff is not a review surface. Three commits,
+A 114-file diff is not a review surface. Three commits,
 each green:
 
 ```bash
@@ -6154,7 +6158,7 @@ Expected: the oracle, no sanitizer diagnostics anywhere.
 { time ./test > /dev/null 2>&1 ; } 2>&1 | grep real
 ```
 
-Compare against Part 1's Deno figure and Node's 17.2 s
+Compare against Part 1's Deno figure and Node's 16.2 s
 baseline. Task 55 documents all three.
 
 - [ ] **Step 5: Commit**
@@ -6187,7 +6191,7 @@ MSG
 
 - **AGENTS.md § Gates:** the suite is `Deno.test` with
   `@std/assert`, the sanitizers on, two preloads, and the
-  two TZ passes. Record the wall time beside Node's 17.2 s
+  two TZ passes. Record the wall time beside Node's 16.2 s
   and Part 1's compat figure — three numbers, all measured.
 - **AGENTS.md § Where things live:** `tests/` gains
   `tests/fixtures/`; say what it holds.
