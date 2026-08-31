@@ -2,19 +2,25 @@
 # Sourced by ./build and ./test-browser from the repo
 # root. Not a command. bundle_client composes the pages
 # and bundles the client into DEST; ./build owns the
-# clean-tree gate, server.mjs, and the ZIP.
+# clean-tree gate, the executable, and the ZIP.
 
 # Fail when the artifact is empty or absent; report its
 # size otherwise — one voice for every emitted artifact.
 emitted() {
     local label="$1" artifact="$2"
-    local name
+    local name rel prefix
     name=$(basename "$artifact")
     if [ ! -s "$artifact" ]; then
         echo "ERROR: $name is empty or missing" >&2
         exit 1
     fi
-    echo "$label: assets/$name" \
+    prefix="${dest:-${BUILD_DIR:-}}"
+    if [ -n "$prefix" ]; then
+        rel="${artifact#"$prefix"/}"
+    else
+        rel="$name"
+    fi
+    echo "$label: $rel" \
         "($(wc -c < "$artifact" | xargs) bytes)"
 }
 

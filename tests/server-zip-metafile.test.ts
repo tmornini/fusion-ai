@@ -40,7 +40,7 @@ function clientGraphHits(
 test('build emits one ZIP from the server-core entry', () => {
     assert.match(
         BUILD_SCRIPT,
-        /fusion-angle-server-\$\{SHA\}\.zip/,
+        /fusion-angle-\$\{SHA\}\.zip/,
     );
     assert.doesNotMatch(
         BUILD_SCRIPT,
@@ -114,7 +114,7 @@ test(
 test('build --no-zip help names crank', () => {
     assert.match(
         BUILD_SCRIPT,
-        /server-core \+ server\.mjs — for \.\/crank/,
+        /the fusion-angle executable — for \.\/crank/,
     );
     assert.doesNotMatch(
         BUILD_SCRIPT,
