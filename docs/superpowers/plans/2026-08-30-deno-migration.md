@@ -6,7 +6,7 @@
 > tracking. Ride this spec's worktree (AGENTS.md
 > § Worktrees).
 
-**Goal:** Retire Node from this repository. Deno 2.9.5 runs
+**Goal:** Retire Node from this repository. Deno 2.9.6 runs
 the gates, builds one self-contained executable, serves the
 product, drives the tooling, runs the suite, and — if the
 gate in Part 6 opens — talks to Postgres without an `npm:`
@@ -25,11 +25,11 @@ decision gate says so. Each part ends green: `./validate`,
 `./test-postgres`, and `./test-all` all pass before the next
 part begins.
 
-**Tech Stack:** Deno 2.9.5 (`deno check`, `deno test`,
+**Tech Stack:** Deno 2.9.6 (`deno check`, `deno test`,
 `deno bundle`, `deno compile`, `deno info`, `deno eval`),
 TypeScript ES2024 strict, Bash, `npm:postgres@3.4.9`,
 `jsr:@std/path`, `jsr:@std/assert`, `jsr:@std/testing`,
-Docker (`denoland/deno:2.9.5`), Postgres 18.
+Docker (`denoland/deno:2.9.6`), Postgres 18.
 
 **Spec:** six scrolls, read in this order — each part of this
 plan names its own:
@@ -55,9 +55,11 @@ git show 9620d38c:docs/superpowers/specs/\
   `.worktrees/2026-08-30-deno-migration`; never merge,
   never push (AGENTS.md § Worktrees). Subagents work in
   that worktree and never create their own.
-- **Deno 2.9.5, pinned.** Every `deno` invocation in a root
+- **Deno 2.9.6, pinned.** Every `deno` invocation in a root
   script passes `--frozen`. Never `-A`; permissions are
-  always named.
+  always named. The operator ruled 2.9.6 acceptable on
+  2026-08-30. Specs 1 and 2 name 2.9.5 and are frozen, so
+  this pin supersedes them.
 - **The oracle.** Measured at `e1cbeac9` under Node
   v26.7.0, `./test`:
 
@@ -149,7 +151,7 @@ it.
 | # | Ruling | Cost if wrong |
 |---|---|---|
 | R1 | **Spec 2, operator tools:** one `fusion-angle` binary whose first argument selects `serve`, `seed`, or `wipe`. The spec recommends this; the ZIP becomes `fusion-angle-${SHA}.zip` and is self-sufficient (unzip, seed, serve). | Three compiles and three ~100 MB binaries instead of one. Task 21's dispatcher and Task 22's ZIP name are re-cut; nothing else moves. |
-| R2 | **Spec 2, runtime image:** `denoland/deno:2.9.5` for both stages. The spec recommends this; the healthcheck cannot lie about the runtime. | A larger runtime image. Swap to `debian:bookworm-slim` plus `curl` and re-cut the healthcheck — Task 25 only. |
+| R2 | **Spec 2, runtime image:** `denoland/deno:2.9.6` for both stages. The spec recommends this; the healthcheck cannot lie about the runtime. | A larger runtime image. Swap to `debian:bookworm-slim` plus `curl` and re-cut the healthcheck — Task 25 only. |
 | R3 | **Spec 3, the 500 body:** an explicit `onError` handler, never `Deno.serve`'s default. `http-server.test.ts` pins `{"error":"internal error"}` with `Cache-Control: no-store`; a framework default is not a covenant. | None. The explicit handler is strictly more controlled than the default. |
 | R4 | **Spec 3, the navigate tests:** `http-static-directory-index.test.ts` keeps `node:http` until Part 5. `Sec-*` is a forbidden request header name, so `fetch` cannot set `sec-fetch-mode`. Task 29 probes it; if Deno permits it, the change is Part 5's, not Part 3's. | One test file ports a part later than it could have. |
 | R5 | **Spec 4, `jsr:@std/path`:** adopt it — the repository's first `jsr:` dependency, pinned in the import map and `deno.lock`. `measure.ts` and `cdp-client.ts` do real path work (`join`, `dirname`, `resolve`, `extname`, `relative`); hand-rolled `URL` arithmetic for `relative` and `extname` is string code nobody asked for. | One dependency. Removing it means hand-rolling five helpers in one module. |
@@ -253,14 +255,14 @@ Node until Part 2.
 
 ---
 
-### Task 1: Install Deno 2.9.5 and record the Node oracle
+### Task 1: Install Deno 2.9.6 and record the Node oracle
 
 **Files:** none. This task commits nothing. Its deliverable
 is two recorded measurements every later task reads.
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `deno` on `PATH` at exactly 2.9.5, and the
+- Produces: `deno` on `PATH` at exactly 2.9.6, and the
   Node baseline counts written into the task report.
 
 **This task needs the operator.** Installing a toolchain
@@ -278,15 +280,15 @@ deno --version 2>/dev/null || echo "DENO ABSENT"
 If absent, the operator runs:
 
 ```bash
-curl -fsSL https://deno.land/install.sh | sh -s v2.9.5
+curl -fsSL https://deno.land/install.sh | sh -s v2.9.6
 ```
 
 - [ ] **Step 2: Verify the exact version**
 
 Run: `deno --version`
-Expected: the first line reads `deno 2.9.5` exactly. A
+Expected: the first line reads `deno 2.9.6` exactly. A
 different patch is a BLOCKED report, not a shrug — every
-measurement in this plan is against 2.9.5.
+measurement in this plan is against 2.9.6.
 
 - [ ] **Step 3: Record the Node oracle**
 
@@ -381,7 +383,7 @@ Append after item 12, before the `## Later work` heading:
     strictly 1 → 6 (3 and 4 may swap after Spec 2's
     measurements; Spec 6 is optional and opens only if
     its decision gate says so). Spec 1 moves `./validate`
-    and `./test` to Deno 2.9.5; Spec 2 replaces the
+    and `./test` to Deno 2.9.6; Spec 2 replaces the
     `server.mjs` ZIP with one `deno compile` binary and
     deletes `package.json`; Spec 3 puts `server/` on
     `Deno.serve`; Spec 4 ports the seven Node-only
@@ -452,7 +454,7 @@ MSG
 - Modify: `validate` (the second `awk "$AWK_LINT"` list)
 
 **Interfaces:**
-- Consumes: Deno 2.9.5 from Task 1.
+- Consumes: Deno 2.9.6 from Task 1.
 - Produces: the import map (`postgres`, `esbuild`) and the
   compiler options every later `deno` invocation resolves
   against. **Also produces four measurements** Tasks 6, 9,
@@ -1433,7 +1435,7 @@ deno --version
 deno check --frozen api shared server tests web-app
 ```
 
-`deno --version` is evidence, not a gate: the pinned 2.9.5
+`deno --version` is evidence, not a gate: the pinned 2.9.6
 is visible in every transcript.
 
 - [ ] **Step 3: Verify**
@@ -1443,7 +1445,7 @@ is visible in every transcript.
 ```
 
 Expected: exits 0, and the transcript opens with
-`deno 2.9.5` followed by a clean `deno check`.
+`deno 2.9.6` followed by a clean `deno check`.
 
 - [ ] **Step 4: Commit**
 
@@ -1647,7 +1649,7 @@ become about 8, since there is one universe now.
 
 - [ ] **Step 1: AGENTS.md — the command block**
 
-Add one line stating that Deno 2.9.5 is the toolchain for
+Add one line stating that Deno 2.9.6 is the toolchain for
 `./validate` and `./test`, and that `./build`,
 `./test-browser`, and `./crank` still need `npm ci` until
 Part 2 lands.
@@ -1701,7 +1703,7 @@ not an import.
 - [ ] **Step 6: README.md — § Getting Started**
 
 Today's paragraph says `npm ci` installs tsc. After Task 14
-it does not. Rewrite the section to install Deno 2.9.5 and
+it does not. Rewrite the section to install Deno 2.9.6 and
 to say plainly that `npm ci` remains for `./build`,
 `build-lib`, and `./test-browser` until Part 2, and what it
 still installs (esbuild, postgres.js 3.4.9).
@@ -1761,7 +1763,7 @@ Before Part 2 begins, all of these hold. The controller
 runs the first three and asks the operator for the rest.
 
 ```bash
-deno --version                     # 2.9.5
+deno --version                     # 2.9.6
 ./validate                         # exit 0, Node called nowhere
 grep -c node validate test test-postgres \
     generate-schema-svg generate-api-documentation   # 0 ×5
@@ -1794,7 +1796,7 @@ argument selects `serve`, `seed`, or `wipe`. The ZIP becomes
 `fusion-angle-${SHA}.zip` and is self-sufficient — unzip,
 seed, serve.
 
-**Ruling R2 applies:** `denoland/deno:2.9.5` for both Docker
+**Ruling R2 applies:** `denoland/deno:2.9.6` for both Docker
 stages.
 
 ---
@@ -1814,7 +1816,7 @@ The spec's `## Open Items` says "the plan's first tasks
 verify". This is that task. Each probe names what changes if
 the answer is not the expected one.
 
-- [ ] **Step 1: PROBE 1 — is `git` in `denoland/deno:2.9.5`?**
+- [ ] **Step 1: PROBE 1 — is `git` in `denoland/deno:2.9.6`?**
 
 The builder stage runs `./build`, which gates on a clean
 tree (`git status --porcelain`) and reads
@@ -1823,7 +1825,7 @@ tree (`git status --porcelain`) and reads
 Operator runs, with `!`:
 
 ```bash
-docker run --rm denoland/deno:2.9.5 \
+docker run --rm denoland/deno:2.9.6 \
     sh -c 'git --version || echo "GIT ABSENT"'
 ```
 
@@ -3265,19 +3267,19 @@ MSG
   executable. Task 27 posts Render jobs against the same
   entry.
 
-**Ruling R2 applies:** `denoland/deno:2.9.5` for both
+**Ruling R2 applies:** `denoland/deno:2.9.6` for both
 stages. One image family, and the healthcheck cannot lie
 about the runtime.
 
 - [ ] **Step 1: Rewrite the Dockerfile**
 
 ```dockerfile
-FROM denoland/deno:2.9.5 AS builder
+FROM denoland/deno:2.9.6 AS builder
 WORKDIR /srv
 COPY . .
 RUN ./build --no-zip render-out/
 
-FROM denoland/deno:2.9.5 AS runtime
+FROM denoland/deno:2.9.6 AS runtime
 WORKDIR /srv
 COPY --from=builder /srv/render-out ./render-out
 USER deno
@@ -4539,7 +4541,7 @@ time deno run --allow-run "$TMPDIR/unrefprobe.ts"
 ```
 
 Expected: returns immediately, not after 5 s. Record
-whether `unref()` exists on `Deno.ChildProcess` at 2.9.5
+whether `unref()` exists on `Deno.ChildProcess` at 2.9.6
 and whether the parent exits. If it does not, Task 42 keeps
 the child referenced and closes it explicitly in a
 `finally` — which is better practice anyway, and Part 5's
@@ -5246,7 +5248,7 @@ nowhere — confirm that here rather than assuming it.
 
 - [ ] **Step 2: Write the changes**
 
-State plainly in AGENTS.md that Deno 2.9.5 is the only
+State plainly in AGENTS.md that Deno 2.9.6 is the only
 runtime, that `npm` is not installed and not needed, and
 that `node:crypto` scrypt in `server/scrypt-hash.ts` is the
 one named import from Node's namespace — with the day it
