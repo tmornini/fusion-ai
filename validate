@@ -17,8 +17,8 @@ then
     exit 0
 fi
 
-npx --no-install tsc --noEmit -p tsconfig.json
-npx --no-install tsc --noEmit -p web-app/app/tsconfig.json
+deno --version
+deno check --frozen api shared server tests web-app
 
 ./test
 
