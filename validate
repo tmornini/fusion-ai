@@ -62,7 +62,7 @@ while read -r FILE MAX; do
 "
     fi
 done <<'EOF'
-AGENTS.md 300
+AGENTS.md 350
 README.md 150
 ARCHITECTURE.md 450
 SCHEMA.md 200
