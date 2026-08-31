@@ -40,8 +40,8 @@ docker compose down        # stop; the database dies with it
 
 Deno 2.9.6 runs `./validate`, `./test`, `./test-postgres`,
 and both generators. `npm ci` installs what `./build`,
-`build-lib`, and `./test-browser` need — esbuild and
-postgres.js.
+`build-lib`, `./test-browser`, and `./crank` need —
+esbuild and postgres.js.
 
 **Commit before building.** `./build` and `./crank`
 require a clean working directory.
@@ -88,7 +88,7 @@ the `org` identifier ban under `api/`,
 `generate-api-documentation --check`, both `deno run`.
 Clean tree for `./build`, `./crank`, and `./measure`.
 
-The suite takes 9.6 s where Node took 16.2 s.
+`./test` takes 9.6 s where Node took 16.2 s.
 `--no-check` costs nothing: `deno check` has already
 covered `tests/`.
 
@@ -257,33 +257,40 @@ record-attribute document id, never a table named
 deno.json enables this — array / object index access
 returns `T | undefined`, requiring a `!` or a guard.
 
-### One type universe, a per-file fence
+### One type universe, no browser fence
 
 `deno.json` is the only project: `strict`, DOM plus
-`deno.ns`, `verbatimModuleSyntax`, `erasableSyntaxOnly`
-— an enum or namespace is TS1294 at `deno check`. The
-`deno check --frozen api shared server tests web-app`
-roots succeed the root project's `include`. The browser
-project's `exclude` registry has no successor: one
-universe checks the seven Node-only modules beside
-everything else.
+`deno.ns`, `verbatimModuleSyntax`, `erasableSyntaxOnly`.
+The `deno check --frozen api shared server tests
+web-app` roots succeed the root project's `include`. The
+browser project's `exclude` registry has no successor,
+and neither does the fence it served.
 
-The Node fence is no longer import-independent.
-`types: []` removed the ambient Node types outright, so
-a browser file could not see `process` whatever it
-imported. Now a `node:` or `npm:` specifier anywhere in
-a file's own transitive graph unlocks those globals for
-THAT FILE; without one, `process` is TS2591. The seven
-modules the retired `exclude` named are exactly the
-`web-app/app/` files whose graphs reach `node:` — six
-directly, `browser-drive.ts` through `cdp-client.ts` —
-so Deno derives the registry tsconfig kept by hand.
+Ambient Node globals unlock per INVOCATION, not per
+file: one `node:` specifier anywhere in the checked
+graph gives `process` to every file in that check, and a
+type-only `import type … from 'node:fs'` is enough.
+`npm:` does not unlock — `npm:postgres` and the bare
+`postgres` mapping both still reject `process`.
+`web-app` carries six `node:` importers of its own, so
+`deno check … web-app` passes a file whose only line
+is `process.env.HOME`. Nothing under `web-app/` is
+type-fenced against `process` today, and `Deno.*` never
+was: `deno.ns` sits in the lib array.
 
-That contingency is the hazard. One `node:` import into
-a `web-app/` or `shared/` module silently unlocks
-`process` for it, and `tests/browser-fence.test.ts`
-checks a hermetically isolated file, so it cannot see
-that happen. TODO.md carries the oracle.
+The browser is what catches a stray `process` or `Deno.*`
+in client code now — a runtime `ReferenceError` that
+`./test-browser` (Layer 2) and the walk (Layer 3) see
+only on a path they exercise. TODO.md carries the oracle
+for a gate that would restore the fence.
+
+`erasableSyntaxOnly` and `verbatimModuleSyntax` are what
+`node --strip-types` requires at runtime, and `deno check`
+enforces both — an enum or namespace is TS1294. They
+still bind: `build-lib`, `test-browser`, `measure`,
+`postgres-seed`, `postgres-wipe`, and `compose.yaml` all
+still run `node --strip-types`, so a lapse breaks a build,
+a seed, or a wipe rather than the gate.
 
 ### `localStorage` is real under Deno
 

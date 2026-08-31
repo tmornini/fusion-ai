@@ -34,21 +34,22 @@ environment). See [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Getting Started
 
-Install [Deno](https://deno.com) 2.9.6. It runs
-`./validate`, `./test`, `./test-postgres`, and both
-generators, resolving its own dependencies from
-`deno.json` and `deno.lock`.
-
 ```sh
+curl -fsSL https://deno.land/install.sh | sh -s v2.9.6
 git clone <repo-url>
 cd fusion-angle
 npm ci
 ```
 
+[Deno](https://deno.com) 2.9.6 runs `./validate`,
+`./test`, `./test-postgres`, and both generators,
+resolving its own dependencies from `deno.json` and
+`deno.lock`.
+
 `npm ci` installs esbuild and postgres.js 3.4.9 at the
 exact versions pinned in `package-lock.json`, for
-`./build`, `build-lib`, and `./test-browser`. The ZIP
-bundles postgres.js into `server.mjs`
+`./build`, `build-lib`, `./test-browser`, and `./crank`.
+The ZIP bundles postgres.js into `server.mjs`
 (`api/postgres-client.ts` is the only importer) — the
 named exception. The unzipped artifact needs no
 `npm install`.
