@@ -291,11 +291,11 @@ for a gate that would restore the fence.
 
 `erasableSyntaxOnly` and `verbatimModuleSyntax` are what
 `node --strip-types` requires at runtime, and `deno check`
-enforces both — an enum or namespace is TS1294. They
-still bind: `build-lib`, `test-browser`, `measure`,
-`postgres-seed`, `postgres-wipe`, and `compose.yaml` all
-still run `node --strip-types`, so a lapse breaks a build,
-a seed, or a wipe rather than the gate.
+enforces both — an enum or namespace is TS1294. The gate
+binds them. `./postgres-seed --postgres local` and
+`./postgres-wipe --postgres local` still exec
+`node --strip-types`; `postgres-lib`'s JSON helpers still
+run `node -e`.
 
 ### `localStorage` is real under Deno
 

@@ -205,7 +205,7 @@ by the master.
 | K. Objectives & Scoring | 30 |
 | R. Records | 25 |
 | J. Teardown | 3 |
-| SV. Server (Node + Postgres) | 9 |
+| SV. Server (Deno + Postgres) | 9 |
 | **Total** | **401** |
 
 A3 **is** SV1 — counted once, in A. The explorer
@@ -6623,7 +6623,7 @@ them after K8, once the explorer has returned.
   `fusion-angle-${SHA}.zip` exists.
   Pin: exploratory — the ZIP file's presence on disk
 
-## SV. Server (Node + Postgres)
+## SV. Server (Deno + Postgres)
 
 This is the default origin, not a second ceremony —
 A3 **is** SV1, on the same crank process every other

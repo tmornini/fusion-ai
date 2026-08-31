@@ -51,7 +51,7 @@ spec's "no Render config change" is retired.
 ## Layers
 
 Four directories. `api/` is the server REST and schema
-handlers (Node over Postgres on the product path; memory
+handlers (Deno over Postgres on the product path; memory
 in `./test`). `shared/` is the one-way chasm: the HTTP
 wire schema (`http-message/`, with its own `types.ts`)
 plus pure utilities (`base64url.ts`, `identifier.ts`,
