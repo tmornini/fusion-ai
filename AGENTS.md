@@ -181,6 +181,9 @@ cannot know:
 Proselytize first, then brief — the scripture loads via the
 skill, the patterns load via the prompt.
 
+Subagents work in the dispatching agent's worktree and never
+create their own — never pass the Agent tool `isolation`.
+
 ## Where things live
 
 - `api/` — REST, derives, validators, auth/tenancy
