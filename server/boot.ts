@@ -156,4 +156,6 @@ export async function main(
         port: running.port,
     }) + '\n');
     installSigterm(() => running.close());
+    // Returning would Deno.exit the compiled binary.
+    await new Promise<never>(() => {});
 }
