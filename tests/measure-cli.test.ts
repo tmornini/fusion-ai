@@ -287,7 +287,7 @@ test('lastJsonLogMessage takes the last message', () => {
     assert.equal(lastJsonLogMessage('plain'), null);
 });
 
-test('local Node spawn is seed then server.mjs', () => {
+test('local spawn is seed then ./fusion-angle serve', () => {
     assert.equal(MEASURE_SEED_COMMAND, './postgres-seed');
     assert.deepEqual(measureSeedArgs(), [
         '--postgres', 'local', '--mock-data',

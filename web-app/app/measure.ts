@@ -3,7 +3,7 @@
 // On the browser exclude list; uses Node APIs + global WebSocket.
 //
 // Flow: optional bare --visualize (disk only) → clean-tree
-// gate → (build → ./postgres-seed → node server.mjs) or
+// gate → (build → ./postgres-seed → ./fusion-angle serve) or
 // --base-url origin → Chrome → login → detail-URL
 // discovery → N-run sweep → report → optional
 // --check / --record / --visualize. Cleanup always in
@@ -145,7 +145,7 @@ function usageText(): string {
         '                       omitted, uses 1.',
         '  --base-url URL       Hit this origin instead',
         '                       of building and spawning',
-        '                       node server.mjs.',
+        '                       ./fusion-angle serve.',
         '                       Skips the seed.',
         '  --password SECRET    Auth password when',
         '                       --base-url is set.',
@@ -624,7 +624,7 @@ async function main(): Promise<void> {
                 });
             }
             await pollUntil(
-                `node server.mjs on port ${port}`,
+                `${MEASURE_SERVER_ENTRY} serve on port ${port}`,
                 SEED_TIMEOUT_MS,
                 async () => {
                     if (serverProc?.exitCode !== null
@@ -634,7 +634,7 @@ async function main(): Promise<void> {
                             stderrText,
                         );
                         throw new Error(
-                            'server.mjs exited'
+                            `${MEASURE_SERVER_ENTRY} serve exited`
                             + (boot
                                 ? `: ${boot}`
                                 : ''),
