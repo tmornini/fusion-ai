@@ -174,7 +174,6 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:esbuild@0.28.0",
       "npm:postgres@3.4.9"
     ],
     "packageJson": {
