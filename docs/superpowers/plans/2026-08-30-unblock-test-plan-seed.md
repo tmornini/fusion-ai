@@ -4,7 +4,8 @@
 > superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan
 > task-by-task. Steps use checkbox (`- [ ]`) syntax for
-> tracking.
+> tracking. Ride this spec's worktree (AGENTS.md
+> § Worktrees).
 
 > **For the dispatching orchestrator (AGENTS.md § Subagents):**
 > every subagent prompt MUST begin with the literal phrase
@@ -47,13 +48,11 @@ dependencies.
 **Spec:**
 `docs/superpowers/specs/2026-08-30-unblock-test-plan-seed-design.md`
 
-**Worktree:** execute in the existing worktree
-`.worktrees/2026-08-30-unblock-test-plan-seed` on branch
-`2026-08-30-unblock-test-plan-seed` (already created;
-`npm ci` done; baseline `./validate` green). The user has
-mandated worktrees for this repo — this overrides AGENTS.md's
-stale "Do not use git worktrees" paragraph; do not edit that
-paragraph (out of scope).
+**Worktree:** `.worktrees/2026-08-30-unblock-test-plan-seed`
+on branch `2026-08-30-unblock-test-plan-seed` (AGENTS.md
+§ Worktrees). Create it from master before the first
+execution commit. Subagents work in that worktree and never
+create their own.
 
 ## Global Constraints
 
