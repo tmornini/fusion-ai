@@ -26,18 +26,7 @@ export async function wipePostgres(
 }
 
 export function renderWipeStartCommand(): string {
-    const script =
-        "import postgres from 'postgres';"
-        + 'const url = process.env.POSTGRES_URL;'
-        + 'if (!url) throw new Error('
-        + "'missing POSTGRES_URL');"
-        + 'const sql = postgres(url, { max: 1 });'
-        + 'await sql.unsafe('
-        + JSON.stringify(POSTGRES_DROP_SCHEMA)
-        + ');'
-        + 'await sql.end();';
-    return 'node --input-type=module -e '
-        + JSON.stringify(script);
+    return './render-out/fusion-angle wipe';
 }
 
 export function wipeErrorMessage(
@@ -87,4 +76,8 @@ export async function wipeMain(
         );
         return 1;
     }
+}
+
+if (import.meta.main) {
+    Deno.exit(await wipeMain(Deno.args));
 }
