@@ -66,8 +66,23 @@ else
 fi
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+ABS_BUILD="$(cd "$BUILD_DIR" && pwd)"
+# deno compile looks up absolute file:// specifiers on
+# disk at runtime, so the generated entry must be
+# relative for the binary to run without the source tree.
+SERVER_IMPORT=$(
+    deno eval --frozen \
+        "import path from 'node:path';
+         let rel = path.posix.relative(
+             Deno.args[0],
+             Deno.args[1],
+         );
+         if (!rel.startsWith('.')) rel = './' + rel;
+         console.log(rel);" \
+        -- "$ABS_BUILD" "$ROOT/server/main.ts"
+)
 cat > "$BUILD_DIR/main.ts" <<ENTRY
-import { dispatch } from '${ROOT}/server/main.ts';
+import { dispatch } from '${SERVER_IMPORT}';
 Deno.exit(await dispatch(
     new URL('./site/', import.meta.url),
     process.argv.slice(2),
@@ -78,7 +93,8 @@ deno compile --frozen --exclude-unused-npm \
     --config "$ROOT/deno.json" \
     --include "$BUILD_DIR/site" \
     --allow-net \
-    --allow-env=POSTGRES_URL,PGSSL,PGSSLNEGOTIATION,PGIDLE_TIMEOUT,\
+    --allow-env=POSTGRES_URL,PGHOST,PGPORT,PGUSER,PGUSERNAME,\
+PGPASSWORD,PGDATABASE,PGSSL,PGSSLNEGOTIATION,PGIDLE_TIMEOUT,\
 PGCONNECT_TIMEOUT,PGMAX_LIFETIME,PGMAX_PIPELINE,PGBACKOFF,\
 PGKEEP_ALIVE,PGPREPARE,PGDEBUG,PGFETCH_TYPES,PGPUBLICATIONS,\
 PGTARGET_SESSION_ATTRS,PGAPPNAME,PGTARGETSESSIONATTRS,\
