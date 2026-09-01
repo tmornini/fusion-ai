@@ -3,6 +3,7 @@ import {
     assertInstanceOf,
     assertRejects,
     assertStrictEquals,
+    assertStringIncludes,
 } from '@std/assert';
 import { generateIdentifier } from
     '../shared/identifier.ts';
@@ -381,14 +382,15 @@ Deno.test(
             db, 'VXTdVVRluJDRBqbXWZBntA', FIELD_VALUE_ID,
             'High',
         );
-        await assertRejects(
+        const err = await assertRejects(
             () => DELETE(
                 db, ATTR1_PATH,
                 DEV_TOKEN,
             ),
-            RequestError,
-            '1 state field value',
-        );
+        ) as RequestError;
+        assertInstanceOf(err, RequestError);
+        assertStrictEquals(err.status, 409);
+        assertStringIncludes(err.message, '1 state field value');
         // RESTRICT 409: attribute still served on message plane.
         const still = await GET<{ id: string }>(
             db, ATTR1_PATH, DEV_TOKEN,
@@ -406,13 +408,16 @@ Deno.test(
             flowId: 'ZOousbbnzpqlxJExVAruYQ', nodeId: NODE_1,
             attributeId: 'VXTdVVRluJDRBqbXWZBntA',
         });
-        await assertRejects(
+        const err = await assertRejects(
             () => DELETE(
                 db, ATTR1_PATH,
                 DEV_TOKEN,
             ),
-            RequestError,
-            'flow(s) ZOousbbnzpqlxJExVAruYQ',
+        ) as RequestError;
+        assertInstanceOf(err, RequestError);
+        assertStrictEquals(err.status, 409);
+        assertStringIncludes(
+            err.message, 'flow(s) ZOousbbnzpqlxJExVAruYQ',
         );
     },
 );
@@ -563,13 +568,16 @@ Deno.test(
             stateEventAts: [AT, AT, AT],
             states: [NODE_HOST, NODE_HOST, 'claimed'],
         }, DEV_TOKEN);
-        await assertRejects(
+        const err = await assertRejects(
             () => DELETE(
                 db, ATTR1_PATH,
                 DEV_TOKEN,
             ),
-            RequestError,
-            'work order(s) yNSSnbrpacodQTzUEcdEVA',
+        ) as RequestError;
+        assertInstanceOf(err, RequestError);
+        assertStrictEquals(err.status, 409);
+        assertStringIncludes(
+            err.message, 'work order(s) yNSSnbrpacodQTzUEcdEVA',
         );
     },
 );
@@ -590,7 +598,7 @@ Deno.test(
         );
         const requestsBefore = await db.messagePairs.getAll();
         const responsesBefore = await db.messagePairs.getAll();
-        await assertRejects(
+        const err = await assertRejects(
             () => POST(db
                 , 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/', {
                 kind: 'edit',
@@ -608,8 +616,9 @@ Deno.test(
                 state: 'active',
                 removedAttributeIds: ['VXTdVVRluJDRBqbXWZBntA'],
             }, DEV_TOKEN),
-            RequestError,
-        );
+        ) as RequestError;
+        assertInstanceOf(err, RequestError);
+        assertStrictEquals(err.status, 409);
         // the batch applied NOTHING: message-plane document
         // survives and zero pairs append
         const record = await GET<{ name: string }>(
