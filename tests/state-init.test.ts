@@ -10,6 +10,8 @@ import {
 import {
     isStoredTheme,
 } from '../web-app/app/adapters/preferences.ts';
+import { withLocalStorage } from
+    './fixtures/local-storage.ts';
 
 // The static import above is itself the purity assertion:
 // state.ts must not throw on import — it touches neither
@@ -19,20 +21,19 @@ import {
 // observable that proves the theme was hydrated from storage.
 Deno.test(
     'initState hydrates the persisted theme preference',
-    () => {
+    () => withLocalStorage({
+        getItem: (k: string) => {
+            if (k === STORAGE_KEY_THEME) {
+                return 'dark';
+            }
+            if (k === STORAGE_KEY_SIDEBAR) {
+                return 'true';
+            }
+            return null;
+        },
+    }, () => {
         const g =
             globalThis as Record<string, unknown>;
-        g.localStorage = {
-            getItem: (k: string) => {
-                if (k === STORAGE_KEY_THEME) {
-                    return 'dark';
-                }
-                if (k === STORAGE_KEY_SIDEBAR) {
-                    return 'true';
-                }
-                return null;
-            },
-        };
         g.window = {
             matchMedia: () => ({ matches: true }),
         };
@@ -40,55 +41,52 @@ Deno.test(
             initState();
             assertStrictEquals(computeTheme(), 'dark');
         } finally {
-            delete g.localStorage;
             delete g.window;
         }
-    },
+    }),
 );
 
-Deno.test('initState throws on a corrupt stored theme', () => {
-    const g =
-        globalThis as Record<string, unknown>;
-    g.localStorage = {
+Deno.test('initState throws on a corrupt stored theme', () =>
+    withLocalStorage({
         getItem: (k: string) =>
             k === STORAGE_KEY_THEME ? 'purple' : null,
-    };
-    g.window = {
-        matchMedia: () => ({ matches: false }),
-    };
-    try {
-        assertThrows(
-            () => initState(),
-            Error, 'corrupt stored theme',
-        );
-    } finally {
-        delete g.localStorage;
-        delete g.window;
-    }
-});
+    }, () => {
+        const g =
+            globalThis as Record<string, unknown>;
+        g.window = {
+            matchMedia: () => ({ matches: false }),
+        };
+        try {
+            assertThrows(
+                () => initState(),
+                Error, 'corrupt stored theme',
+            );
+        } finally {
+            delete g.window;
+        }
+    }));
 
-Deno.test('initState throws on a corrupt stored sidebar', () => {
-    const g =
-        globalThis as Record<string, unknown>;
-    g.localStorage = {
+Deno.test('initState throws on a corrupt stored sidebar', () =>
+    withLocalStorage({
         getItem: (k: string) =>
             k === STORAGE_KEY_THEME ? 'dark'
                 : k === STORAGE_KEY_SIDEBAR ? 'maybe'
                     : null,
-    };
-    g.window = {
-        matchMedia: () => ({ matches: false }),
-    };
-    try {
-        assertThrows(
-            () => initState(),
-            Error, 'corrupt stored sidebar',
-        );
-    } finally {
-        delete g.localStorage;
-        delete g.window;
-    }
-});
+    }, () => {
+        const g =
+            globalThis as Record<string, unknown>;
+        g.window = {
+            matchMedia: () => ({ matches: false }),
+        };
+        try {
+            assertThrows(
+                () => initState(),
+                Error, 'corrupt stored sidebar',
+            );
+        } finally {
+            delete g.window;
+        }
+    }));
 
 Deno.test('isStoredTheme accepts the three themes only', () => {
     assertStrictEquals(isStoredTheme('light'), true);
