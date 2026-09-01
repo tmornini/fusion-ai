@@ -41,12 +41,13 @@ Deno.test(
             );
             const unhandled: unknown[] = [];
             const onRejection = (
-                reason: unknown,
+                event: PromiseRejectionEvent,
             ) => {
-                unhandled.push(reason);
+                event.preventDefault();
+                unhandled.push(event.reason);
             };
-            process.on(
-                'unhandledRejection',
+            globalThis.addEventListener(
+                'unhandledrejection',
                 onRejection,
             );
             try {
@@ -54,7 +55,7 @@ Deno.test(
                 // Drain microtask boundaries inside
                 // getSearchIndex (await hasSchema,
                 // await getIdeas, etc.) so the
-                // unhandledRejection handler can fire.
+                // unhandledrejection handler can fire.
                 // Two setImmediates flush today's
                 // pipeline; the loop guards against
                 // future microtask growth.
@@ -64,8 +65,8 @@ Deno.test(
                     );
                 }
             } finally {
-                process.off(
-                    'unhandledRejection',
+                globalThis.removeEventListener(
+                    'unhandledrejection',
                     onRejection,
                 );
             }
