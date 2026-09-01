@@ -1,6 +1,3 @@
-import {
-    afterAll, beforeAll, describe, it,
-} from '@std/testing/bdd';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import { PostgresBackend } from
@@ -47,49 +44,47 @@ function urlWithSearchPath(
     return parsed.href;
 }
 
-describe('pg acceptance', () => {
-    if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
-        it(
-            'postgres acceptance skipped without POSTGRES_URL',
-            { ignore: true }, // POSTGRES_URL is unset
+if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
+    Deno.test(
+        'postgres acceptance skipped without POSTGRES_URL',
+        { ignore: true }, // POSTGRES_URL is unset
+        () => {},
+    );
+} else {
+    const schema = schemaName();
+    const sql = connectPostgres(
+        urlWithSearchPath(POSTGRES_URL, schema),
+    );
+    const backend = new PostgresBackend(sql);
+
+    Deno.test.beforeAll(async () => {
+        await sql.unsafe(
+            'CREATE SCHEMA ' + quoteIdent(schema),
+        );
+    });
+
+    Deno.test.afterAll(async () => {
+        try {
+            await sql.unsafe(
+                'DROP SCHEMA IF EXISTS '
+                + quoteIdent(schema)
+                + ' CASCADE',
+            );
+        } finally {
+            await sql.end();
+        }
+    });
+
+    defineStoreAcceptance('postgres', async () => {
+        // Fresh tables each case. hasSchema after
+        // deleteSchema throws (loud miss) — do not probe.
+        await backend.deleteSchema();
+        await backend.ensureTables(TABLE_NAMES);
+        return new BackedDbAdapter(
+            backend,
+            async () => {},
+            async () => {},
             () => {},
         );
-    } else {
-        const schema = schemaName();
-        const sql = connectPostgres(
-            urlWithSearchPath(POSTGRES_URL, schema),
-        );
-        const backend = new PostgresBackend(sql);
-
-        beforeAll(async () => {
-            await sql.unsafe(
-                'CREATE SCHEMA ' + quoteIdent(schema),
-            );
-        });
-
-        afterAll(async () => {
-            try {
-                await sql.unsafe(
-                    'DROP SCHEMA IF EXISTS '
-                    + quoteIdent(schema)
-                    + ' CASCADE',
-                );
-            } finally {
-                await sql.end();
-            }
-        });
-
-        defineStoreAcceptance('postgres', async () => {
-            // Fresh tables each case. hasSchema after
-            // deleteSchema throws (loud miss) — do not probe.
-            await backend.deleteSchema();
-            await backend.ensureTables(TABLE_NAMES);
-            return new BackedDbAdapter(
-                backend,
-                async () => {},
-                async () => {},
-                () => {},
-            );
-        });
-    }
-});
+    });
+}
