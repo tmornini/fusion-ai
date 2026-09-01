@@ -1,10 +1,8 @@
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
-
 import { assert, assertStrictEquals } from '@std/assert';
+import {
+    withLocalStorage,
+    withLocalStorageAsync,
+} from './fixtures/local-storage.ts';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
     createRequestContext,
@@ -35,6 +33,11 @@ import type {
 } from '../api/types.ts';
 import { generateIdentifier } from
     '../shared/identifier.ts';
+
+const NULL_STORAGE: Partial<Storage> = {
+    getItem: () => null,
+    setItem: () => {},
+};
 
 function buildNode(
     id: string,
@@ -149,7 +152,7 @@ Deno.test(
     'validateFlowForCreation reports ready when'
     + ' every regular node has a member and an'
     + ' outgoing edge',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const flow = buildFlowEntity(
             generateIdentifier(),
             readyGraph(generateIdentifier()),
@@ -157,13 +160,13 @@ Deno.test(
         const r = validateFlowForCreation(flow);
         assertStrictEquals(r.ready, true);
         assertStrictEquals(r.problems.length, 0);
-    },
+    }),
 );
 
 Deno.test(
     'validateFlowForCreation flags zero_members'
     + ' on regular nodes with empty memberIds',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const start = generateIdentifier();
         const mid = generateIdentifier();
         const done = generateIdentifier();
@@ -198,13 +201,13 @@ Deno.test(
         assertStrictEquals(
             r.problems[0]!.nodeId, mid,
         );
-    },
+    }),
 );
 
 Deno.test(
     'validateFlowForCreation flags dead_end on'
     + ' a non-End node with zero outgoing edges',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const start = generateIdentifier();
         const mid = generateIdentifier();
         const orphan = generateIdentifier();
@@ -245,13 +248,13 @@ Deno.test(
         );
         assert(problem);
         assertStrictEquals(problem!.kind, 'dead_end');
-    },
+    }),
 );
 
 Deno.test(
     'validateFlowForCreation ignores start and'
     + ' complete nodes (they never hazard)',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const start = generateIdentifier();
         const mid = generateIdentifier();
         const done = generateIdentifier();
@@ -283,13 +286,13 @@ Deno.test(
         );
         const r = validateFlowForCreation(flow);
         assertStrictEquals(r.ready, true);
-    },
+    }),
 );
 
 Deno.test(
     'getFlowsForCreation partitions ready and'
     + ' notReady flows',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         const ctx = createRequestContext(db, await organizationToken());
@@ -340,13 +343,13 @@ Deno.test(
         assertStrictEquals(
             result.notReady[0]!.problemCount, 1,
         );
-    },
+    }),
 );
 
 Deno.test(
     'getFlowsForCreation filters out locked flows'
     + ' entirely (regardless of readiness)',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         const ctx = createRequestContext(db, await organizationToken());
@@ -374,5 +377,5 @@ Deno.test(
             result.ready[0]!.id, openId,
         );
         assertStrictEquals(result.notReady.length, 0);
-    },
+    }),
 );

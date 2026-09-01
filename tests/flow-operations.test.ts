@@ -1,13 +1,3 @@
-
-// flow-operations.ts → logger.ts → preferences.ts
-// reads localStorage, which is absent in Node.
-// Stub it before any log.* call in an error path.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: (_key: string) => null,
-    setItem: () => {},
-};
-
 import {
     assert,
     assertEquals,
@@ -17,6 +7,8 @@ import {
     assertStrictEquals,
     assertStringIncludes,
 } from '@std/assert';
+import { withLocalStorageAsync } from
+    './fixtures/local-storage.ts';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -79,6 +71,14 @@ import {
 } from './test-fixtures.ts';
 
 const FLOW_ID = 'aEsGMmBEFaVdWihhHXwCbw';
+
+// flow-operations.ts -> logger.ts -> preferences.ts
+// reads localStorage lazily, only on a log.* call in
+// an error path.
+const NULL_STORAGE: Partial<Storage> = {
+    getItem: (_key: string) => null,
+    setItem: () => {},
+};
 
 const NODE_A = generateIdentifier();
 const NODE_B = generateIdentifier();
@@ -297,7 +297,7 @@ async function seedCurrentGraph(
 Deno.test(
     'performAddEdge: success returns the new'
     + ' edge and persists it',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A), buildNode(NODE_B),
@@ -322,13 +322,13 @@ Deno.test(
         assertStrictEquals(
             await flowVersionCount(db), 0,
         );
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: from a start node with no'
     + ' outgoing edge succeeds',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_S, { isCreate: true }),
@@ -338,12 +338,12 @@ Deno.test(
             createRequestContext(db, DEV_TOKEN), snap, NODE_S, NODE_A,
         );
         assertStrictEquals(op.kind, 'ok');
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: locked flow fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = locked(snapFrom(buildGraph([
             buildNode(NODE_A), buildNode(NODE_B),
@@ -354,12 +354,12 @@ Deno.test(
         assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
         assertMatch(op.toast, /locked/i);
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: unknown fromId throws',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_B),
@@ -373,12 +373,12 @@ Deno.test(
         assertStringIncludes(
             err.message, 'unknown fromId ' + MISSING_ID,
         );
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: unknown toId throws',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -392,12 +392,12 @@ Deno.test(
         assertStringIncludes(
             err.message, 'unknown toId ' + MISSING_ID,
         );
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: from an end node fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_E, { isArchive: true }),
@@ -409,12 +409,12 @@ Deno.test(
         assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
         assertMatch(op.toast, /end state/i);
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: to a start node fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -426,12 +426,12 @@ Deno.test(
         assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
         assertMatch(op.toast, /start state/i);
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: duplicate edge fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph(
             [buildNode(NODE_A), buildNode(NODE_B)],
@@ -443,13 +443,13 @@ Deno.test(
         assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
         assertMatch(op.toast, /already exists/i);
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: a second edge out of the'
     + ' start node fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph(
             [
@@ -466,13 +466,13 @@ Deno.test(
         assertMatch(
             op.toast, /only one outgoing/i,
         );
-    },
+    }),
 );
 
 Deno.test(
     'performAddEdge: a commit failure yields a'
     + ' fail result',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await setupNoFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A), buildNode(NODE_B),
@@ -492,7 +492,7 @@ Deno.test(
         assertMatch(
             settled.toast, /failed to create/i,
         );
-    },
+    }),
 );
 
 // -- performAddNodeAtPosition -----------------
@@ -500,7 +500,7 @@ Deno.test(
 Deno.test(
     'performAddNodeAtPosition: returns node,'
     + ' edge, selectId and centers on the point',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -527,12 +527,12 @@ Deno.test(
         const g = await persistedGraph(db);
         assertStrictEquals(g.nodes.length, 2);
         assertStrictEquals(g.edges.length, 1);
-    },
+    }),
 );
 
 Deno.test(
     'performAddNodeAtPosition: locked flow fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = locked(snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -541,13 +541,13 @@ Deno.test(
             createRequestContext(db, DEV_TOKEN), snap, NODE_A, 0, 0,
         );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 Deno.test(
     'performAddNodeAtPosition: unknown fromNodeId'
     + ' throws',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([]));
         const err = await assertRejects(
@@ -559,13 +559,13 @@ Deno.test(
         assertStringIncludes(
             err.message, 'unknown fromNodeId ' + MISSING_ID,
         );
-    },
+    }),
 );
 
 Deno.test(
     'performAddNodeAtPosition: from an end node'
     + ' fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_E, { isArchive: true }),
@@ -576,13 +576,13 @@ Deno.test(
         assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
         assertMatch(op.toast, /end state/i);
-    },
+    }),
 );
 
 Deno.test(
     'performAddNodeAtPosition: from a start node'
     + ' that already has an outgoing edge fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph(
             [
@@ -599,13 +599,13 @@ Deno.test(
         assertMatch(
             op.toast, /only one outgoing/i,
         );
-    },
+    }),
 );
 
 Deno.test(
     'performAddNodeAtPosition: a commit failure'
     + ' yields a fail result',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await setupNoFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -622,7 +622,7 @@ Deno.test(
         assertMatch(
             settled.toast, /failed to add state/i,
         );
-    },
+    }),
 );
 
 // -- performDeleteSelectedNodes ---------------
@@ -630,7 +630,7 @@ Deno.test(
 Deno.test(
     'performDeleteSelectedNodes: removes the'
     + ' selected intermediate node',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_S, { isCreate: true }),
@@ -651,14 +651,14 @@ Deno.test(
         );
         const g = await persistedGraph(db);
         assertStrictEquals(g.nodes.length, 2);
-    },
+    }),
 );
 
 Deno.test(
     'performDeleteSelectedNodes: keeps start/end'
     + ' when the selection mixes them with an'
     + ' intermediate',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_S, { isCreate: true }),
@@ -676,13 +676,13 @@ Deno.test(
         if (op.kind !== 'ok') return;
         const ids = op.nodes.map(n => n.id).sort();
         assertEquals(ids, [NODE_E, NODE_S].sort());
-    },
+    }),
 );
 
 Deno.test(
     'performDeleteSelectedNodes: locked flow'
     + ' fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -695,13 +695,13 @@ Deno.test(
                 ),
             );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 Deno.test(
     'performDeleteSelectedNodes: an edge'
     + ' selection is a no-op',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph(
             [buildNode(NODE_A), buildNode(NODE_B)],
@@ -713,13 +713,13 @@ Deno.test(
                 withEdgeSelection(base, 'YiJPbufDpkyrZcZCYbUJpg'),
             );
         assertStrictEquals(op.kind, 'noop');
-    },
+    }),
 );
 
 Deno.test(
     'performDeleteSelectedNodes: a selection of'
     + ' only start/end nodes is a no-op',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_S, { isCreate: true }),
@@ -731,13 +731,13 @@ Deno.test(
                 withNodeSelection(base, NODE_S, NODE_E),
             );
         assertStrictEquals(op.kind, 'noop');
-    },
+    }),
 );
 
 Deno.test(
     'performDeleteSelectedNodes: a commit'
     + ' failure yields a fail result',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await setupNoFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -755,7 +755,7 @@ Deno.test(
         assertMatch(
             settled.toast, /failed to delete state/i,
         );
-    },
+    }),
 );
 
 // -- performDeleteSelectedEdge ----------------
@@ -763,7 +763,7 @@ Deno.test(
 Deno.test(
     'performDeleteSelectedEdge: removes the'
     + ' selected edge',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph(
             [buildNode(NODE_A), buildNode(NODE_B)],
@@ -780,13 +780,13 @@ Deno.test(
         assertStrictEquals(op.advanceHistory, true);
         const g = await persistedGraph(db);
         assertStrictEquals(g.edges.length, 0);
-    },
+    }),
 );
 
 Deno.test(
     'performDeleteSelectedEdge: locked flow'
     + ' fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph(
             [buildNode(NODE_A), buildNode(NODE_B)],
@@ -800,13 +800,13 @@ Deno.test(
                 ),
             );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 Deno.test(
     'performDeleteSelectedEdge: a node selection'
     + ' is a no-op',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -817,13 +817,13 @@ Deno.test(
                 withNodeSelection(base, NODE_A),
             );
         assertStrictEquals(op.kind, 'noop');
-    },
+    }),
 );
 
 Deno.test(
     'performDeleteSelectedEdge: a commit failure'
     + ' yields a fail result',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await setupNoFlow();
         const base = snapFrom(buildGraph(
             [buildNode(NODE_A), buildNode(NODE_B)],
@@ -843,7 +843,7 @@ Deno.test(
             settled.toast,
             /failed to delete transition/i,
         );
-    },
+    }),
 );
 
 // -- performAddAttributeRef -------------------
@@ -851,7 +851,7 @@ Deno.test(
 Deno.test(
     'performAddAttributeRef: appends a ref to the'
     + ' single selected node',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -870,12 +870,12 @@ Deno.test(
         assertStrictEquals(op.ref.mode, 'editable');
         assertStrictEquals(op.ref.isRequired, true);
         assertStrictEquals(op.advanceHistory, true);
-    },
+    }),
 );
 
 Deno.test(
     'performAddAttributeRef: locked flow fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -886,13 +886,13 @@ Deno.test(
             'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 Deno.test(
     'performAddAttributeRef: no single selected'
     + ' node is a no-op',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A), buildNode(NODE_B),
@@ -908,13 +908,13 @@ Deno.test(
             'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
         assertStrictEquals(manyOp.kind, 'noop');
-    },
+    }),
 );
 
 Deno.test(
     'performAddAttributeRef: a selected id that'
     + ' is not a node is a no-op',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -925,13 +925,13 @@ Deno.test(
             'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
         assertStrictEquals(op.kind, 'noop');
-    },
+    }),
 );
 
 Deno.test(
     'performAddAttributeRef: a commit failure'
     + ' yields a fail result',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await setupNoFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -951,7 +951,7 @@ Deno.test(
             settled.toast,
             /failed to add attribute/i,
         );
-    },
+    }),
 );
 
 // -- performRemoveAttributeRef ----------------
@@ -959,7 +959,7 @@ Deno.test(
 Deno.test(
     'performRemoveAttributeRef: removes the ref'
     + ' from the single selected node',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -978,12 +978,12 @@ Deno.test(
         assertStrictEquals(op.nodeId, NODE_A);
         assertStrictEquals(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
         assertStrictEquals(op.advanceHistory, true);
-    },
+    }),
 );
 
 Deno.test(
     'performRemoveAttributeRef: locked flow fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -998,13 +998,13 @@ Deno.test(
             'VPckAwjJsTGCEkKaOOGRGw',
         );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 Deno.test(
     'performRemoveAttributeRef: no single selected'
     + ' node is a no-op',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -1018,13 +1018,13 @@ Deno.test(
             withNoSelection(base), 'VPckAwjJsTGCEkKaOOGRGw',
         );
         assertStrictEquals(op.kind, 'noop');
-    },
+    }),
 );
 
 Deno.test(
     'performRemoveAttributeRef: a commit failure'
     + ' yields a fail result',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await setupNoFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -1048,7 +1048,7 @@ Deno.test(
             settled.toast,
             /failed to remove attribute/i,
         );
-    },
+    }),
 );
 
 // -- performUpdateAttributeMode ---------------
@@ -1056,7 +1056,7 @@ Deno.test(
 Deno.test(
     'performUpdateAttributeMode: updates the mode'
     + ' on the matching ref',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -1078,12 +1078,12 @@ Deno.test(
         assertStrictEquals(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
         assertStrictEquals(op.mode, 'readonly');
         assertStrictEquals(op.advanceHistory, true);
-    },
+    }),
 );
 
 Deno.test(
     'performUpdateAttributeMode: locked flow fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -1098,13 +1098,13 @@ Deno.test(
             'VPckAwjJsTGCEkKaOOGRGw', 'readonly',
         );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 Deno.test(
     'performUpdateAttributeMode: no single selected'
     + ' node is a no-op',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -1118,7 +1118,7 @@ Deno.test(
             'VPckAwjJsTGCEkKaOOGRGw', 'readonly',
         );
         assertStrictEquals(op.kind, 'noop');
-    },
+    }),
 );
 
 // -- performUpdateAttributeRequired -----------
@@ -1126,7 +1126,7 @@ Deno.test(
 Deno.test(
     'performUpdateAttributeRequired: updates the'
     + ' isRequired flag on the matching ref',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -1149,13 +1149,13 @@ Deno.test(
         assertStrictEquals(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
         assertStrictEquals(op.isRequired, true);
         assertStrictEquals(op.advanceHistory, true);
-    },
+    }),
 );
 
 Deno.test(
     'performUpdateAttributeRequired: locked flow'
     + ' fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -1173,13 +1173,13 @@ Deno.test(
                 'VPckAwjJsTGCEkKaOOGRGw', true,
             );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 Deno.test(
     'performUpdateAttributeRequired: no single'
     + ' selected node is a no-op',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph([
             buildNode(NODE_A, {
@@ -1194,7 +1194,7 @@ Deno.test(
                 'VPckAwjJsTGCEkKaOOGRGw', true,
             );
         assertStrictEquals(op.kind, 'noop');
-    },
+    }),
 );
 
 // -- performUndo ------------------------------
@@ -1208,7 +1208,7 @@ Deno.test(
 Deno.test(
     'performUndo: with no history is a no-op'
     + ' that returns the same snapshot',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A), buildNode(NODE_B),
@@ -1223,12 +1223,12 @@ Deno.test(
         assertStrictEquals(
             op.newHistory.hasUndoHistory, false,
         );
-    },
+    }),
 );
 
 Deno.test(
     'performUndo: locked flow fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = locked(snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -1238,7 +1238,7 @@ Deno.test(
             buildFlowHistorySnapshot(true),
         );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 // NAMED REWRITE (Phase 14 Task 8, undo-as-replay): the target
@@ -1252,7 +1252,7 @@ Deno.test(
 Deno.test(
     'performUndo: restores the previous save (one'
     + ' step back), and stages a redo entry',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupFlow();
         // The 2-node baseline — undo's own target.
         await seedCurrentGraph(ctx, [
@@ -1299,13 +1299,13 @@ Deno.test(
         );
         const g = await persistedGraph(db);
         assertStrictEquals(g.nodes.length, 2);
-    },
+    }),
 );
 
 Deno.test(
     'performUndo: keeps the panel open on a'
     + ' surviving node and restores memberIds',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupFlow();
         const humanId =
             'XXZruirZyAOoRpNxaDnpSA';
@@ -1359,13 +1359,13 @@ Deno.test(
         assertEquals(
             restored!.memberIds, [],
         );
-    },
+    }),
 );
 
 Deno.test(
     'performUndo: closes the panel when the'
     + ' selected node is gone',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupFlow();
         await seedCurrentGraph(ctx, [
             buildNode(NODE_A),
@@ -1405,7 +1405,7 @@ Deno.test(
                 .selection.kind,
             'none',
         );
-    },
+    }),
 );
 
 // -- performRedo ------------------------------
@@ -1413,7 +1413,7 @@ Deno.test(
 Deno.test(
     'performRedo: with an empty redo stack is a'
     + ' no-op that returns the same snapshot',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A), buildNode(NODE_B),
@@ -1425,12 +1425,12 @@ Deno.test(
         assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
         assertStrictEquals(op.freshSnap, snap);
-    },
+    }),
 );
 
 Deno.test(
     'performRedo: locked flow fails',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db } = await setupFlow();
         const snap = locked(snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -1443,14 +1443,14 @@ Deno.test(
             ),
         );
         assertStrictEquals(op.kind, 'fail');
-    },
+    }),
 );
 
 Deno.test(
     'performRedo: re-applies the popped version,'
     + ' snapshots the current state, and marks'
     + ' undo available',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupFlow();
         // Seed the relations with the current single-node graph
         // so GET /organizations/:id/flows/:id reflects the snap; redo diffs
@@ -1492,7 +1492,7 @@ Deno.test(
         );
         const g = await persistedGraph(db);
         assertStrictEquals(g.nodes.length, 2);
-    },
+    }),
 );
 
 // Comment refreshed (Phase 14 Task 8, undo-as-replay): redo is
@@ -1509,7 +1509,7 @@ Deno.test(
     + ' putFlow\'s own baseline read shares the SAME'
     + ' covenant catch every sibling perform* mutation'
     + ' uses',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await setupNoFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -1528,7 +1528,7 @@ Deno.test(
         assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
         assertMatch(op.toast, /redo failed/i);
-    },
+    }),
 );
 
 // A ctx whose POST to a named operation faults. For
@@ -1631,7 +1631,7 @@ function faultingPutCtx(
 Deno.test(
     'performUndo: a faulted POST /organizations/:id/flows/:id/undo'
     + ' applies nothing',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -1663,7 +1663,7 @@ Deno.test(
         );
         const g = await persistedGraph(db);
         assertStrictEquals(g.nodes.length, 2);
-    },
+    }),
 );
 
 // RETIRED (Phase 14 Task 8, undo-as-replay): "performRedo: a
@@ -1688,7 +1688,7 @@ Deno.test(
 Deno.test(
     'performRedo: a faulted document-PUT fails'
     + ' gracefully',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A),
@@ -1724,5 +1724,5 @@ Deno.test(
         );
         const g = await persistedGraph(db);
         assertStrictEquals(g.nodes.length, 2);
-    },
+    }),
 );

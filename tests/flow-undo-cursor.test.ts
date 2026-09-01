@@ -63,6 +63,8 @@ import type { GraphNode } from '../api/types.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { withLocalStorageAsync } from
+    './fixtures/local-storage.ts';
 
 const PROJECT_1 = generateIdentifier();
 const FLOWID_A = generateIdentifier();
@@ -88,10 +90,9 @@ const FLOWID_RECONCILE = generateIdentifier();
 // a client behavior (the 412-absorbing retry loop).
 
 // flow-operations.ts -> logger.ts -> preferences.ts reads
-// localStorage, absent in Node — stub it before any log.* call
-// in an error path (mirrors flow-operations.test.ts).
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
+// localStorage lazily, only on a log.* call in an error
+// path (mirrors flow-operations.test.ts).
+const NULL_STORAGE: Partial<Storage> = {
     getItem: (_key: string) => null,
     setItem: () => {},
 };
@@ -306,7 +307,7 @@ async function currentGraphName(
 Deno.test(
     'undo cursor: a single undo restores the previous'
     + ' save (one step back)',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -321,13 +322,13 @@ Deno.test(
         assertStrictEquals(
             await currentGraphName(db, token, flowId), 'A',
         );
-    },
+    }),
 );
 
 Deno.test(
     'undo cursor: after a save, undo succeeds under the'
     + ' postgres write-lock gate',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = withWriteGate(await freshDb());
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -342,7 +343,7 @@ Deno.test(
         assertStrictEquals(
             await currentGraphName(db, token, flowId), 'A',
         );
-    },
+    }),
 );
 
 // -- 2. undo-undo (consecutive) ----------------
@@ -354,7 +355,7 @@ Deno.test(
 Deno.test(
     'undo cursor: undo-undo walks further back, never'
     + ' oscillating between the two most recent states',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -381,7 +382,7 @@ Deno.test(
             'second consecutive undo reaches genesis, not'
             + ' back to B',
         );
-    },
+    }),
 );
 
 // -- 3. undo-save-undo (branch abandonment) ----
@@ -397,7 +398,7 @@ Deno.test(
     + ' undone branch — a save after undo-undo, then'
     + ' undo, reverts to the SAVE\'s own baseline, never'
     + ' the abandoned A/B branch',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -432,7 +433,7 @@ Deno.test(
             'undo after the save reverts to genesis (D\'s own'
             + ' baseline) — never A or B',
         );
-    },
+    }),
 );
 
 // -- 4. undo at history exhaustion -------------
@@ -441,7 +442,7 @@ Deno.test(
     'undo cursor: undo at exhaustion (nothing before'
     + ' genesis) is a graceful no-op — 204, no document'
     + ' pair, no graph change',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -480,7 +481,7 @@ Deno.test(
         assertStrictEquals(
             await currentGraphName(db, token, flowId), 'genesis',
         );
-    },
+    }),
 );
 
 // -- 5. concurrent-save vs undo (412 + retry) --
@@ -494,7 +495,7 @@ Deno.test(
     'undo cursor: a 412 on attempt 1 is absorbed —'
     + ' attempt 2 succeeds with no client-side baseline'
     + ' refetch',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         const flowId = generateIdentifier();
@@ -557,7 +558,7 @@ Deno.test(
         );
         assertStrictEquals(op.kind, 'ok');
         assertStrictEquals(posts, 2, 'the retry re-posts once');
-    },
+    }),
 );
 
 function buildNode(id: string): GraphNode {
@@ -606,7 +607,7 @@ Deno.test(
     + ' resolution snapshot 412s — it must never silently'
     + ' overwrite a save that landed after the snapshot'
     + ' was taken',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -671,7 +672,7 @@ Deno.test(
         assertStrictEquals(
             await currentGraphName(db, token, flowId), 'B',
         );
-    },
+    }),
 );
 
 // -- 6. SIDECAR-KEEP ---------------------------
@@ -686,7 +687,7 @@ Deno.test(
 Deno.test(
     'SIDECAR-KEEP: undo-authored document message pairs carry'
     + ' deleted/restored sidecars on graphDelta/revivals',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -809,7 +810,7 @@ Deno.test(
             'the undo-authored pair\'s own revival is'
             + ' visible on the message plane',
         );
-    },
+    }),
 );
 
 // -- 7. flags are guards, not undo content -----------
@@ -825,7 +826,7 @@ Deno.test(
 // unreachable.
 Deno.test(
     'undo cursor: a flag-only pair is not a step',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -897,12 +898,12 @@ Deno.test(
             secondBody.is_locked, !head.is_locked,
             'flag-only pairs are carried, not restored',
         );
-    },
+    }),
 );
 
 Deno.test(
     'undo after lock toggles reverts name not lock',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -962,13 +963,13 @@ Deno.test(
         if (op.kind !== 'ok') return;
         assertStrictEquals(op.freshSnap.flowName, 'genesis');
         assertStrictEquals(op.freshSnap.isLocked, false);
-    },
+    }),
 );
 
 Deno.test(
     'undo cursor: eleven saves walk eleven undos —'
     + ' N10 back to genesis, no cap',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = generateIdentifier();
@@ -1003,5 +1004,5 @@ Deno.test(
             ),
             'genesis',
         );
-    },
+    }),
 );

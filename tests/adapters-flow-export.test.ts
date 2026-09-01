@@ -1,15 +1,11 @@
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
-
 import {
     assert,
     assertEquals,
     assertNotStrictEquals,
     assertStrictEquals,
 } from '@std/assert';
+import { withLocalStorageAsync } from
+    './fixtures/local-storage.ts';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -62,6 +58,11 @@ import type {
 import {
     asStoredGraph,
 } from '../api/validators.ts';
+
+const NULL_STORAGE: Partial<Storage> = {
+    getItem: () => null,
+    setItem: () => {},
+};
 
 async function setup(): Promise<{
     db: MemoryDbAdapter;
@@ -160,7 +161,7 @@ async function readPairGraph(
 Deno.test(
     'postFlowFromBackup round-trip preserves'
     + ' node members AND attributes',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { ctx } = await setup();
         const newFlowId = generateIdentifier();
         const projectId = generateIdentifier();
@@ -215,7 +216,7 @@ Deno.test(
         assertStrictEquals(
             attr.isRequired, true,
         );
-    },
+    }),
 );
 
 // F5/F43: mermaid import must POST graphDelta (the flow
@@ -225,7 +226,7 @@ Deno.test(
 Deno.test(
     'postFlowFromMermaid creates a flow with'
     + ' a message-plane graph from simple .mmd',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { ctx } = await setup();
         const flowId = generateIdentifier();
         const mmd = [
@@ -258,13 +259,13 @@ Deno.test(
             graph.edges.length >= 1,
             'at least one edge after auto-wire',
         );
-    },
+    }),
 );
 
 Deno.test(
     'flowchart mmd with begin round-trips'
     + ' through postFlowFromMermaid',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { ctx } = await setup();
         const flowId = generateIdentifier();
         const startId = generateIdentifier();
@@ -340,12 +341,12 @@ Deno.test(
         assertEquals(
             names, ['begin', 'submit'],
         );
-    },
+    }),
 );
 
 Deno.test(
     'zip sidecar mermaid ids stay injective',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { ctx } = await setup();
         const dashBytes = new Uint8Array(16);
         dashBytes[0] = 62 << 2;
@@ -445,13 +446,13 @@ Deno.test(
         const edge = parsed.edges[0];
         assertStrictEquals(edge?.mermaidFrom, dashHex);
         assertStrictEquals(edge?.mermaidTo, underHex);
-    },
+    }),
 );
 
 Deno.test(
     'zip Create New keeps begin edges and'
     + ' sidecar positions with Auto Layout off',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { ctx } = await setup();
         const sourceId = generateIdentifier();
         const startId = generateIdentifier();
@@ -552,13 +553,13 @@ Deno.test(
         assert(create);
         assertStrictEquals(create.positionX, -190);
         assertStrictEquals(create.positionY, 30);
-    },
+    }),
 );
 
 Deno.test(
     'zip mermaid path reads sidecar.json'
     + ' positions and begin edges',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { ctx } = await setup();
         const sourceId = generateIdentifier();
         const startId = generateIdentifier();
@@ -650,5 +651,5 @@ Deno.test(
         assert(capture);
         assertStrictEquals(capture.positionX, 0);
         assertStrictEquals(capture.positionY, 30);
-    },
+    }),
 );

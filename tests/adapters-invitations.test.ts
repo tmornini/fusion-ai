@@ -1,23 +1,3 @@
-globalThis.localStorage = (() => {
-    const store = new Map<string, string>();
-    return {
-        getItem: (k: string) => store.get(k) ?? null,
-        setItem: (k: string, v: string) => {
-            store.set(k, v);
-        },
-        removeItem: (k: string) => {
-            store.delete(k);
-        },
-        clear: () => {
-            store.clear();
-        },
-        key: () => null,
-        get length() {
-            return store.size;
-        },
-    };
-})();
-
 import {
     assert,
     assertEquals,
@@ -26,6 +6,10 @@ import {
     assertStrictEquals,
     assertThrows,
 } from '@std/assert';
+import {
+    withLocalStorage,
+    withLocalStorageAsync,
+} from './fixtures/local-storage.ts';
 import {
     invitationLifecycleStatesFor,
 } from '../api/derive-states.ts';
@@ -79,6 +63,28 @@ import { generateIdentifier } from
     '../shared/identifier.ts';
 
 const AT = '2026-01-01T00:00:00.000000Z';
+
+// A fresh Map-backed fake per test — session-token adapters
+// used throughout this file read/write it lazily.
+function freshStorage(): Partial<Storage> {
+    const store = new Map<string, string>();
+    return {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+            store.set(k, v);
+        },
+        removeItem: (k: string) => {
+            store.delete(k);
+        },
+        clear: () => {
+            store.clear();
+        },
+        key: () => null,
+        get length() {
+            return store.size;
+        },
+    };
+}
 
 // Below-facade pair formation (the member-fixtures.ts idiom,
 // mirroring seedOrganizationDocument's own reasoning just below):
@@ -271,7 +277,8 @@ async function eraseIdentityPii(
     assertStrictEquals(response.status, 204);
 }
 
-Deno.test('validateInvitationEntity accepts a full body', () => {
+Deno.test('validateInvitationEntity accepts a full body',
+() => withLocalStorage(freshStorage(), () => {
     assertEquals(
         validateInvitationEntity({
             organization_id: 'BBjWJsjYIDkTRKIIPrzWRw',
@@ -284,30 +291,33 @@ Deno.test('validateInvitationEntity accepts a full body', () => {
             at: AT,
         },
     );
-});
+}));
 
-Deno.test('validateInvitationEntity rejects an extra key', () => {
+Deno.test('validateInvitationEntity rejects an extra key',
+() => withLocalStorage(freshStorage(), () => {
     assertThrows(() =>
         validateInvitationEntity({
             organization_id: 'BBjWJsjYIDkTRKIIPrzWRw'
                 , identity_id: 'toccYYkLEABmlbpHJalgtQ',
             at: AT, state: 'pending',
         }));
-});
+}));
 
-Deno.test('validateInvitationEntity rejects a bad timestamp', () => {
+Deno.test('validateInvitationEntity rejects a bad timestamp',
+() => withLocalStorage(freshStorage(), () => {
     assertThrows(() =>
         validateInvitationEntity({
             organization_id: 'BBjWJsjYIDkTRKIIPrzWRw'
                 , identity_id: 'toccYYkLEABmlbpHJalgtQ',
             at: 'not-a-date',
         }));
-});
+}));
 
 // Phase Final Stage B: invitations table retired — store
 // round-trip pins live on message-plane document tests.
 
-Deno.test('grant by email appends a pending invitation', async () => {
+Deno.test('grant by email appends a pending invitation',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db, ctx } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     assertStrictEquals(
@@ -319,9 +329,10 @@ Deno.test('grant by email appends a pending invitation', async () => {
     assertStrictEquals(rows[0]!.identity_id, 'toccYYkLEABmlbpHJalgtQ');
     assertStrictEquals(rows[0]!.state, 'pending');
     // Phase Final Stage B: roster tables retired.
-});
+}));
 
-Deno.test('grant stamps the org from the verified token', async () => {
+Deno.test('grant stamps the org from the verified token',
+() => withLocalStorageAsync(freshStorage(), async () => {
     // Tony is admin of both, but his token is scoped to Wayne;
     // the invitation must land in Wayne, never Stark.
     const { db, ctx } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
@@ -329,36 +340,38 @@ Deno.test('grant stamps the org from the verified token', async () => {
     await postInvitationGrant(ctx, 'sarah@x.com');
     const rows = await deriveInvitations(db);
     assertStrictEquals(rows[0]!.organization_id, 'BBjWJsjYIDkTRKIIPrzWRw');
-});
+}));
 
-Deno.test('grant by unknown email returns no-identity', async () => {
+Deno.test('grant by unknown email returns no-identity',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { ctx } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     assertStrictEquals(
         await postInvitationGrant(ctx, 'nobody@x.com'),
         'no-identity');
-});
+}));
 
 Deno.test('grant for an existing member returns already-member',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     // Tony invites Sarah to Stark, where she is already a member.
     const { ctx } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'AjdvjuECVZEgZoFajaIEkg');
     assertStrictEquals(
         await postInvitationGrant(ctx, 'sarah@x.com'),
         'already-member');
-});
+}));
 
-Deno.test('a non-admin cannot grant', async () => {
+Deno.test('a non-admin cannot grant',
+() => withLocalStorageAsync(freshStorage(), async () => {
     // Sarah is a Stark member but not an admin.
     const { ctx } = await ctxFor('toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
     await assertRejects(
         () => postInvitationGrant(ctx, 'dave@x.com'));
-});
+}));
 
 Deno.test('the invitee reads their own pending invitation',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -370,10 +383,10 @@ async () => {
     assertStrictEquals(mine.length, 1);
     assertStrictEquals(mine[0]!.organizationName, 'Wayne');
     assertStrictEquals(mine[0]!.state, 'pending');
-});
+}));
 
 Deno.test('the view omits the inviter name when PII is erased',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -386,10 +399,10 @@ async () => {
     const mine = await getInvitations(toccYYkLEABmlbpHJalgtQ);
     assertStrictEquals(mine.length, 1);
     assert(!('invitedByName' in mine[0]!));
-});
+}));
 
 Deno.test('the view omits the org name when the org is gone',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     // Org '3': current is admin/member, but it carries no
     // organizations document at all — a states 'deleted' event
     // against an EXISTING org (the pre-flip version of this test)
@@ -416,10 +429,10 @@ async () => {
     const mine = await getInvitations(toccYYkLEABmlbpHJalgtQ);
     assertStrictEquals(mine.length, 1);
     assert(!('organizationName' in mine[0]!));
-});
+}));
 
 Deno.test('accept writes a membership in the invitation org',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     // THE security crux: Sarah is scoped to Stark, but accepting
     // a Wayne invite must write a WAYNE membership, never Stark.
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
@@ -439,9 +452,10 @@ async () => {
     const views = await getInvitations(toccYYkLEABmlbpHJalgtQ);
     assertStrictEquals(
         views.find(v => v.id === inv.id)?.state, 'accepted');
-});
+}));
 
-Deno.test('accept by a non-invitee is rejected', async () => {
+Deno.test('accept by a non-invitee is rejected',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -452,10 +466,10 @@ Deno.test('accept by a non-invitee is rejected', async () => {
     const dave = await ctxOn(db, daveId, 'AjdvjuECVZEgZoFajaIEkg');
     await assertRejects(
         () => postInvitationAcceptance(dave, inv.id));
-});
+}));
 
 Deno.test('decline records declined and writes no membership',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -472,9 +486,10 @@ async () => {
     const memberships = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === daveId);
     assertStrictEquals(memberships.length, 0);
-});
+}));
 
-Deno.test('revoke records revoked (admin only)', async () => {
+Deno.test('revoke records revoked (admin only)',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -487,9 +502,10 @@ Deno.test('revoke records revoked (admin only)', async () => {
     const views = await getInvitations(toccYYkLEABmlbpHJalgtQ);
     assertStrictEquals(
         views.find(v => v.id === inv.id)?.state, 'revoked');
-});
+}));
 
-Deno.test('a non-admin cannot revoke', async () => {
+Deno.test('a non-admin cannot revoke',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -502,9 +518,10 @@ Deno.test('a non-admin cannot revoke', async () => {
         () => postInvitationRevocation(
             toccYYkLEABmlbpHJalgtQ, inv.id,
         ));
-});
+}));
 
-Deno.test('accept after revoke is rejected, no membership', async () => {
+Deno.test('accept after revoke is rejected, no membership',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -522,9 +539,10 @@ Deno.test('accept after revoke is rejected, no membership', async () => {
         .filter(m => m.identity_id === 'toccYYkLEABmlbpHJalgtQ'
             && m.organization_id === 'BBjWJsjYIDkTRKIIPrzWRw');
     assertStrictEquals(wayne.length, 0);
-});
+}));
 
-Deno.test('accept after decline is rejected', async () => {
+Deno.test('accept after decline is rejected',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -538,9 +556,10 @@ Deno.test('accept after decline is rejected', async () => {
         () => postInvitationAcceptance(
             toccYYkLEABmlbpHJalgtQ, inv.id,
         ));
-});
+}));
 
-Deno.test('decline after accept is rejected', async () => {
+Deno.test('decline after accept is rejected',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -554,9 +573,10 @@ Deno.test('decline after accept is rejected', async () => {
         () => postInvitationDecline(
             toccYYkLEABmlbpHJalgtQ, inv.id,
         ));
-});
+}));
 
-Deno.test('granting the same email twice is idempotent', async () => {
+Deno.test('granting the same email twice is idempotent',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -564,7 +584,7 @@ Deno.test('granting the same email twice is idempotent', async () => {
     await postInvitationGrant(tony, 'sarah@x.com');
     await postInvitationGrant(tony, 'sarah@x.com');
     assertStrictEquals((await deriveInvitations(db)).length, 1);
-});
+}));
 
 // The dedup treats only a PENDING invitation as outstanding — a
 // DECLINED one is spent. Contrast the idempotent-duplicate case
@@ -572,7 +592,7 @@ Deno.test('granting the same email twice is idempotent', async () => {
 // re-grant must mint a FRESH invitation, never echo the declined
 // row's id.
 Deno.test('re-inviting a declined invitee mints a fresh invitation',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -595,10 +615,10 @@ async () => {
     const stateById = new Map(mine.map(v => [v.id, v.state]));
     assertStrictEquals(stateById.get(first.id), 'declined');
     assertStrictEquals(stateById.get(fresh!.id), 'pending');
-});
+}));
 
 Deno.test('sent invitations list the active org pending only',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tonyWayne = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -611,10 +631,10 @@ async () => {
     const tonyStark = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'AjdvjuECVZEgZoFajaIEkg');
     assertStrictEquals((await getSentInvitations(tonyStark)).length, 0);
-});
+}));
 
 Deno.test('the sent view omits the email when PII is erased',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -625,7 +645,7 @@ async () => {
     const sent = await getSentInvitations(tony);
     assertStrictEquals(sent.length, 1);
     assert(!('inviteeEmail' in sent[0]!));
-});
+}));
 
 // Caller-minted ids + at (T11)
 // Adapters mint unconditionally; the adapter-level tests assert:
@@ -636,7 +656,7 @@ async () => {
 // tests/api-invitations-fence.test.ts.
 
 Deno.test('grant: entity lands and event author is server-derived',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -658,10 +678,10 @@ async () => {
     ).at(-1)!;
     assert(ev.at !== '');
     assertStrictEquals(ev.member_id, 'XXZruirZyAOoRpNxaDnpSA');
-});
+}));
 
 Deno.test('accept: event author is server-derived, membership lands',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -690,9 +710,10 @@ async () => {
             && m.organization_id === 'BBjWJsjYIDkTRKIIPrzWRw');
     assertStrictEquals(wayne.length, 1);
     assert(wayne[0]!.id !== '');
-});
+}));
 
-Deno.test('decline: event author is server-derived', async () => {
+Deno.test('decline: event author is server-derived',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -713,9 +734,10 @@ Deno.test('decline: event author is server-derived', async () => {
     assert(ev.id !== '');
     assert(ev.at !== '');
     assertStrictEquals(ev.member_id, daveId);
-});
+}));
 
-Deno.test('revoke: event author is server-derived', async () => {
+Deno.test('revoke: event author is server-derived',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -735,13 +757,13 @@ Deno.test('revoke: event author is server-derived', async () => {
     assert(ev.id !== '');
     assert(ev.at !== '');
     assertStrictEquals(ev.member_id, 'XXZruirZyAOoRpNxaDnpSA');
-});
+}));
 
 // A notify fires only after a write commits — an idempotent
 // no-op writes nothing, so it must ring nothing.
 
 Deno.test('a repeated grant (existing pending) posts no notification',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     const posted: NotificationEvent[] = [];
     const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -750,9 +772,10 @@ async () => {
     assertStrictEquals(posted.length, 1);
     await postInvitationGrant(tony, 'sarah@x.com');
     assertStrictEquals(posted.length, 1);
-});
+}));
 
-Deno.test('a repeated accept posts no notification', async () => {
+Deno.test('a repeated accept posts no notification',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const posted: NotificationEvent[] = [];
     const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -765,9 +788,10 @@ Deno.test('a repeated accept posts no notification', async () => {
     assertStrictEquals(posted.length, 2);   // grant, accept
     await postInvitationAcceptance(toccYYkLEABmlbpHJalgtQ, inv.id);
     assertStrictEquals(posted.length, 2);
-});
+}));
 
-Deno.test('a repeated decline posts no notification', async () => {
+Deno.test('a repeated decline posts no notification',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const posted: NotificationEvent[] = [];
     const { db, daveId } = await seedWithNotify(
         e => posted.push(e),
@@ -781,9 +805,10 @@ Deno.test('a repeated decline posts no notification', async () => {
     assertStrictEquals(posted.length, 2);   // grant, decline
     await postInvitationDecline(dave, inv.id);
     assertStrictEquals(posted.length, 2);
-});
+}));
 
-Deno.test('a repeated revoke posts no notification', async () => {
+Deno.test('a repeated revoke posts no notification',
+() => withLocalStorageAsync(freshStorage(), async () => {
     const posted: NotificationEvent[] = [];
     const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -796,10 +821,10 @@ Deno.test('a repeated revoke posts no notification', async () => {
         () => postInvitationRevocation(tony, inv.id),
     );
     assertStrictEquals(posted.length, 2);
-});
+}));
 
 Deno.test('cookie-session accept remints via refresh POST',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     setCookieSession(true);
     try {
         const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
@@ -840,10 +865,10 @@ async () => {
         setCookieSession(false);
         deleteSessionToken();
     }
-});
+}));
 
 Deno.test('a failed re-mint after accept surfaces, seat kept',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     setCookieSession(true);
     try {
         const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
@@ -890,4 +915,4 @@ async () => {
         setCookieSession(false);
         deleteSessionToken();
     }
-});
+}));

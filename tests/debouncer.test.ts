@@ -1,23 +1,22 @@
 import { assertEquals, assertStrictEquals } from '@std/assert';
 import { FakeTime } from '@std/testing/time';
-
-// debouncer.ts → logger.ts → preferences.ts reads
-// localStorage, which is absent in Node. Stub it
-// before any log.* call fires.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: (_key: string) => null,
-    setItem: () => {},
-};
-
+import { withLocalStorage } from
+    './fixtures/local-storage.ts';
 import {
     Debouncer,
 } from '../web-app/app/debouncer.ts';
 
+// debouncer.ts -> logger.ts -> preferences.ts reads
+// localStorage lazily, only when a log.* call fires.
+const NULL_STORAGE: Partial<Storage> = {
+    getItem: (_key: string) => null,
+    setItem: () => {},
+};
+
 Deno.test(
     'schedule waits the delay; the last scheduled'
     + ' save wins the burst',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         using time = new FakeTime();
         const d = new Debouncer(800);
         const ran: string[] = [];
@@ -27,13 +26,13 @@ Deno.test(
         assertEquals(ran, []);
         time.tick(1);
         assertEquals(ran, ['second']);
-    },
+    }),
 );
 
 Deno.test(
     'flush runs the pending save immediately and'
     + ' cancels the timer — no double fire',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         using time = new FakeTime();
         const d = new Debouncer(800);
         let runs = 0;
@@ -42,12 +41,12 @@ Deno.test(
         assertStrictEquals(runs, 1);
         time.tick(800);
         assertStrictEquals(runs, 1);
-    },
+    }),
 );
 
 Deno.test(
     'flush with nothing pending is a no-op',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         using time = new FakeTime();
         const d = new Debouncer(800);
         let runs = 0;
@@ -58,13 +57,13 @@ Deno.test(
         d.schedule(() => { runs += 1; });
         time.tick(800);
         assertStrictEquals(runs, 1);
-    },
+    }),
 );
 
 Deno.test(
     'a fired save clears pending — a later flush'
     + ' does not replay it',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         using time = new FakeTime();
         const d = new Debouncer(800);
         let runs = 0;
@@ -73,12 +72,12 @@ Deno.test(
         assertStrictEquals(runs, 1);
         d.flush();
         assertStrictEquals(runs, 1);
-    },
+    }),
 );
 
 Deno.test(
     'schedule after a fire starts a fresh burst',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         using time = new FakeTime();
         const d = new Debouncer(800);
         const ran: string[] = [];
@@ -87,13 +86,13 @@ Deno.test(
         d.schedule(() => ran.push('b'));
         time.tick(800);
         assertEquals(ran, ['a', 'b']);
-    },
+    }),
 );
 
 Deno.test(
     'isPending tracks a scheduled save until fire'
     + ' or flush',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         using time = new FakeTime();
         const d = new Debouncer(800);
         assertStrictEquals(d.isPending(), false);
@@ -105,5 +104,5 @@ Deno.test(
         assertStrictEquals(d.isPending(), true);
         d.flush();
         assertStrictEquals(d.isPending(), false);
-    },
+    }),
 );

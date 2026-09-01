@@ -1,15 +1,6 @@
-
-// flow-operations.ts → logger.ts → preferences.ts
-// reads localStorage, which is absent in Node. Stub it
-// before any log.* call in an error path (mirrors
-// flow-operations.test.ts).
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: (_key: string) => null,
-    setItem: () => {},
-};
-
 import { assert, assertStrictEquals } from '@std/assert';
+import { withLocalStorageAsync } from
+    './fixtures/local-storage.ts';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -69,6 +60,14 @@ const FLOW_ID = generateIdentifier();
 const NODE_A = generateIdentifier();
 const NODE_X = generateIdentifier();
 const EDGE_XE = generateIdentifier();
+
+// flow-operations.ts -> logger.ts -> preferences.ts reads
+// localStorage lazily on an error path (mirrors
+// flow-operations.test.ts).
+const NULL_STORAGE: Partial<Storage> = {
+    getItem: (_key: string) => null,
+    setItem: () => {},
+};
 
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;
@@ -277,7 +276,7 @@ Deno.test(
     'DELETE-THEN-UNDO revives the deleted node and its'
     + ' edge: pair graph includes them, latest state'
     + " is 'restored'",
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupMemDb();
         const a = buildNode(NODE_A, { isCreate: true });
         const x = buildNode(NODE_X);
@@ -332,13 +331,13 @@ Deno.test(
             await latestSidecarStateFor(db, EDGE_XE), 'restored',
             "revived edge's latest state is 'restored'",
         );
-    },
+    }),
 );
 
 Deno.test(
     'ADD-THEN-UNDO deletes the added node: pair graph'
     + ' omits it (working-not-target is a deletion)',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupMemDb();
         const a = buildNode(NODE_A, { isCreate: true });
         const x = buildNode(NODE_X);
@@ -367,12 +366,12 @@ Deno.test(
         assertStrictEquals(
             await latestSidecarStateFor(db, NODE_X), 'deleted',
         );
-    },
+    }),
 );
 
 Deno.test(
     'MEMBER add + undo: the member is gone after undo',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { ctx } = await setupMemDb();
         const aBare = buildNode(NODE_A, { isCreate: true });
         const aWithMember = buildNode(NODE_A, {
@@ -404,13 +403,13 @@ Deno.test(
                 .memberIds.includes('mFNSxZqywTSMXhgUTdTqtA'),
             'undo removes the added member',
         );
-    },
+    }),
 );
 
 Deno.test(
     'REDO round-trip: redo re-applies the delete after'
     + ' an undo revived it (X tombstoned again)',
-    async () => {
+    () => withLocalStorageAsync(NULL_STORAGE, async () => {
         const { db, ctx } = await setupMemDb();
         const a = buildNode(NODE_A, { isCreate: true });
         const x = buildNode(NODE_X);
@@ -446,5 +445,5 @@ Deno.test(
             await latestSidecarStateFor(db, NODE_X), 'deleted',
             "redo re-tombstones X (latest state 'deleted')",
         );
-    },
+    }),
 );
