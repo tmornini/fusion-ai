@@ -1,9 +1,9 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fromFileUrl } from '@std/path';
 
 const src = readFileSync(
-    fileURLToPath(
+    fromFileUrl(
         new URL(
             '../web-app/app/root-redirect.ts',
             import.meta.url,

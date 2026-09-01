@@ -1,11 +1,9 @@
 import { assertMatch, assertNotMatch, assertStrictEquals } from '@std/assert';
 import {
     existsSync,
-    mkdtempSync,
     readFileSync,
     writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from '@std/path';
 import {
     spawnSync,
@@ -13,9 +11,9 @@ import {
 } from 'node:child_process';
 
 function pathWithDockerStub(stamp: string): string {
-    const dir = mkdtempSync(
-        join(tmpdir(), 'fusion-docker-stub-'),
-    );
+    const dir = Deno.makeTempDirSync({
+        prefix: 'fusion-docker-stub-',
+    });
     writeFileSync(
         join(dir, 'docker'),
         '#!/bin/bash\n'
@@ -31,7 +29,7 @@ function runServe(
     extraEnv: NodeJS.ProcessEnv = {},
 ): SpawnSyncReturns<string> & { stamp: string } {
     const stamp = join(
-        mkdtempSync(join(tmpdir(), 'fusion-stamp-')),
+        Deno.makeTempDirSync({ prefix: 'fusion-stamp-' }),
         'called',
     );
     const result = spawnSync('./serve', args, {

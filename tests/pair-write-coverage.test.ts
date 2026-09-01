@@ -1,6 +1,6 @@
 import { assert, assertStrictEquals } from '@std/assert';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fromFileUrl } from '@std/path';
 import { routes, type Route } from '../api/routes.ts';
 import {
     MESSAGE_PAIR_WIRED_ROUTE_PATTERNS,
@@ -17,7 +17,7 @@ import {
 // task-2a-report.md deferred to explicitly: "the Task 6 exit
 // test will catch any gap mechanically."
 
-const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+const repoRoot = fromFileUrl(new URL('..', import.meta.url));
 
 function sourceText(relativePath: string): string {
     return readFileSync(repoRoot + relativePath, 'utf8');

@@ -1,7 +1,5 @@
 import { assert, assertStrictEquals } from '@std/assert';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { rmSync } from 'node:fs';
 import { STARK_ORGANIZATION } from
     '../api/mock-data/seed-constants.ts';
 import {
@@ -20,11 +18,10 @@ const MEMBERS_PATH = '/api/organizations/'
 
 Deno.test('the in-process origin serves the seeded API',
 async () => {
-    const staticRoot = mkdtempSync(join(
-        process.env['TMPDIR'] ?? tmpdir(),
-        'fusion-origin-',
-    ));
-    process.env['FUSION_ANGLE_STATIC_ROOT'] = staticRoot;
+    const staticRoot = Deno.makeTempDirSync({
+        prefix: 'fusion-origin-',
+    });
+    Deno.env.set('FUSION_ANGLE_STATIC_ROOT', staticRoot);
     const origin = await startOrigin();
     try {
         assert(

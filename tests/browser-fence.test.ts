@@ -1,15 +1,10 @@
 import { assertMatch, assertNotStrictEquals } from '@std/assert';
 import { spawnSync } from 'node:child_process';
-import {
-    mkdtempSync, writeFileSync, rmSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync, rmSync } from 'node:fs';
 import { join } from '@std/path';
 
 Deno.test('browser project rejects process (TS2591)', () => {
-    const dir = mkdtempSync(
-        join(tmpdir(), 'deno-fence-'),
-    );
+    const dir = Deno.makeTempDirSync({ prefix: 'deno-fence-' });
     try {
         const leak = join(dir, 'leak.ts');
         writeFileSync(leak, 'process.exit(0);\n');

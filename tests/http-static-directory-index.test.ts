@@ -1,8 +1,7 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
 import { request } from 'node:http';
-import { mkdtemp, mkdir, writeFile, rm } from
+import { mkdir, writeFile, rm } from
     'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join } from '@std/path';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
@@ -23,9 +22,9 @@ async function withServer(
         logs: Record<string, unknown>[],
     ) => Promise<void>,
 ): Promise<void> {
-    const root = await mkdtemp(
-        join(tmpdir(), 'fusion-http-'),
-    );
+    const root = await Deno.makeTempDir({
+        prefix: 'fusion-http-',
+    });
     const logs: Record<string, unknown>[] = [];
     let listener: HttpListener | undefined;
     try {

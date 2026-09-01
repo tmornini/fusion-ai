@@ -6,8 +6,7 @@ import {
     readFileSync,
     statSync,
 } from 'node:fs';
-import { join, relative } from '@std/path';
-import { fileURLToPath } from 'node:url';
+import { fromFileUrl, join, relative } from '@std/path';
 import { handleRequest, PUT } from '../api/api.ts';
 import {
     memoryDbAdapter,
@@ -57,7 +56,7 @@ const RETIRED_MESSAGE =
     + ' is retired: send set/clear against'
     + ' the bound instance';
 
-const repoRoot = fileURLToPath(
+const repoRoot = fromFileUrl(
     new URL('..', import.meta.url),
 );
 

@@ -10,8 +10,7 @@ import {
     readFileSync,
     statSync,
 } from 'node:fs';
-import { join } from '@std/path';
-import { fileURLToPath } from 'node:url';
+import { fromFileUrl, join } from '@std/path';
 import {
     sha256Hex,
     sha256HexOfBytes,
@@ -120,7 +119,7 @@ Deno.test('notifyPayload emits full when over 8000 bytes',
     assertStrictEquals(notifyPayload(large), '{"kind":"full"}');
 });
 
-const repoRoot = fileURLToPath(
+const repoRoot = fromFileUrl(
     new URL('..', import.meta.url),
 );
 

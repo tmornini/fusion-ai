@@ -1,7 +1,6 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { writeFileSync } from 'node:fs';
+import { join } from '@std/path';
 import { execSync, spawnSync } from 'node:child_process';
 
 function headSha(): string {
@@ -13,7 +12,7 @@ function headSha(): string {
 Deno.test('validate skips when the HEAD SHA already passed',
     () => {
     const stamp = join(
-        mkdtempSync(join(tmpdir(), 'validate-ok-')),
+        Deno.makeTempDirSync({ prefix: 'validate-ok-' }),
         'validate-ok',
     );
     writeFileSync(stamp, `${headSha()}\n`);

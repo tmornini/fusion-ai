@@ -1,8 +1,6 @@
 import { assertStrictEquals } from '@std/assert';
 import { request } from 'node:http';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { rm } from 'node:fs/promises';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import { HTTP_TOO_MANY_REQUESTS } from
     '../api/http-errors.ts';
@@ -18,9 +16,9 @@ async function withServer(
     run: (base: string) => Promise<void>,
     trustedProxyHops?: string,
 ): Promise<void> {
-    const root = await mkdtemp(
-        join(tmpdir(), 'fusion-throttle-'),
-    );
+    const root = await Deno.makeTempDir({
+        prefix: 'fusion-throttle-',
+    });
     let listener: HttpListener | undefined;
     try {
         listener = await listenHttp({
