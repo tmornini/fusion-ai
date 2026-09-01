@@ -131,3 +131,7 @@ export async function seedMain(
         return 1;
     }
 }
+
+if (import.meta.main) {
+    Deno.exit(await seedMain(Deno.args));
+}
