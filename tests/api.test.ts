@@ -19,7 +19,7 @@ import {
 import {
     DEV_TOKEN, organizationToken,
 } from './token-fixtures.ts';
-import { captureConsole } from './console-capture.ts';
+import { captureConsole } from './fixtures/console-capture.ts';
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';

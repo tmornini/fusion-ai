@@ -5,7 +5,7 @@ import { memoryDbAdapter } from '../api/db-memory.ts';
 import { reachableToken } from
     './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
-import { captureConsole } from './console-capture.ts';
+import { captureConsole } from './fixtures/console-capture.ts';
 
 // Phase 12 Task 1: the pre-dispatch fence reads (handleRequest's
 // two ownership-fence regions, api/api.ts) redact a thrown fault

@@ -28,7 +28,7 @@ import {
     getPreference,
     putPreference,
 } from '../web-app/app/adapters/preferences.ts';
-import { captureConsole } from './console-capture.ts';
+import { captureConsole } from './fixtures/console-capture.ts';
 
 Deno.test(
     'getPreference returns null for an unset key',

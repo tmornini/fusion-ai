@@ -26,7 +26,7 @@ import {
     type RequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
-import { captureConsole } from './console-capture.ts';
+import { captureConsole } from './fixtures/console-capture.ts';
 import {
     postFlowCreation,
     putFlow,

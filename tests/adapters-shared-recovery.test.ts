@@ -42,7 +42,7 @@ import { handleRequest, UnauthorizedError } from '../api/api.ts';
 import {
     createRecoveringRequestContext,
 } from '../web-app/app/adapters/shared.ts';
-import { captureConsole } from './console-capture.ts';
+import { captureConsole } from './fixtures/console-capture.ts';
 import { putSessionToken } from '../web-app/app/adapters/init.ts';
 import {
     getSessionCredentials,

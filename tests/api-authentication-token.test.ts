@@ -19,7 +19,7 @@ import {
 } from './mock-seed.ts';
 import { generateIdentifier } from
     '../shared/identifier.ts';
-import { captureConsole } from './console-capture.ts';
+import { captureConsole } from './fixtures/console-capture.ts';
 import {
     makeAssertionSigner,
 } from './client-assertion-fixtures.ts';
