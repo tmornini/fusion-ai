@@ -1,5 +1,10 @@
-import { after, before, test } from 'node:test';
-import assert from 'node:assert/strict';
+// before/after stay on node:test — Task 48's hooks.
+import {
+    assertEquals,
+    assertNotEquals,
+    assertStrictEquals,
+} from '@std/assert';
+import { after, before } from 'node:test';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import { PostgresBackend } from
@@ -96,10 +101,10 @@ async function idsAtAddress(
 }
 
 if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
-    test(
+    Deno.test(
         'postgres identifier order skipped without'
         + ' POSTGRES_URL',
-        { skip: 'POSTGRES_URL is unset' },
+        { ignore: true }, // POSTGRES_URL is unset
         () => {},
     );
 } else {
@@ -128,7 +133,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         }
     });
 
-    test(
+    Deno.test(
         'uuid ORDER BY matches compareIdentifiers',
         async () => {
             const prefixes = ['-', '0', 'A', '_', 'a'];
@@ -136,7 +141,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
                 identifierForPrefix,
             );
             for (let i = 0; i < ids.length; i++) {
-                assert.equal(
+                assertStrictEquals(
                     ids[i]![0], prefixes[i],
                 );
             }
@@ -144,10 +149,10 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
             const identifierOrder = [...ids].sort(
                 compareIdentifiers,
             );
-            assert.notDeepEqual(
+            assertNotEquals(
                 identifierOrder, asciiOrder,
             );
-            assert.deepEqual(
+            assertEquals(
                 identifierOrder.map((id) => id[0]),
                 ['A', 'a', '0', '-', '_'],
             );
@@ -170,8 +175,8 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
             const memIds = await idsAtAddress(
                 memory,
             );
-            assert.deepEqual(pgIds, identifierOrder);
-            assert.deepEqual(memIds, identifierOrder);
+            assertEquals(pgIds, identifierOrder);
+            assertEquals(memIds, identifierOrder);
         },
     );
 }

@@ -1,4 +1,5 @@
-import { after, before, test } from 'node:test';
+// before/after stay on node:test — Task 48's hooks.
+import { after, before } from 'node:test';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import { PostgresBackend } from
@@ -46,9 +47,9 @@ function urlWithSearchPath(
 }
 
 if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
-    test(
+    Deno.test(
         'postgres acceptance skipped without POSTGRES_URL',
-        { skip: 'POSTGRES_URL is unset' },
+        { ignore: true }, // POSTGRES_URL is unset
         () => {},
     );
 } else {
