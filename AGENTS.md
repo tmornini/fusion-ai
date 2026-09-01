@@ -39,11 +39,14 @@ docker compose down        # stop; the database dies with it
 ```
 
 Deno 2.9.6 runs `./validate`, `./test`, `./test-postgres`,
-`./build`, `./test-browser`, `./crank`, `./measure`,
-`./serve`, and both generators. The local
-`./postgres-seed` and `./postgres-wipe` paths `exec deno
-run` under named permissions, and `postgres-lib`'s eight
-inline programs pipe into `deno run --frozen` on stdin.
+`./build`, `./test-browser`, `./measure`, and both
+generators, each invoking the `deno` CLI directly. The
+local `./postgres-seed` and `./postgres-wipe` paths
+`exec deno run` under named permissions, and
+`postgres-lib`'s eight inline programs pipe into
+`deno run --frozen` on stdin. `./crank` composes those
+scripts, and `./serve` execs the `deno compile` binary,
+which embeds the runtime — neither calls `deno` itself.
 
 Deno is the only runtime this repository uses. No script
 invokes `node` or `npm`; there is no `package.json` and no
