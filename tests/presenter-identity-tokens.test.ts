@@ -1,24 +1,18 @@
 import { assertMatch } from '@std/assert';
-// state.ts reads localStorage / window / document at
-// module-eval time; stub before importing presenters.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import {
+    IdentityTokensPresenter,
+} from '../web-app/app/presenters/identity-tokens.ts';
+
+// identity-tokens.ts never reads localStorage (checked
+// against the full product tree); window/document are
+// stubbed because IdentityTokensPresenter.render walks a
+// real DOM element.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
 } as unknown as Window & typeof globalThis;
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
-
-
-const {
-    IdentityTokensPresenter,
-} = await import(
-    '../web-app/app/presenters/identity-tokens.ts'
-);
 
 function record(): {
     container: HTMLElement;

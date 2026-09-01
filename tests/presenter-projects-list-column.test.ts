@@ -1,14 +1,14 @@
 import { assert, assertStrictEquals } from '@std/assert';
-// project.ts (transitively) reads localStorage /
-// window at module-eval time, which Node lacks.
-// Stub before any import, then load via dynamic
-// import() so stubs are in place.
-// Same pattern as presenter-projects-org.test.ts.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import { Project } from '../api/types.ts';
+import {
+    ProjectListPresenter,
+    buildInitialProjectListState,
+} from '../web-app/app/presenters/project.ts';
+
+// project.ts never reads localStorage (checked against
+// the full product tree); window/document are stubbed
+// because ProjectListPresenter.render walks a real DOM
+// element.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
@@ -17,17 +17,6 @@ globalThis.window = {
 globalThis.document = {
     addEventListener: () => {},
 };
-
-
-const { Project } = await import(
-    '../api/types.ts'
-);
-const {
-    ProjectListPresenter,
-    buildInitialProjectListState,
-} = await import(
-    '../web-app/app/presenters/project.ts'
-);
 
 function makeProject(id: string): InstanceType<
     typeof Project

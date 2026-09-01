@@ -1,33 +1,23 @@
 import { assertMatch, assertNotMatch, assertStrictEquals } from '@std/assert';
-// state.ts (transitively imported via core.ts ->
-// presenters) reads localStorage and window /
-// document at module-eval time, which Node lacks.
-// Stub before any import, then load the page-module
-// reducer with dynamic import() so the stubs are in
-// place. Same pattern as members-detail-reduce.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import { Project } from '../api/types.ts';
+import { ProjectView } from
+    '../web-app/app/adapters/projects.ts';
+import {
+    ProjectDetailPresenter,
+} from '../web-app/app/presenters/project-detail.ts';
+import { reduceProjectSave } from
+    '../web-app/projects/detail.ts';
+
+// None of these four modules reads localStorage (checked
+// against the full product tree); window/document are
+// stubbed because ProjectDetailPresenter walks a real DOM
+// tree via renderShell/mutateSlot.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
 } as unknown as Window & typeof globalThis;
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
-
-
-const { Project } = await import('../api/types.ts');
-const { ProjectView } = await import(
-    '../web-app/app/adapters/projects.ts'
-);
-const { ProjectDetailPresenter } = await import(
-    '../web-app/app/presenters/project-detail.ts'
-);
-const { reduceProjectSave } = await import(
-    '../web-app/projects/detail.ts'
-);
 
 function makeRecordingContainer(): {
     container: HTMLElement;

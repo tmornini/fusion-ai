@@ -1,36 +1,24 @@
 import { assertMatch, assertNotMatch, assertStrictEquals } from '@std/assert';
-// state.ts (transitively imported via core.ts ->
-// presenters) reads localStorage and window /
-// document at module-eval time, which Node lacks.
-// Stub before any import, then load presenter
-// modules with dynamic import() so the stubs are
-// in place. Same pattern as presenter-member-detail.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import { Identity } from '../api/types.ts';
+import {
+    IDENTITY_WITHOUT_PII_NAME,
+    UNNAMED_SERVICE_NAME,
+} from '../web-app/app/adapters/identities.ts';
+import {
+    IdentityDetailPresenter,
+} from '../web-app/app/presenters/identity-detail.ts';
+
+// Neither adapters/identities.ts nor
+// presenters/identity-detail.ts reads localStorage
+// (checked against the full product tree); window/
+// document are stubbed because IdentityDetailPresenter
+// walks a real DOM tree via renderShell/mutateSlot.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
 } as unknown as Window & typeof globalThis;
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
-
-
-const { Identity } = await import('../api/types.ts');
-const {
-    IDENTITY_WITHOUT_PII_NAME,
-    UNNAMED_SERVICE_NAME,
-} = await import(
-    '../web-app/app/adapters/identities.ts'
-);
-
-const {
-    IdentityDetailPresenter,
-} = await import(
-    '../web-app/app/presenters/identity-detail.ts'
-);
 
 function makeRecordingContainer(): {
     container: HTMLElement;

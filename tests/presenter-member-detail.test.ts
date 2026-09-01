@@ -1,46 +1,27 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
-// state.ts (transitively imported via core.ts ->
-// presenters) reads localStorage and window /
-// document at module-eval time, which Node lacks.
-// Stub before any import, then load presenter
-// modules with dynamic import() so the stubs are
-// in place. Same pattern as logger.test.ts.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import { HumanMember, AIMember } from '../api/types.ts';
+import { firstProviderModel } from './member-fixtures.ts';
+import {
+    HumanMemberDetailPresenter,
+    HumanMemberDetailEditPresenter,
+    humanMemberDraftFromMember,
+} from '../web-app/app/presenters/human-member-detail.ts';
+import {
+    AIMemberDetailPresenter,
+    AIMemberDetailEditPresenter,
+    aiMemberDraftFromMember,
+} from '../web-app/app/presenters/ai-member-detail.ts';
+
+// None of these four modules reads localStorage (checked
+// against the full product tree); window/document are
+// stubbed because the presenters below walk a real DOM
+// tree via renderShell/mutateSlot.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
 } as unknown as Window & typeof globalThis;
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
-
-
-const {
-    HumanMember, AIMember,
-} = await import('../api/types.ts');
-
-const {
-    firstProviderModel,
-} = await import('./member-fixtures.ts');
-
-const {
-    HumanMemberDetailPresenter,
-    HumanMemberDetailEditPresenter,
-    humanMemberDraftFromMember,
-} = await import(
-    '../web-app/app/presenters/human-member-detail.ts'
-);
-
-const {
-    AIMemberDetailPresenter,
-    AIMemberDetailEditPresenter,
-    aiMemberDraftFromMember,
-} = await import(
-    '../web-app/app/presenters/ai-member-detail.ts'
-);
 
 // Recording stub: presenters write into a container
 // via setHtml on the shell, then mutateSlot calls

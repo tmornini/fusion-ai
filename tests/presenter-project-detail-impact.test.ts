@@ -1,34 +1,29 @@
-// state.ts (transitively imported) reads localStorage
-// at module-eval time; stub before any presenter import.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import {
+    assertMatch,
+    assertNotStrictEquals,
+    assertStrictEquals,
+} from '@std/assert';
+import { Project } from '../api/types.ts';
+import type {
+    ObjectiveEntity,
+} from '../api/types.ts';
+import { ProjectView } from
+    '../web-app/app/adapters/projects.ts';
+import {
+    ProjectDetailPresenter,
+} from '../web-app/app/presenters/project-detail.ts';
+
+// None of api/types.ts, adapters/projects.ts, or
+// presenters/project-detail.ts reads localStorage (checked
+// against the full product tree); window/document are
+// stubbed because ProjectDetailPresenter walks a real DOM
+// tree via renderShell/mutateSlot.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
 } as unknown as Window & typeof globalThis;
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
-
-
-const { Project } = await import('../api/types.ts');
-const { ProjectView } = await import(
-    '../web-app/app/adapters/projects.ts'
-);
-const { ProjectDetailPresenter } = await import(
-    '../web-app/app/presenters/project-detail.ts'
-);
-
-import {
-    assertMatch,
-    assertNotStrictEquals,
-    assertStrictEquals,
-} from '@std/assert';
-import type {
-    ObjectiveEntity,
-} from '../api/types.ts';
 
 function makeRecordingContainer(): {
     container: HTMLElement;
