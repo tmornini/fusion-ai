@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assert, assertStrictEquals } from '@std/assert';
 
 // logger.ts → preferences.ts calls
 // localStorage, which does not exist in
@@ -47,7 +46,7 @@ function fieldsOf(
     call: unknown[],
 ): Record<string, unknown> {
     const fields = call[1];
-    assert.ok(
+    assert(
         fields !== null
         && typeof fields === 'object'
         && !Array.isArray(fields),
@@ -60,7 +59,7 @@ function fieldsOf(
 
 // ── Tests ────────────────────
 
-test(
+Deno.test(
     'log.error emits RFC-3339 ts and level',
     () => {
         const calls = capture(
@@ -70,24 +69,24 @@ test(
                 'test-ctx',
             ),
         );
-        assert.equal(calls.length, 1);
+        assertStrictEquals(calls.length, 1);
         const call = calls[0]!;
-        assert.equal(
+        assertStrictEquals(
             call[0], 'something failed',
         );
         const fields = fieldsOf(call);
-        assert.equal(fields.level, 'error');
-        assert.equal(
+        assertStrictEquals(fields.level, 'error');
+        assertStrictEquals(
             fields.context, 'test-ctx',
         );
-        assert.ok(
+        assert(
             typeof fields.ts === 'string'
             && TS_RE.test(fields.ts),
             `Expected RFC-3339 ts, got: ${
                 String(fields.ts)
             }`,
         );
-        assert.equal(
+        assertStrictEquals(
             fields.requestId,
             undefined,
             'unbound log has no requestId',
@@ -95,7 +94,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'log.error without .with has no requestId',
     () => {
         const calls = capture(
@@ -105,16 +104,16 @@ test(
                 'test-ctx',
             ),
         );
-        assert.equal(calls.length, 1);
+        assertStrictEquals(calls.length, 1);
         const fields = fieldsOf(calls[0]!);
-        assert.equal(
+        assertStrictEquals(
             fields.requestId, undefined,
         );
         // No prose prefix either.
-        assert.equal(
+        assertStrictEquals(
             typeof calls[0]![0], 'string',
         );
-        assert.ok(
+        assert(
             !String(calls[0]![0]).includes(
                 '[req:',
             ),
@@ -122,7 +121,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'log.with carries full requestId',
     () => {
         const fullId =
@@ -134,14 +133,14 @@ test(
                 'test-ctx',
             ),
         );
-        assert.equal(calls.length, 1);
+        assertStrictEquals(calls.length, 1);
         const fields = fieldsOf(calls[0]!);
-        assert.equal(
+        assertStrictEquals(
             fields.requestId, fullId,
         );
         // Full id must NOT be truncated into
         // a prose [req:] tag.
-        assert.ok(
+        assert(
             !String(calls[0]![0]).includes(
                 '[req:',
             ),
@@ -149,7 +148,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'log.with includes context and level fields',
     () => {
         const calls = capture(
@@ -158,25 +157,25 @@ test(
                 .with('abcdefghijklmnopqrstug')
                 .error('msg', 'mymod'),
         );
-        assert.equal(calls.length, 1);
-        assert.equal(calls[0]![0], 'msg');
+        assertStrictEquals(calls.length, 1);
+        assertStrictEquals(calls[0]![0], 'msg');
         const fields = fieldsOf(calls[0]!);
-        assert.equal(
+        assertStrictEquals(
             fields.context, 'mymod',
         );
-        assert.equal(
+        assertStrictEquals(
             fields.requestId,
             'abcdefghijklmnopqrstug',
         );
-        assert.equal(fields.level, 'error');
-        assert.ok(
+        assertStrictEquals(fields.level, 'error');
+        assert(
             typeof fields.ts === 'string'
             && TS_RE.test(fields.ts),
         );
     },
 );
 
-test(
+Deno.test(
     'log.with works without context arg',
     () => {
         const calls = capture(
@@ -185,20 +184,20 @@ test(
                 .with('abcdefghijklmnopqrstug')
                 .error('msg'),
         );
-        assert.equal(calls.length, 1);
-        assert.equal(calls[0]![0], 'msg');
+        assertStrictEquals(calls.length, 1);
+        assertStrictEquals(calls[0]![0], 'msg');
         const fields = fieldsOf(calls[0]!);
-        assert.equal(
+        assertStrictEquals(
             fields.context, undefined,
         );
-        assert.equal(
+        assertStrictEquals(
             fields.requestId,
             'abcdefghijklmnopqrstug',
         );
     },
 );
 
-test(
+Deno.test(
     'plain object data merges into fields',
     () => {
         const err = new Error('boom');
@@ -211,21 +210,21 @@ test(
                 err,
             ),
         );
-        assert.equal(calls.length, 1);
+        assertStrictEquals(calls.length, 1);
         const call = calls[0]!;
-        assert.equal(
+        assertStrictEquals(
             call[0], 'page failed to init',
         );
         const fields = fieldsOf(call);
-        assert.equal(
+        assertStrictEquals(
             fields.page, 'dashboard',
         );
-        assert.equal(fields.context, 'core');
-        assert.equal(call[2], err);
+        assertStrictEquals(fields.context, 'core');
+        assertStrictEquals(call[2], err);
     },
 );
 
-test(
+Deno.test(
     'reserved field keys ignore extras',
     () => {
         const calls = capture(
@@ -244,36 +243,36 @@ test(
                     },
                 ),
         );
-        assert.equal(calls.length, 1);
+        assertStrictEquals(calls.length, 1);
         const fields = fieldsOf(calls[0]!);
-        assert.equal(
+        assertStrictEquals(
             fields.level, 'error',
             'envelope level wins',
         );
-        assert.equal(
+        assertStrictEquals(
             fields.context, 'real-ctx',
             'envelope context wins',
         );
-        assert.equal(
+        assertStrictEquals(
             fields.requestId,
             'abcdefghijklmnopqrstug',
             'envelope requestId wins',
         );
-        assert.ok(
+        assert(
             typeof fields.ts === 'string'
             && TS_RE.test(fields.ts as string),
             `envelope ts wins, got: ${
                 String(fields.ts)
             }`,
         );
-        assert.equal(
+        assertStrictEquals(
             fields.page, 'dashboard',
             'non-reserved extras still merge',
         );
     },
 );
 
-test(
+Deno.test(
     'Error data is not merged into fields',
     () => {
         const err = new Error('boom');
@@ -285,18 +284,18 @@ test(
                 err,
             ),
         );
-        assert.equal(calls.length, 1);
+        assertStrictEquals(calls.length, 1);
         const call = calls[0]!;
         const fields = fieldsOf(call);
-        assert.equal(call[2], err);
+        assertStrictEquals(call[2], err);
         // Error properties stay off the record.
-        assert.equal(
+        assertStrictEquals(
             fields.message, undefined,
         );
     },
 );
 
-test(
+Deno.test(
     'log.with respects configured level'
     + ' (debug skipped at warn)',
     () => {
@@ -308,7 +307,7 @@ test(
                 .with('abcdefghijklmnopqrstug')
                 .debug('low-priority'),
         );
-        assert.equal(
+        assertStrictEquals(
             calls.length, 0,
             'debug should be suppressed'
             + ' at warn level',
@@ -316,7 +315,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'log.error respects configured level'
     + ' (debug skipped at warn)',
     () => {
@@ -324,7 +323,7 @@ test(
             'debug',
             () => log.debug('low-priority'),
         );
-        assert.equal(
+        assertStrictEquals(
             calls.length, 0,
             'debug should be suppressed'
             + ' at warn level',

@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assert } from '@std/assert';
 import { readFileSync } from 'node:fs';
 
 // C4 / K27 covenant: the Objectives box is one gauge
@@ -7,7 +6,7 @@ import { readFileSync } from 'node:fs';
 // 768px. The TEST-PLAN copy states it; this pin keeps
 // the CSS honest.
 
-test('the Objectives card is one gauge column wide',
+Deno.test('the Objectives card is one gauge column wide',
 () => {
     const src = readFileSync(
         'web-app/app/styles/components-metrics.css',
@@ -16,10 +15,10 @@ test('the Objectives card is one gauge column wide',
     const rule = '.objective-aggregates-card {\n'
         + '    width:'
         + ' calc((100% - 2 * var(--space-6)) / 3);';
-    assert.ok(src.includes(rule));
+    assert(src.includes(rule));
 });
 
-test('the Objectives card is full-width under 768px',
+Deno.test('the Objectives card is full-width under 768px',
 () => {
     const src = readFileSync(
         'web-app/app/styles/responsive.css',
@@ -33,7 +32,7 @@ test('the Objectives card is full-width under 768px',
         + ' { width: auto; }',
     );
     const close = src.indexOf('\n}', media);
-    assert.ok(media >= 0);
-    assert.ok(auto > media);
-    assert.ok(auto < close);
+    assert(media >= 0);
+    assert(auto > media);
+    assert(auto < close);
 });

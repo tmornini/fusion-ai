@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assert, assertEquals, assertStrictEquals } from '@std/assert';
 
 // page-performance → logger → preferences reads
 // localStorage, which is absent in Node. Stub it
@@ -60,7 +59,7 @@ function fieldsOf(
     call: unknown[],
 ): Record<string, unknown> {
     const fields = call[1];
-    assert.ok(
+    assert(
         fields !== null
         && typeof fields === 'object'
         && !Array.isArray(fields),
@@ -80,40 +79,40 @@ function busyWaitMs(ms: number): void {
 
 // ── Wire-stable phase names ──────
 
-test(
+Deno.test(
     'phase-name constants equal wire-stable strings',
     () => {
-        assert.equal(
+        assertStrictEquals(
             MEASURE_BOOT_DB_OPEN, 'boot:db-open',
         );
-        assert.equal(
+        assertStrictEquals(
             MEASURE_BOOT_AUTH_GATE,
             'boot:auth-gate',
         );
-        assert.equal(
+        assertStrictEquals(
             MEASURE_BOOT_ORGANIZATION_SCOPE,
             'boot:organization-scope',
         );
-        assert.equal(
+        assertStrictEquals(
             MEASURE_BOOT_SIDEBAR_CHROME,
             'boot:sidebar-chrome',
         );
-        assert.equal(
+        assertStrictEquals(
             MEASURE_BOOT_COMMAND_PALETTE,
             'boot:command-palette',
         );
-        assert.equal(
+        assertStrictEquals(
             MEASURE_BOOT_MODULE_IMPORT,
             'boot:module-import',
         );
-        assert.equal(
+        assertStrictEquals(
             MEASURE_BOOT_PAGE_INIT,
             'boot:page-init',
         );
-        assert.equal(
+        assertStrictEquals(
             MEASURE_PAGE_READY, 'page:ready',
         );
-        assert.deepEqual(
+        assertEquals(
             [...BOOT_PHASE_MEASURE_NAMES],
             [
                 'boot:db-open',
@@ -128,22 +127,22 @@ test(
     },
 );
 
-test(
+Deno.test(
     'fetchMeasureName / renderMeasureName format',
     () => {
-        assert.equal(
+        assertStrictEquals(
             fetchMeasureName('ideas-list'),
             'fetch:ideas-list',
         );
-        assert.equal(
+        assertStrictEquals(
             renderMeasureName('ideas-list'),
             'render:ideas-list',
         );
-        assert.equal(
+        assertStrictEquals(
             fetchMeasureName('main'),
             'fetch:main',
         );
-        assert.equal(
+        assertStrictEquals(
             renderMeasureName('main'),
             'render:main',
         );
@@ -152,7 +151,7 @@ test(
 
 // ── Pure field assembly ──────
 
-test(
+Deno.test(
     'assemblePagePerformanceFields nests phases',
     () => {
         const fields =
@@ -164,24 +163,24 @@ test(
                     'boot:page-init': 40,
                 },
             });
-        assert.equal(fields.page, 'dashboard');
-        assert.equal(fields.readyMs, 120.5);
-        assert.deepEqual(fields.phases, {
+        assertStrictEquals(fields.page, 'dashboard');
+        assertStrictEquals(fields.readyMs, 120.5);
+        assertEquals(fields.phases, {
             'boot:db-open': 10,
             'boot:page-init': 40,
         });
-        assert.equal(
+        assertStrictEquals(
             fields.ttfbMs, undefined,
             'optional nav fields omitted when absent',
         );
-        assert.equal(
+        assertStrictEquals(
             fields.domContentLoadedMs,
             undefined,
         );
     },
 );
 
-test(
+Deno.test(
     'assemblePagePerformanceFields includes nav'
     + ' timing when provided',
     () => {
@@ -195,13 +194,13 @@ test(
                 ttfbMs: 12.3,
                 domContentLoadedMs: 80,
             });
-        assert.equal(fields.page, 'flows');
-        assert.equal(fields.readyMs, 200);
-        assert.equal(fields.ttfbMs, 12.3);
-        assert.equal(
+        assertStrictEquals(fields.page, 'flows');
+        assertStrictEquals(fields.readyMs, 200);
+        assertStrictEquals(fields.ttfbMs, 12.3);
+        assertStrictEquals(
             fields.domContentLoadedMs, 80,
         );
-        assert.deepEqual(fields.phases, {
+        assertEquals(fields.phases, {
             'boot:auth-gate': 5,
         });
     },
@@ -209,7 +208,7 @@ test(
 
 // ── Mark / measure / harvest ──────
 
-test(
+Deno.test(
     'markStart + markEnd creates positive duration',
     () => {
         const name =
@@ -218,22 +217,22 @@ test(
         busyWaitMs(2);
         markEnd(name);
         const ms = readMeasureDurationMs(name);
-        assert.ok(
+        assert(
             ms !== undefined,
             'measure entry must exist',
         );
-        assert.ok(
+        assert(
             ms > 0,
             `expected positive duration, got ${ms}`,
         );
     },
 );
 
-test(
+Deno.test(
     'readMeasureDurationMs returns undefined'
     + ' when absent',
     () => {
-        assert.equal(
+        assertStrictEquals(
             readMeasureDurationMs(
                 'no-such-measure-xyz',
             ),
@@ -242,7 +241,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'recordPageReady emits one info log with'
     + ' page-performance context',
     () => {
@@ -255,44 +254,44 @@ test(
             'info',
             () => recordPageReady('dashboard'),
         );
-        assert.equal(calls.length, 1);
+        assertStrictEquals(calls.length, 1);
         const call = calls[0]!;
-        assert.equal(call[0], 'page ready');
+        assertStrictEquals(call[0], 'page ready');
         const fields = fieldsOf(call);
-        assert.equal(
+        assertStrictEquals(
             fields.context, 'page-performance',
         );
-        assert.equal(fields.page, 'dashboard');
-        assert.equal(fields.level, 'info');
-        assert.ok(
+        assertStrictEquals(fields.page, 'dashboard');
+        assertStrictEquals(fields.level, 'info');
+        assert(
             typeof fields.readyMs === 'number',
             'readyMs must be a number',
         );
-        assert.ok(
+        assert(
             (fields.readyMs as number) > 0,
             'readyMs from timeOrigin must be > 0',
         );
         const phases = fields.phases as
             Record<string, number>;
-        assert.ok(
+        assert(
             phases !== null
             && typeof phases === 'object',
         );
-        assert.ok(
+        assert(
             typeof phases['boot:db-open']
                 === 'number',
             'measured boot phase must appear',
         );
         // Unmeasured boot phases must not be zeros.
-        assert.equal(
+        assertStrictEquals(
             phases['boot:page-init'],
             undefined,
         );
         // Node has no navigation entry — omit.
-        assert.equal(
+        assertStrictEquals(
             fields.ttfbMs, undefined,
         );
-        assert.equal(
+        assertStrictEquals(
             fields.domContentLoadedMs,
             undefined,
         );

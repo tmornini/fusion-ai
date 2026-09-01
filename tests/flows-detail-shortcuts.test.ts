@@ -44,8 +44,7 @@ g.HTMLInputElement = FakeInput;
 g.HTMLTextAreaElement = FakeTextArea;
 g.HTMLSelectElement = FakeSelect;
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assertStrictEquals } from '@std/assert';
 import type {
     DesignerShortcutInput,
 } from '../web-app/flows/detail.ts';
@@ -71,8 +70,8 @@ function chord(
     };
 }
 
-test('Cmd+Shift+Z arrives as key Z and is redo', () => {
-    assert.equal(
+Deno.test('Cmd+Shift+Z arrives as key Z and is redo', () => {
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'Z', metaKey: true, shiftKey: true,
         })),
@@ -80,8 +79,8 @@ test('Cmd+Shift+Z arrives as key Z and is redo', () => {
     );
 });
 
-test('Cmd+z is undo', () => {
-    assert.equal(
+Deno.test('Cmd+z is undo', () => {
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'z', metaKey: true,
         })),
@@ -89,8 +88,8 @@ test('Cmd+z is undo', () => {
     );
 });
 
-test('Caps-Lock Cmd+Z (no shift) is still undo', () => {
-    assert.equal(
+Deno.test('Caps-Lock Cmd+Z (no shift) is still undo', () => {
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'Z', metaKey: true,
         })),
@@ -98,8 +97,8 @@ test('Caps-Lock Cmd+Z (no shift) is still undo', () => {
     );
 });
 
-test('Ctrl+Shift+z is redo', () => {
-    assert.equal(
+Deno.test('Ctrl+Shift+z is redo', () => {
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'z', ctrlKey: true, shiftKey: true,
         })),
@@ -107,8 +106,8 @@ test('Ctrl+Shift+z is redo', () => {
     );
 });
 
-test('the chord honors an editable target', () => {
-    assert.equal(
+Deno.test('the chord honors an editable target', () => {
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'z', metaKey: true,
             isEditableFocused: true,
@@ -117,8 +116,8 @@ test('the chord honors an editable target', () => {
     );
 });
 
-test('Delete in an editable target is null', () => {
-    assert.equal(
+Deno.test('Delete in an editable target is null', () => {
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'Delete', isEditableFocused: true,
         })),
@@ -126,8 +125,8 @@ test('Delete in an editable target is null', () => {
     );
 });
 
-test('Delete with canvas focus deletes', () => {
-    assert.equal(
+Deno.test('Delete with canvas focus deletes', () => {
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'Delete',
         })),
@@ -135,14 +134,14 @@ test('Delete with canvas focus deletes', () => {
     );
 });
 
-test('Escape closes only an open panel', () => {
-    assert.equal(
+Deno.test('Escape closes only an open panel', () => {
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'Escape', isPanelOpen: true,
         })),
         'escape',
     );
-    assert.equal(
+    assertStrictEquals(
         reduceDesignerShortcut(chord({
             key: 'Escape',
         })),
@@ -150,35 +149,35 @@ test('Escape closes only an open panel', () => {
     );
 });
 
-test(
+Deno.test(
     'a Members checkbox is not an editable'
     + ' target',
     () => {
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeInput('checkbox'),
             ),
             false,
         );
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeInput('radio'),
             ),
             false,
         );
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeInput('button'),
             ),
             false,
         );
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeInput('submit'),
             ),
             false,
         );
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeInput('reset'),
             ),
@@ -187,29 +186,29 @@ test(
     },
 );
 
-test(
+Deno.test(
     'texty inputs, textarea, and select are'
     + ' editable targets',
     () => {
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeInput('text'),
             ),
             true,
         );
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeInput('password'),
             ),
             true,
         );
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeTextArea(),
             ),
             true,
         );
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(
                 new FakeSelect(),
             ),
@@ -218,10 +217,10 @@ test(
     },
 );
 
-test(
+Deno.test(
     'null is not an editable target',
     () => {
-        assert.equal(
+        assertStrictEquals(
             isDesignerEditableTarget(null),
             false,
         );

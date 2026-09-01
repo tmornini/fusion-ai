@@ -1,6 +1,5 @@
+import { assert, assertStrictEquals } from '@std/assert';
 import './hmac-test-key.ts';
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedHumanMember } from './member-fixtures.ts';
@@ -38,7 +37,7 @@ function makeListStub(): {
     };
 }
 
-test(
+Deno.test(
     'an empty initial ideas load still subscribes'
     + ' to cross-tab changes',
     async () => {
@@ -94,7 +93,7 @@ test(
             const hasSchema = await initAdapter(
                 () => db,
             );
-            assert.equal(hasSchema, true);
+            assertStrictEquals(hasSchema, true);
             putSessionToken(
                 await organizationToken(),
             );
@@ -102,7 +101,7 @@ test(
                 '../web-app/ideas/index.ts'
             );
             await init();
-            assert.ok(
+            assert(
                 listStub.innerHTML.includes(
                     'No Ideas Yet',
                 ),
@@ -174,7 +173,7 @@ test(
                 );
             }
             poster.close();
-            assert.ok(
+            assert(
                 listStub.innerHTML.includes(
                     'Cross-tab idea',
                 ),

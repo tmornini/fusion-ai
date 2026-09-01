@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assertEquals } from '@std/assert';
 import {
     readdirSync,
     readFileSync,
@@ -85,12 +84,12 @@ function hitsIn(path: string): string[] {
     return hits;
 }
 
-test('no live Fusion AI or fusion-ai remains',
+Deno.test('no live Fusion AI or fusion-ai remains',
 () => {
     const files = [...ROOT_FILES];
     for (const tree of TREES) {
         walk(tree, files);
     }
     const hits = files.flatMap(hitsIn);
-    assert.deepEqual(hits, []);
+    assertEquals(hits, []);
 });

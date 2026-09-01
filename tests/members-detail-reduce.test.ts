@@ -1,3 +1,9 @@
+import {
+    assertEquals,
+    assertMatch,
+    assertNotMatch,
+    assertStrictEquals,
+} from '@std/assert';
 // state.ts (transitively imported via core.ts ->
 // presenters) reads localStorage and window /
 // document at module-eval time, which Node lacks.
@@ -16,8 +22,6 @@ globalThis.window = {
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
 const { makeHumanMember, makeAIMember } = await import(
     './member-fixtures.ts'
@@ -42,7 +46,7 @@ const HUMAN_DRAFT = {
     strengths: ['Leadership'],
 };
 
-test(
+Deno.test(
     'editing state is preserved when fresh data'
     + ' arrives (sibling member mutated)',
     () => {
@@ -55,11 +59,11 @@ test(
         const fresh = makeHumanMember('hw_1', 'Sarah Chen');
         const next = reduceRefresh(current, fresh);
         // Same reference: the draft is sacred.
-        assert.equal(next, current);
+        assertStrictEquals(next, current);
     },
 );
 
-test(
+Deno.test(
     'reading + fresh human → reading human',
     () => {
         const current = {
@@ -69,13 +73,13 @@ test(
         };
         const fresh = makeHumanMember('hw_1', 'Sarah Chen');
         const next = reduceRefresh(current, fresh);
-        assert.equal(next.kind, 'reading');
-        assert.equal(next.variant, 'human');
-        assert.equal(next.member, fresh);
+        assertStrictEquals(next.kind, 'reading');
+        assertStrictEquals(next.variant, 'human');
+        assertStrictEquals(next.member, fresh);
     },
 );
 
-test(
+Deno.test(
     'reading + fresh AI → reading AI',
     () => {
         const current = {
@@ -85,13 +89,13 @@ test(
         };
         const fresh = makeAIMember('ai_1', 'Claude Opus');
         const next = reduceRefresh(current, fresh);
-        assert.equal(next.kind, 'reading');
-        assert.equal(next.variant, 'ai');
-        assert.equal(next.member, fresh);
+        assertStrictEquals(next.kind, 'reading');
+        assertStrictEquals(next.variant, 'ai');
+        assertStrictEquals(next.member, fresh);
     },
 );
 
-test(
+Deno.test(
     'reading + fresh null → current preserved'
     + ' (member vanished mid-session)',
     () => {
@@ -101,11 +105,11 @@ test(
             member: makeHumanMember('hw_1', 'Sarah Chen'),
         };
         const next = reduceRefresh(current, null);
-        assert.equal(next, current);
+        assertStrictEquals(next, current);
     },
 );
 
-test(
+Deno.test(
     'editing + fresh null → editing preserved',
     () => {
         const current = {
@@ -115,11 +119,11 @@ test(
             draft: HUMAN_DRAFT,
         };
         const next = reduceRefresh(current, null);
-        assert.equal(next, current);
+        assertStrictEquals(next, current);
     },
 );
 
-test(
+Deno.test(
     'reading human + fresh AI follows fresh.kind',
     () => {
         const current = {
@@ -129,9 +133,9 @@ test(
         };
         const fresh = makeAIMember('ai_1', 'Claude Opus');
         const next = reduceRefresh(current, fresh);
-        assert.equal(next.kind, 'reading');
-        assert.equal(next.variant, 'ai');
-        assert.equal(next.member, fresh);
+        assertStrictEquals(next.kind, 'reading');
+        assertStrictEquals(next.variant, 'ai');
+        assertStrictEquals(next.member, fresh);
     },
 );
 
@@ -147,7 +151,7 @@ const ORIGINAL_PII = {
     bio: 'Builds things.',
 };
 
-test(
+Deno.test(
     'an unchanged draft returns undefined — a detail-only save'
     + ' omits the PUT identities/:id/pii call',
     () => {
@@ -160,11 +164,11 @@ test(
             },
             ORIGINAL_PII,
         );
-        assert.equal(patch, undefined);
+        assertStrictEquals(patch, undefined);
     },
 );
 
-test(
+Deno.test(
     'a changed field returns the full four-field patch',
     () => {
         const patch = humanMemberPiiPatchIfDirty(
@@ -176,7 +180,7 @@ test(
             },
             ORIGINAL_PII,
         );
-        assert.deepEqual(patch, {
+        assertEquals(patch, {
             name: 'Sarah C. Chen',
             email: ORIGINAL_PII.email,
             phone: ORIGINAL_PII.phone,
@@ -185,7 +189,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'an erased original baselines against blank fields — an'
     + ' untouched erased member never fires a spurious PUT',
     () => {
@@ -193,18 +197,18 @@ test(
             { name: '', email: '', phone: '', bio: '' },
             { erased: true },
         );
-        assert.equal(patch, undefined);
+        assertStrictEquals(patch, undefined);
     },
 );
 
-test(
+Deno.test(
     'an erased original with a newly entered name IS dirty',
     () => {
         const patch = humanMemberPiiPatchIfDirty(
             { name: 'New Name', email: '', phone: '', bio: '' },
             { erased: true },
         );
-        assert.deepEqual(patch, {
+        assertEquals(patch, {
             name: 'New Name', email: '', phone: '', bio: '',
         });
     },
@@ -256,7 +260,7 @@ function makeRecordingContainer(): {
     };
 }
 
-test(
+Deno.test(
     'reduceSave lands in read mode painting the fresh member',
     () => {
         const fresh = new HumanMember(
@@ -277,19 +281,19 @@ test(
             },
         );
         const next = reduceSave(fresh);
-        assert.equal(next.kind, 'reading');
-        assert.equal(next.variant, 'human');
-        assert.equal(next.member, fresh);
+        assertStrictEquals(next.kind, 'reading');
+        assertStrictEquals(next.variant, 'human');
+        assertStrictEquals(next.member, fresh);
         const rec = makeRecordingContainer();
         new HumanMemberDetailPresenter(fresh)
             .renderShell(rec.container);
         const out = rec.allHtml();
-        assert.match(out, /555-0199/);
-        assert.match(out, /Ships things\./);
-        assert.match(out, /Agile Methods/);
-        assert.doesNotMatch(out, /Builds things\./);
-        assert.match(out, /data-member-action="edit"/);
-        assert.doesNotMatch(
+        assertMatch(out, /555-0199/);
+        assertMatch(out, /Ships things\./);
+        assertMatch(out, /Agile Methods/);
+        assertNotMatch(out, /Builds things\./);
+        assertMatch(out, /data-member-action="edit"/);
+        assertNotMatch(
             out, /data-member-action="save"/,
         );
     },

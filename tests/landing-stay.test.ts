@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assertMatch, assertStrictEquals } from '@std/assert';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -13,14 +12,14 @@ const src = readFileSync(
     'utf8',
 );
 
-test('landing does not shove to dashboard', () => {
-    assert.equal(
+Deno.test('landing does not shove to dashboard', () => {
+    assertStrictEquals(
         src.includes('AUTO_REDIRECT_MS'),
         false,
     );
-    assert.equal(
+    assertStrictEquals(
         src.includes('dashboard/index.html'),
         false,
     );
-    assert.match(src, /auth\/index\.html/);
+    assertMatch(src, /auth\/index\.html/);
 });
