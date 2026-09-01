@@ -1105,15 +1105,6 @@ Off the critical path; each with its oracle.
   TEST-PLAN case claims the feedback survives. Oracle: a
   Layer 1 test asserting the typed feedback reaches the
   transition
-- One corrupted upstream identifier, from an old
-  id-scrubber — a local variable standing for `r1`
-  (`rOEPOcVMQdJiiiMuiiEhlg`, its sibling `r2` beside it)
-  in `tests/api-invitations-fence.test.ts`,
-  `tests/api-flow-tags.test.ts`,
-  `tests/flow-fsm-reduce.test.ts`,
-  `tests/flow-zoom-to-fit.test.ts`, and
-  `tests/derive-record-instances.test.ts`; quoted by no
-  pin, so it renames alone
 - Two locals named for a retired section slice —
   `gOrganization` and `gAdmin`
   (`tests/api-authentication-token.test.ts:1092-1093`)
