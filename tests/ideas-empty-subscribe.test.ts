@@ -1,6 +1,8 @@
 import { assert, assertStrictEquals } from '@std/assert';
 import './hmac-test-key.ts';
 import { memoryDbAdapter } from '../api/db-memory.ts';
+import { withLocalStorageAsync } from
+    './fixtures/local-storage.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedHumanMember } from './member-fixtures.ts';
 import { organizationToken } from './token-fixtures.ts';
@@ -40,22 +42,29 @@ function makeListStub(): {
 Deno.test(
     'an empty initial ideas load still subscribes'
     + ' to cross-tab changes',
-    async () => {
+    () => withLocalStorageAsync(
+        (() => {
+            const storage = new Map<
+                string, string
+            >();
+            return {
+                getItem: (k: string) =>
+                    storage.get(k) ?? null,
+                setItem: (
+                    k: string, v: string,
+                ) => {
+                    storage.set(k, v);
+                },
+                removeItem: (k: string) => {
+                    storage.delete(k);
+                },
+            };
+        })(),
+        async () => {
         const g = globalThis as Record<
             string, unknown
         >;
         const listStub = makeListStub();
-        const storage = new Map<string, string>();
-        g['localStorage'] = {
-            getItem: (k: string) =>
-                storage.get(k) ?? null,
-            setItem: (k: string, v: string) => {
-                storage.set(k, v);
-            },
-            removeItem: (k: string) => {
-                storage.delete(k);
-            },
-        };
         g['window'] = {
             matchMedia: () => ({
                 matches: false,
@@ -181,10 +190,9 @@ Deno.test(
                 + ' the first cross-tab bell',
             );
         } finally {
-            delete g['localStorage'];
             delete g['window'];
             delete g['MutationObserver'];
             delete g['document'];
         }
-    },
+    }),
 );

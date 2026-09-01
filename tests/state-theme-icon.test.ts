@@ -6,6 +6,13 @@ import {
     persistThemePreference,
     initListeners,
 } from '../web-app/app/state.ts';
+import { withLocalStorage } from
+    './fixtures/local-storage.ts';
+
+const NULL_STORAGE: Partial<Storage> = {
+    getItem: () => null,
+    setItem: () => {},
+};
 
 type ThemeButton = {
     innerHTML: string;
@@ -24,10 +31,6 @@ function installThemeDom(
     mobile: ThemeButton,
 ): void {
     const g = globalThis as Record<string, unknown>;
-    g.localStorage = {
-        getItem: () => null,
-        setItem: () => {},
-    };
     const root = {
         setAttribute: () => {},
         classList: { toggle: () => {} },
@@ -47,7 +50,7 @@ function installThemeDom(
 Deno.test(
     'a cross-tab theme storage event repaints the'
     + ' toggle icon',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const desktop = makeButton();
         const mobile = makeButton();
         installThemeDom(desktop, mobile);
@@ -91,17 +94,16 @@ Deno.test(
                 mobile.innerHTML, /M12 3a6 6 0 0 0 9 9/,
             );
         } finally {
-            delete g.localStorage;
             delete g.document;
             delete g.window;
         }
-    },
+    }),
 );
 
 Deno.test(
     'a prefers-color-scheme change event applies '
     + 'data-theme while preference is system',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const g =
             globalThis as Record<string, unknown>;
         const attrs: Record<string, string> = {};
@@ -109,10 +111,6 @@ Deno.test(
             (e: { matches: boolean }) => void
         > = [];
         let matches = false;
-        g.localStorage = {
-            getItem: () => null,
-            setItem: () => {},
-        };
         g.document = {
             documentElement: {
                 setAttribute: (
@@ -149,11 +147,10 @@ Deno.test(
             mediaListeners[0]!({ matches: true });
             assertStrictEquals(attrs['data-theme'], 'dark');
         } finally {
-            delete g.localStorage;
             delete g.document;
             delete g.window;
         }
-    },
+    }),
 );
 
 type ThemeMq = {
@@ -193,15 +190,11 @@ Deno.test(
     'a MediaQueryList change on a later matchMedia '
     + 'call applies data-theme while preference is '
     + 'system',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const g =
             globalThis as Record<string, unknown>;
         const attrs: Record<string, string> = {};
         let matches = true;
-        g.localStorage = {
-            getItem: () => null,
-            setItem: () => {},
-        };
         g.document = {
             documentElement: {
                 setAttribute: (
@@ -231,9 +224,8 @@ Deno.test(
             ).dispatchChange();
             assertStrictEquals(attrs['data-theme'], 'light');
         } finally {
-            delete g.localStorage;
             delete g.document;
             delete g.window;
         }
-    },
+    }),
 );

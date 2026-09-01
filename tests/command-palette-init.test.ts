@@ -1,6 +1,8 @@
 import { assertEquals, assertStrictEquals } from '@std/assert';
 import './hmac-test-key.ts';
 import { memoryDbAdapter } from '../api/db-memory.ts';
+import { withLocalStorageAsync } from
+    './fixtures/local-storage.ts';
 
 // Integration: initCommandPalette() performs no
 // data reads at init — the index builds lazily on
@@ -17,9 +19,9 @@ import { memoryDbAdapter } from '../api/db-memory.ts';
 Deno.test(
     'initCommandPalette does not throw'
     + ' when schema is absent',
-    async () => {
-        const fakeStorage = createFakeStorage();
-        installGlobals(fakeStorage);
+    () => withLocalStorageAsync(
+        createFakeStorage(), async () => {
+        installGlobals();
         try {
             await import('./in-page-facade.ts');
             const { initAdapter } = await import(
@@ -74,7 +76,7 @@ Deno.test(
         } finally {
             uninstallGlobals();
         }
-    },
+    }),
 );
 
 interface FakeStorage {
@@ -106,9 +108,7 @@ interface SavedGlobals {
 
 let saved: SavedGlobals | null = null;
 
-function installGlobals(
-    storage: FakeStorage,
-): void {
+function installGlobals(): void {
     const g = globalThis as Record<
         string, unknown
     >;
@@ -124,12 +124,12 @@ function installGlobals(
     // A future init-time touch of those would fail
     // with "undefined is not a function" — signal
     // worth keeping, but unrelated to the lazy-init
-    // behavior under test.
+    // behavior under test. localStorage is handled by
+    // withLocalStorageAsync, not here.
     g.document = {
         addEventListener: () => {},
         querySelector: () => null,
     };
-    g.localStorage = storage;
 }
 
 function uninstallGlobals(): void {
@@ -142,6 +142,5 @@ function uninstallGlobals(): void {
     } else {
         delete g.document;
     }
-    delete g.localStorage;
     saved = null;
 }
