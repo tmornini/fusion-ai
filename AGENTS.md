@@ -253,11 +253,13 @@ Page URLs use relative paths (`/ideas/` or
 
 `server/scrypt-hash.ts` is the one product-process `node:` import
 (`node:crypto` scrypt). A Deno or `@std` scrypt landing retires
-the import, not the algorithm: every stored credential reads
-`$scrypt$ln=17,r=8,p=1$…`, so scrypt verification must outlive
-the swap. `shared/password-hash.ts` dispatches on the PHC
-algo-id, so a second algorithm can take new passwords without
-touching the old ones.
+the import, not the algorithm: credentials written since the
+scrypt cutover read `$scrypt$ln=17,r=8,p=1$…`, so scrypt
+verification must outlive the swap. Older `$pbkdf2-sha256$`
+secrets still exist and rehash on login
+(`api/authentication.ts:1544`). `shared/password-hash.ts`
+dispatches on the PHC algo-id, so a second algorithm can take
+new passwords without touching the old ones.
 
 Anchor the specifier on its quote when you sweep for survivors:
 
