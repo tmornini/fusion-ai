@@ -75,7 +75,6 @@ Deno.test(
         };
         g['MutationObserver'] = class {
             observe(): void {}
-            disconnect(): void {}
         };
         g['document'] = {
             addEventListener: () => {},
