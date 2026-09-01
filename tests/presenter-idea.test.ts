@@ -17,26 +17,45 @@ import {
 import type {
     IdeaWithSubmitter,
 } from '../web-app/app/adapters/index.ts';
+import {
+    IdeaPresenter,
+    IdeaEditPresenter,
+    ideaDraftFromIdea,
+    ideaPatchFromDraft,
+    buildInitialIdeaListState,
+    applyIdeaListUpdate,
+    applyIdeaFilterToggle,
+    IdeaListPresenter,
+} from '../web-app/app/presenters/idea.ts';
+import {
+    IdeaCreatePresenter,
+    EMPTY_IDEA_CREATE_DRAFT,
+    ideaCreateDraftIsComplete,
+} from '../web-app/app/presenters/idea-create.ts';
+import {
+    IdeaConversionPresenter,
+    buildInitialConversionDraft,
+    conversionRequiredCount,
+    conversionCompletedCount,
+    conversionIsReady,
+    conversionFieldIsReady,
+} from '../web-app/app/presenters/idea-conversion.ts';
 
-// The idea read/conversion presenters import from
-// ../core.ts, whose module init does
-// document.addEventListener and reads theme/sidebar
-// from localStorage via state.ts. ESM hoists static
-// imports above any top-level assignment, so the
-// browser globals are stubbed here and the presenter
-// modules are pulled in with a dynamic import that
-// runs after the stubs land. The presenters
-// themselves are pure: their render() / build*
-// methods return SafeHtml and never touch the DOM.
-// renderShell/renderUpdate on IdeaPresenter and
-// IdeaEditPresenter walk a real DOM tree (via
-// $required slot lookups), so those flows stay in
-// the manual browser plan; here we pin the pure
-// SafeHtml-returning surface plus the pure
-// list-state functions. IdeaListPresenter renders
-// through setHtml (assigns the markup string onto
-// the element), so a minimal stub element with a
-// settable markup property is enough for it.
+// None of idea.ts, idea-create.ts, or idea-conversion.ts
+// reads localStorage (checked against the full product
+// tree). window/document are stubbed because
+// IdeaListPresenter renders through setHtml onto a real
+// element; the presenters otherwise are pure: their
+// render() / build* methods return SafeHtml and never
+// touch the DOM. renderShell/renderUpdate on IdeaPresenter
+// and IdeaEditPresenter walk a real DOM tree (via
+// $required slot lookups), so those flows stay in the
+// manual browser plan; here we pin the pure
+// SafeHtml-returning surface plus the pure list-state
+// functions. IdeaListPresenter renders through setHtml
+// (assigns the markup string onto the element), so a
+// minimal stub element with a settable markup property is
+// enough for it.
 
 interface StubEl {
     captured: string;
@@ -60,11 +79,6 @@ function makeStubEl(): StubEl {
 }
 
 const g = globalThis as Record<string, unknown>;
-g['localStorage'] = {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-};
 g['window'] = {
     matchMedia: () => ({
         matches: false,
@@ -77,43 +91,10 @@ g['document'] = {
     addEventListener: () => {},
 };
 
-const ideaMod = await import(
-    '../web-app/app/presenters/idea.ts'
-);
-const createMod = await import(
-    '../web-app/app/presenters/idea-create.ts'
-);
-const conversionMod = await import(
-    '../web-app/app/presenters/idea-conversion.ts'
-);
-
-const {
-    IdeaPresenter,
-    IdeaEditPresenter,
-    ideaDraftFromIdea,
-    ideaPatchFromDraft,
-    buildInitialIdeaListState,
-    applyIdeaListUpdate,
-    applyIdeaFilterToggle,
-    IdeaListPresenter,
-} = ideaMod;
 type IdeaDraftFields = ReturnType<
     typeof ideaDraftFromIdea
 >;
-const {
-    IdeaCreatePresenter,
-    EMPTY_IDEA_CREATE_DRAFT,
-    ideaCreateDraftIsComplete,
-} = createMod;
 type IdeaCreateDraft = typeof EMPTY_IDEA_CREATE_DRAFT;
-const {
-    IdeaConversionPresenter,
-    buildInitialConversionDraft,
-    conversionRequiredCount,
-    conversionCompletedCount,
-    conversionIsReady,
-    conversionFieldIsReady,
-} = conversionMod;
 type ConversionDraft = ReturnType<
     typeof buildInitialConversionDraft
 >;

@@ -1,16 +1,14 @@
 import { assert, assertMatch } from '@std/assert';
+import {
+    ProjectScoreHistoryPresenter,
+} from '../web-app/app/presenters/project-score-history.ts';
 
-// ProjectScoreHistoryPresenter imports from
-// ../core.ts, whose module init reads theme/sidebar
-// from localStorage via state.ts. Stubs must land
-// before the dynamic import pulls in the presenter.
-
+// presenters/project-score-history.ts never reads
+// localStorage (checked against the full product tree);
+// window/document are stubbed because
+// ProjectScoreHistoryPresenter.render walks a real DOM
+// element.
 const g = globalThis as Record<string, unknown>;
-g['localStorage'] = {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-};
 g['window'] = {
     matchMedia: () => ({
         matches: false,
@@ -20,10 +18,6 @@ g['window'] = {
     addEventListener: () => {},
 };
 g['document'] = { addEventListener: () => {} };
-
-const { ProjectScoreHistoryPresenter } = await import(
-    '../web-app/app/presenters/project-score-history.ts'
-);
 
 const baselines = [
     { id: 'b1',

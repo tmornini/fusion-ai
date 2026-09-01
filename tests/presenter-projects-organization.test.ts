@@ -1,51 +1,32 @@
 import { assert, assertMatch, assertStrictEquals } from '@std/assert';
-// state.ts (transitively imported via core.ts ->
-// presenters) reads localStorage and window /
-// document at module-eval time, which Node lacks.
-// Stub before any import, then load presenter
-// modules with dynamic import() so the stubs are
-// in place. Same pattern as logger.test.ts.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import { Project } from '../api/types.ts';
+import { DISPLAY_ABSENT } from '../web-app/app/format.ts';
+import { ProjectView } from
+    '../web-app/app/adapters/projects.ts';
+import { Organization } from
+    '../web-app/app/adapters/admin.ts';
+import { ProjectPresenter } from
+    '../web-app/app/presenters/project.ts';
+import {
+    ProjectDetailPresenter,
+    ProjectDetailEditPresenter,
+    projectDraftFromView,
+} from '../web-app/app/presenters/project-detail.ts';
+import {
+    OrganizationPresenter,
+    OrganizationEditPresenter,
+} from '../web-app/app/presenters/organization.ts';
+
+// None of these seven modules reads localStorage (checked
+// against the full product tree); window/document are
+// stubbed because the detail presenters below walk a real
+// DOM tree via renderShell/mutateSlot.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
 } as unknown as Window & typeof globalThis;
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
-
-
-const {
-    Project,
-} = await import('../api/types.ts');
-const { DISPLAY_ABSENT } = await import(
-    '../web-app/app/format.ts'
-);
-const { ProjectView } = await import(
-    '../web-app/app/adapters/projects.ts'
-);
-const { Organization } = await import(
-    '../web-app/app/adapters/admin.ts'
-);
-const { ProjectPresenter } = await import(
-    '../web-app/app/presenters/project.ts'
-);
-const {
-    ProjectDetailPresenter,
-    ProjectDetailEditPresenter,
-    projectDraftFromView,
-} = await import(
-    '../web-app/app/presenters/project-detail.ts'
-);
-const {
-    OrganizationPresenter,
-    OrganizationEditPresenter,
-} = await import(
-    '../web-app/app/presenters/organization.ts'
-);
 
 // Recording stub for the detail presenters, which
 // write into a container via setHtml/$required.

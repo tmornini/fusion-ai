@@ -8,11 +8,17 @@ import {
     makeHumanMember,
     makeAIMember,
 } from './member-fixtures.ts';
+import {
+    ManagedMembersPresenter,
+    buildInitialManagedMembersState,
+    applyManagedMembersSearch,
+    applyManagedMembersKind,
+} from '../web-app/app/presenters/member.ts';
 
-// The member presenter transitively imports state.ts
-// (via core.ts), which reads from localStorage and
-// addEventListener at module init. Stub the browser
-// globals here and dynamic-import after they land.
+// presenters/member.ts never reads localStorage (checked
+// against the full product tree); window/document are
+// stubbed because ManagedMembersPresenter.render walks a
+// real DOM element via addEventListener.
 
 interface StubEl {
     captured: string;
@@ -36,11 +42,6 @@ function makeStubEl(): StubEl {
 }
 
 const g = globalThis as Record<string, unknown>;
-g['localStorage'] = {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-};
 g['window'] = {
     matchMedia: () => ({
         matches: false,
@@ -52,16 +53,6 @@ g['window'] = {
 g['document'] = {
     addEventListener: () => {},
 };
-
-const memberMod = await import(
-    '../web-app/app/presenters/member.ts'
-);
-const {
-    ManagedMembersPresenter,
-    buildInitialManagedMembersState,
-    applyManagedMembersSearch,
-    applyManagedMembersKind,
-} = memberMod;
 
 function makeHuman(
     id: string,
