@@ -261,19 +261,30 @@ secrets still exist and rehash on login
 dispatches on the PHC algo-id, so a second algorithm can take
 new passwords without touching the old ones.
 
-Anchor the specifier on its quote when you sweep for survivors:
+Anchor the specifier on its quote, and match `process` as a
+word — `process\.` cannot see `process?.`:
 
 ```bash
-grep -rnE "['\"]node:|process\." web-app/app/*.ts \
+grep -rnE "['\"]node:|\bprocess\b" web-app/app/*.ts \
     server/ api/ shared/
 ```
 
-A bare `node:` also matches `node: GraphNode`, a domain
-property name, in `flow-graph.ts` (×3), `flow-operations.ts`
-(×3), `mermaid-generate.ts`, and `api/types.ts`. Those eight
-are false positives — the identifier is right and the pattern
-is wrong. `tests/` is outside the sweep on purpose: its files
-still import `node:test`.
+Twelve lines. One is the `node:crypto` import above. Two are
+`api/access-token.ts:31` and `:35`, which read the Node-compat
+`process` global through optional chaining
+(`runtime.process?.env?.[…]`) — a real reader that the
+narrower `process\.` pattern silently clears, leaving a
+one-line false all-clear. The remaining nine are the English
+word in comments, plus one page keyword string,
+`'flow, process,'` at `web-app/app/page-registry.ts:177`.
+
+Dropping the quote anchor adds nine more non-specifier hits:
+`node: GraphNode`, a domain property name, in `flow-graph.ts`
+(×3), `flow-operations.ts` (×3), `mermaid-generate.ts`, and
+`api/types.ts`, plus the comment naming `node:crypto` at
+`server/scrypt-hash.ts:2`. The identifier is right and the
+pattern is wrong. `tests/` is outside the sweep on purpose:
+its files still import `node:test`.
 
 ### Operator seed and wipe
 
