@@ -3,6 +3,7 @@ import { defineStoreAcceptance } from
     './store-acceptance.ts';
 
 defineStoreAcceptance(
+    Deno.test,
     'memory',
     async () => memoryDbAdapter(),
 );

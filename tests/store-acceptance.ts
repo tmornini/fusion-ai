@@ -134,7 +134,15 @@ async function messagePairsAt(
         .length;
 }
 
+// Both Deno.test and @std/testing/bdd's it satisfy this:
+// each accepts a name plus a zero-arg (sync or async) fn.
+type TestRegistrar = (
+    name: string,
+    fn: () => void | Promise<void>,
+) => void;
+
 export function defineStoreAcceptance(
+    register: TestRegistrar,
     name: string,
     open: () => Promise<DbAdapter>,
 ): void {
@@ -147,7 +155,7 @@ export function defineStoreAcceptance(
         return { db, token: await organizationToken() };
     }
 
-    Deno.test(name + ': get live PUT', async () => {
+    register(name + ': get live PUT', async () => {
         const { db, token } = await ready();
         const put = await handleRequest(db, req(
             'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
@@ -168,7 +176,7 @@ export function defineStoreAcceptance(
         assertStrictEquals(body.title, 'Live');
     });
 
-    Deno.test(name + ': DELETE head is gone', async () => {
+    register(name + ': DELETE head is gone', async () => {
         const { db, token } = await ready();
         const put = await handleRequest(db, req(
             'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
@@ -196,7 +204,7 @@ export function defineStoreAcceptance(
         assertStrictEquals(got.status, 404);
     });
 
-    Deno.test(name + ': same-body PUT is 200', async () => {
+    register(name + ': same-body PUT is 200', async () => {
         const { db, token } = await ready();
         const body = ideaDocument('Same', 'ev-sa-same');
         const first = await handleRequest(
@@ -223,7 +231,7 @@ export function defineStoreAcceptance(
         );
     });
 
-    Deno.test(name + ': exact retry keeps status', async () => {
+    register(name + ': exact retry keeps status', async () => {
         const { db, token } = await ready();
         const body = ideaDocument('Retry', 'ev-sa-retry');
         const first = await handleRequest(
@@ -254,7 +262,7 @@ export function defineStoreAcceptance(
         );
     });
 
-    Deno.test(name + ': address miss is 404', async () => {
+    register(name + ': address miss is 404', async () => {
         const { db, token } = await ready();
         const put = await handleRequest(db, req(
             'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
@@ -270,7 +278,7 @@ export function defineStoreAcceptance(
         assertStrictEquals(got.status, 404);
     });
 
-    Deno.test(name + ': If-Match stale is 412', async () => {
+    register(name + ': If-Match stale is 412', async () => {
         const { db, token } = await ready();
         const created = await handleRequest(db, req(
             'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token

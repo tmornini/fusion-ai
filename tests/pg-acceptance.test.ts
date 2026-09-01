@@ -79,7 +79,7 @@ describe('pg acceptance', () => {
             }
         });
 
-        defineStoreAcceptance('postgres', async () => {
+        defineStoreAcceptance(it, 'postgres', async () => {
             // Fresh tables each case. hasSchema after
             // deleteSchema throws (loud miss) — do not probe.
             await backend.deleteSchema();
