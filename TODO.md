@@ -1268,8 +1268,10 @@ Off the critical path; each with its oracle.
 - `JWT_HMAC_SIGNING_KEY` may not belong in the local
   seed/wipe `--allow-env` (`postgres-seed:168`,
   `postgres-wipe:109`). `api/access-token.ts` IS in the
-  seed's 105-module transitive graph, reached through
-  `api/api.ts`, but it reads the key lazily inside
+  seed's 105-module transitive graph — `postgres-seed.ts`
+  → `seed.ts` → `api/mock-data.ts` → `api/routes.ts` →
+  `api/authentication.ts`, a route that never touches
+  `api/api.ts` — but it reads the key lazily inside
   `hmacSigningKeyMaterial()` (:29-44), so whether the seed
   ever reaches that read is undecided — the seed hits
   ECONNREFUSED first. Kept rather than narrowed on
