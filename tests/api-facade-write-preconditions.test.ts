@@ -1,13 +1,6 @@
 import { assert, assertEquals, assertStrictEquals } from '@std/assert';
-// `test`, not `Deno.test`, on purpose: this file's last test
-// mocks setTimeout via node:test's `t.mock.timers`. Deno's
-// native TestContext has no fake-timer facility, and adding
-// one is Task 48-50's territory (the brief's own "no timers"
-// scope line), so that ONE test stays on the node:test
-// compat shim as a deliberate exception -- verified to run
-// correctly side by side with Deno.test in this same file
-// (both funnel through Deno's own test runner).
-import { test } from 'node:test';
+import { stub } from '@std/testing/mock';
+import { FakeTime } from '@std/testing/time';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -131,26 +124,26 @@ async () => {
     assertEquals(viaGetWithEtag, viaGet);
 });
 
-test('jitteredBackoff waits base*2^(attempt-1) plus jitter'
+Deno.test('jitteredBackoff waits base*2^(attempt-1) plus jitter'
 + ' (the C6 retry loop\'s pacing primitive)',
-async (t) => {
+async () => {
     // BACKOFF_BASE_MS is 100; random fixed at 0 → delay
     // equals the base with no jitter added.
-    t.mock.timers.enable({ apis: ['setTimeout'] });
-    t.mock.method(Math, 'random', () => 0);
+    using time = new FakeTime();
+    using _randomStub = stub(Math, 'random', () => 0);
 
     let resolved = false;
     const p = jitteredBackoff(2).then(() => {
         resolved = true;
     });
     // attempt 2 → base = 100 * 2^(2-1) = 200
-    t.mock.timers.tick(199);
+    time.tick(199);
     await Promise.resolve();
     assertStrictEquals(
         resolved, false,
         'must not resolve before the backoff delay',
     );
-    t.mock.timers.tick(1);
+    time.tick(1);
     await p;
     assertStrictEquals(resolved, true);
 });
