@@ -1238,6 +1238,61 @@ Off the critical path; each with its oracle.
   browser-reachable subset alone, excluding the
   Node-only modules the retired `exclude` named. Oracle:
   that invocation rejects `process` with TS2591.
+- The `exists()` helper is duplicated five times, byte
+  for byte, all under `web-app/app/` — `compose.ts`,
+  `generate-api-documentation.ts`, `measure-viz.ts`,
+  `cdp-client.ts`, `measure.ts`. Commandment IX's
+  threshold is three. Each copy was sanctioned
+  deliberately: extracting a shared module from any one
+  Deno porting task would have reached into four other
+  tasks' files. Oracle: one definition, five importers,
+  `./validate` green.
+- `./measure --record` writes the literal `'unknown'` as
+  `cpuModel` (`web-app/app/measure.ts:946`). Deno exposes
+  no CPU-model API — `navigator.hardwareConcurrency` is a
+  count — and the `sysctl` workaround was rejected as
+  unverifiable and macOS-only. All 14 rows in
+  `measurements/history.jsonl` carry a real chip name; no
+  row written from here on will. The truthful shape omits
+  the field rather than storing a sentinel, which needs
+  `measure-core.ts`'s field type and `shapeHistoryLine`
+  (:36, :264) together with `measure-viz.ts:986`, whose
+  `|| ''` is itself the default-value sin. Oracle: a row
+  with no `cpuModel` key renders without the separator.
+- `JWT_HMAC_SIGNING_KEY` may not belong in the local
+  seed/wipe `--allow-env` (`postgres-seed:168`,
+  `postgres-wipe:109`). `api/access-token.ts` IS in the
+  seed's 105-module transitive graph, reached through
+  `api/api.ts`, but it reads the key lazily inside
+  `hmacSigningKeyMaterial()` (:29-44), so whether the seed
+  ever reaches that read is undecided — the seed hits
+  ECONNREFUSED first. Kept rather than narrowed on
+  evidence that needs a database to gather. Oracle: a
+  successful `./postgres-seed --postgres local
+  --bootstrap` that never reads it.
+- Nothing asserts that the operator wrappers exec `deno`
+  rather than `node`; coverage today is a grep run by
+  hand. `tests/fusion-angle-live-name.test.ts` already
+  walks the same root-file list for forbidden strings, so
+  the shape exists. Oracle: a test asserting no `node`
+  invocation in `postgres-lib`, `postgres-seed`,
+  `postgres-wipe`.
+- A pure-TypeScript scrypt would retire the last
+  product-process `node:` import
+  (`server/scrypt-hash.ts`). Measured at
+  this repo's `ln=17,r=8,p=1,dkLen=32`,
+  `jsr:@noble/hashes@2.4.0/scrypt.js` medians 224 ms
+  against `node:crypto` scryptSync's 192 ms — 17% slower,
+  digests byte-identical, so stored `$scrypt$` credentials
+  verify unchanged, and `deno compile` embeds it with no
+  native dependency. Its audit status, maintenance
+  cadence, and supply-chain posture are UNVERIFIED; for a
+  credential path that is the decisive question, and it
+  settles before the benchmark means anything. The cost is
+  a third-party package where the Article prefers a
+  platform primitive. `@denorg/scrypt` and
+  `@wildboar/scrypt-0` also exist on JSR, unexamined.
+  Oracle: byte-identical digests for the stored parameters.
 
 ## Sequencing
 
