@@ -1105,12 +1105,6 @@ Off the critical path; each with its oracle.
   TEST-PLAN case claims the feedback survives. Oracle: a
   Layer 1 test asserting the typed feedback reaches the
   transition
-- Two locals named for a retired section slice —
-  `gOrganization` and `gAdmin`
-  (`tests/api-authentication-token.test.ts:1092-1093`)
-  carry the old Section-G prefix; Commandment III says
-  they read `starkOrganization` and `starkAdmin`. Quoted
-  by no pin, so they rename alone
 - A stale manual-coverage pointer —
   `tests/flow-designer-presenter.test.ts:352` points its
   comment at "TEST-PLAN F51"; the locked-members case is
