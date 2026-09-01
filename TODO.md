@@ -1105,16 +1105,14 @@ Off the critical path; each with its oracle.
   TEST-PLAN case claims the feedback survives. Oracle: a
   Layer 1 test asserting the typed feedback reaches the
   transition
-- Two corrupted upstream identifiers, from an old
-  id-scrubber. One is a test NAME —
-  `tests/presenter-projects-organization.test.ts:398`
-  says `XXZruirZyAOoRpNxaDnpSA` where it means
-  `current/limit` — and a TEST-PLAN pin quotes it
-  faithfully (`TEST-PLAN.md:4391`), so the name is fixed
-  first and the pin follows in the same commit. The other
-  is a local variable standing for `r1` at four sites in
-  `tests/api-invitations-fence.test.ts` (:360, :363,
-  :505, :509) — `rOEPOcVMQdJiiiMuiiEhlg`, quoted by no
+- One corrupted upstream identifier, from an old
+  id-scrubber — a local variable standing for `r1`
+  (`rOEPOcVMQdJiiiMuiiEhlg`, its sibling `r2` beside it)
+  in `tests/api-invitations-fence.test.ts`,
+  `tests/api-flow-tags.test.ts`,
+  `tests/flow-fsm-reduce.test.ts`,
+  `tests/flow-zoom-to-fit.test.ts`, and
+  `tests/derive-record-instances.test.ts`; quoted by no
   pin, so it renames alone
 - Two locals named for a retired section slice —
   `gOrganization` and `gAdmin`
