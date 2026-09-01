@@ -48,7 +48,8 @@ local `./postgres-seed` and `./postgres-wipe` paths
 scripts, and `./serve` execs the `deno compile` binary,
 which embeds the runtime — neither calls `deno` itself.
 
-Deno is the only runtime this repository uses. No script
+Deno is the only server-side runtime this repository uses;
+the browser is the other, and runs the pages. No script
 invokes `node` or `npm`; there is no `package.json` and no
 `node_modules`, and `deno.json` sets `nodeModulesDir:
 none`. `deno.json` and `deno.lock` are the whole dependency
