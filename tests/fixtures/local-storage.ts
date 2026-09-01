@@ -1,10 +1,11 @@
 // Per-test localStorage swap that restores the previous
 // value in a finally, so a test's fake never outlives it.
-// A module-level `globalThis.localStorage = fake` leaks
-// into every later test in the worker — there is no
-// process boundary to reclaim it. defineProperty (not a
-// bare assignment) installs and restores, matching
-// local-storage-stub.ts and staying independent of it.
+// A module-level assignment to the global (`globalThis.
+// localStorage=fake`) leaks into every later test in the
+// worker — there is no process boundary to reclaim it.
+// defineProperty (not a bare assignment) installs and
+// restores, matching local-storage-stub.ts and staying
+// independent of it.
 
 export function withLocalStorage<T>(
     fake: Partial<Storage>,
