@@ -231,7 +231,6 @@ async function expiredOrganizationToken(
 
 Deno.test('a recover context silently refreshes a dead access token',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     const db = await freshDb();
     const pair = await issuePair(db);
     const deadAccess = await expiredToken();
@@ -251,7 +250,6 @@ Deno.test('a recover context silently refreshes a dead access token',
 
 Deno.test('concurrent 401s share exactly one refresh grant',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     const db = await freshDb();
     const pair = await issuePair(db);
     const deadAccess = await expiredToken();
@@ -281,7 +279,6 @@ Deno.test('concurrent 401s share exactly one refresh grant',
 Deno.test('a live credential with an anonymous-seed holder re-scopes'
 + ' rather than scrubbing the session',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     window.location.href = '';
     const db = await freshDb();
     const pair = await issuePair(db);
@@ -307,7 +304,6 @@ Deno.test('a live credential with an anonymous-seed holder re-scopes'
 
 Deno.test('recovery with both tokens dead scrubs and bounces',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     window.location.href = '';
     const db = await freshDb();
     // both tokens dead → the resolver says login, not refresh
@@ -334,7 +330,6 @@ Deno.test('recovery with both tokens dead scrubs and bounces',
 Deno.test('recovery with a corrupt credential scrubs, bounces,'
 + ' and warns',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     window.location.href = '';
     const db = await freshDb();
     localStorage.setItem(
@@ -366,7 +361,6 @@ Deno.test('recovery with a corrupt credential scrubs, bounces,'
 Deno.test('a recovering context reads through the vessel token,'
 + ' not a concurrently-moved global',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     const db = await freshDb();
     await seedOrganizationAdmin(db, ORGANIZATION_A);
     await seedOrganizationAdmin(db, ORGANIZATION_B);
@@ -402,7 +396,6 @@ Deno.test('a recovering context reads through the vessel token,'
 Deno.test('recovery re-scopes to the vessel org claim, not the'
 + ' cross-tab preference',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     const db = await freshDb();
     await seedOrganizationAdmin(db, ORGANIZATION_A);
     await seedOrganizationAdmin(db, ORGANIZATION_B);
@@ -435,7 +428,6 @@ Deno.test('recovery re-scopes to the vessel org claim, not the'
 
 Deno.test('recovery leaves the cross-tab active-org preference'
 + ' untouched', () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     const db = await freshDb();
     await seedOrganizationAdmin(db, ORGANIZATION_A);
     await seedOrganizationAdmin(db, ORGANIZATION_B);

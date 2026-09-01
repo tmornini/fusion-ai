@@ -41,7 +41,6 @@ function freshStorage(): Partial<Storage> {
 
 Deno.test('logout revokes this identity and clears credentials',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     const { db, ctx } = await adminContext();
     putSessionCredentials({
         accessToken: await devToken(),
@@ -61,7 +60,6 @@ Deno.test('logout revokes this identity and clears credentials',
 
 Deno.test('logout scrubs locally even when the revoke fails',
 () => withLocalStorageAsync(freshStorage(), async () => {
-    localStorage.clear();
     putSessionCredentials({
         accessToken: await devToken(),
         refreshToken: await organizationToken(),
