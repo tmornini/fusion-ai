@@ -1,5 +1,4 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
-import { writeFileSync } from 'node:fs';
 import { join } from '@std/path';
 import { execSync, spawnSync } from 'node:child_process';
 
@@ -15,7 +14,7 @@ Deno.test('validate skips when the HEAD SHA already passed',
         Deno.makeTempDirSync({ prefix: 'validate-ok-' }),
         'validate-ok',
     );
-    writeFileSync(stamp, `${headSha()}\n`);
+    Deno.writeTextFileSync(stamp, `${headSha()}\n`);
     const result = spawnSync('./validate', [], {
         encoding: 'utf8',
         timeout: 4000,

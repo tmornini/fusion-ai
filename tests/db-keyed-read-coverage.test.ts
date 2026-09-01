@@ -1,5 +1,4 @@
 import { assert, assertEquals, assertStrictEquals } from '@std/assert';
-import { readdirSync, readFileSync } from 'node:fs';
 import { join } from '@std/path';
 import { TABLE_INDEXES } from '../api/db.ts';
 
@@ -56,11 +55,9 @@ Deno.test('every keyed read has a matching secondary index', () => {
 
 function apiTypeScriptFiles(dir: string): string[] {
     const out: string[] = [];
-    for (const entry of readdirSync(dir, {
-        withFileTypes: true,
-    })) {
+    for (const entry of Deno.readDirSync(dir)) {
         const path = join(dir, entry.name);
-        if (entry.isDirectory()) {
+        if (entry.isDirectory) {
             out.push(...apiTypeScriptFiles(path));
             continue;
         }
@@ -76,7 +73,7 @@ Deno.test('KEYED_READS lists every getAllWhere literal',
     const call = /getAllWhere\(\s*'([^']+)'/g;
     const found = new Set<string>();
     for (const file of apiTypeScriptFiles('api')) {
-        const text = readFileSync(file, 'utf8')
+        const text = Deno.readTextFileSync(file)
             .replace(/^\s*\/\/.*$/gm, '');
         for (const match of text.matchAll(call)) {
             const column = match[1];

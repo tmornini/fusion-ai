@@ -1,5 +1,4 @@
 import { assert, assertMatch, assertNotMatch } from '@std/assert';
-import { readFileSync } from 'node:fs';
 import * as icons from '../web-app/app/icons.ts';
 import type { IconFn } from '../web-app/app/icons.ts';
 
@@ -19,7 +18,7 @@ const FILES = [
 
 Deno.test('product chrome says Fusion Angle', () => {
     for (const path of FILES) {
-        const src = readFileSync(path, 'utf8');
+        const src = Deno.readTextFileSync(path);
         assertMatch(
             src,
             /Fusion Angle/,
@@ -35,9 +34,8 @@ Deno.test('product chrome says Fusion Angle', () => {
 
 Deno.test('design-system card heading is Fusion Angle Card',
 () => {
-    const src = readFileSync(
+    const src = Deno.readTextFileSync(
         'web-app/design-system/index.ts',
-        'utf8',
     );
     assertMatch(src, /Fusion Angle Card/);
     assertNotMatch(src, /Fusion Card/);
@@ -56,7 +54,7 @@ Deno.test('chrome and icon path data are SVG grammar', () => {
     for (const path of FILES) {
         if (!path.endsWith('.html')) continue;
         for (const d of pathData(
-            readFileSync(path, 'utf8'),
+            Deno.readTextFileSync(path),
         )) {
             count += 1;
             assertMatch(

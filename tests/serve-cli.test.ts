@@ -1,9 +1,5 @@
 import { assertMatch, assertNotMatch, assertStrictEquals } from '@std/assert';
-import {
-    existsSync,
-    readFileSync,
-    writeFileSync,
-} from 'node:fs';
+import { existsSync } from '@std/fs';
 import { join } from '@std/path';
 import {
     spawnSync,
@@ -14,7 +10,7 @@ function pathWithDockerStub(stamp: string): string {
     const dir = Deno.makeTempDirSync({
         prefix: 'fusion-docker-stub-',
     });
-    writeFileSync(
+    Deno.writeTextFileSync(
         join(dir, 'docker'),
         '#!/bin/bash\n'
         + `printf x >> "${stamp}"\n`
@@ -53,7 +49,7 @@ Deno.test('serve with no args exits 1 with usage', () => {
     assertMatch(result.stderr, /Usage: \.\/serve/);
     assertStrictEquals(
         existsSync(result.stamp) &&
-            readFileSync(result.stamp, 'utf8')
+            Deno.readTextFileSync(result.stamp)
                 .length > 0,
         false,
     );
@@ -96,7 +92,7 @@ Deno.test('serve missing JWT exits 1', () => {
 });
 
 Deno.test('serve does not invoke ./build', () => {
-    const src = readFileSync('serve', 'utf8');
+    const src = Deno.readTextFileSync('serve');
     assertNotMatch(src, /\.\/build/);
     assertMatch(src, /exec \.\/fusion-angle serve/);
     assertNotMatch(src, /DEFAULT_PORT/);

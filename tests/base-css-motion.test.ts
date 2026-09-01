@@ -1,9 +1,7 @@
 import { assert } from '@std/assert';
-import { readFileSync } from 'node:fs';
 
-const src = readFileSync(
+const src = Deno.readTextFileSync(
     'web-app/app/styles/base.css',
-    'utf8',
 );
 
 Deno.test(

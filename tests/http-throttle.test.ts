@@ -1,6 +1,5 @@
 import { assertStrictEquals } from '@std/assert';
 import { request } from 'node:http';
-import { rm } from 'node:fs/promises';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import { HTTP_TOO_MANY_REQUESTS } from
     '../api/http-errors.ts';
@@ -37,7 +36,7 @@ async function withServer(
         );
     } finally {
         if (listener !== undefined) await listener.close();
-        await rm(root, { recursive: true, force: true });
+        await Deno.remove(root, { recursive: true });
     }
 }
 

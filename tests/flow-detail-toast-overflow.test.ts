@@ -1,9 +1,7 @@
 import { assert, assertStrictEquals } from '@std/assert';
-import { readFileSync } from 'node:fs';
 
-const src = readFileSync(
+const src = Deno.readTextFileSync(
     'web-app/app/styles/pages-flow-detail.css',
-    'utf8',
 );
 
 function ruleAfter(needle: string): string {

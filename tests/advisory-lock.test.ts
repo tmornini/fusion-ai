@@ -5,11 +5,6 @@ import {
     assertNotStrictEquals,
     assertStrictEquals,
 } from '@std/assert';
-import {
-    readdirSync,
-    readFileSync,
-    statSync,
-} from 'node:fs';
 import { fromFileUrl, join } from '@std/path';
 import {
     sha256Hex,
@@ -128,17 +123,17 @@ Deno.test('postgres notify is issued; server never LISTENs',
     const postgresPath = join(
         repoRoot, 'api/backend-postgres.ts',
     );
-    const postgres = readFileSync(postgresPath, 'utf8');
+    const postgres = Deno.readTextFileSync(postgresPath);
     assertMatch(postgres, /pg_notify/);
     assertNotMatch(postgres, /\bLISTEN\b/);
     const serverDir = join(repoRoot, 'server');
     const files: string[] = [];
     const walk = (dir: string): void => {
-        for (const name of readdirSync(dir)) {
-            const path = join(dir, name);
-            if (statSync(path).isDirectory()) {
+        for (const entry of Deno.readDirSync(dir)) {
+            const path = join(dir, entry.name);
+            if (entry.isDirectory) {
                 walk(path);
-            } else if (name.endsWith('.ts')) {
+            } else if (entry.name.endsWith('.ts')) {
                 files.push(path);
             }
         }
@@ -146,7 +141,7 @@ Deno.test('postgres notify is issued; server never LISTENs',
     walk(serverDir);
     assert(files.length >= 8);
     for (const path of files) {
-        const src = readFileSync(path, 'utf8');
+        const src = Deno.readTextFileSync(path);
         assertNotMatch(
             src,
             /\bLISTEN\b/,

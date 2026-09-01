@@ -1,13 +1,12 @@
 import { assertMatch, assertNotStrictEquals } from '@std/assert';
 import { spawnSync } from 'node:child_process';
-import { writeFileSync, rmSync } from 'node:fs';
 import { join } from '@std/path';
 
 Deno.test('browser project rejects process (TS2591)', () => {
     const dir = Deno.makeTempDirSync({ prefix: 'deno-fence-' });
     try {
         const leak = join(dir, 'leak.ts');
-        writeFileSync(leak, 'process.exit(0);\n');
+        Deno.writeTextFileSync(leak, 'process.exit(0);\n');
         const result = spawnSync(
             'deno',
             ['check', '--frozen', leak],
@@ -19,6 +18,6 @@ Deno.test('browser project rejects process (TS2591)', () => {
         assertMatch(out, /TS2591/);
         assertMatch(out, /Cannot find name 'process'/);
     } finally {
-        rmSync(dir, { recursive: true, force: true });
+        Deno.removeSync(dir, { recursive: true });
     }
 });

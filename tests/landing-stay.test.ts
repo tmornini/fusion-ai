@@ -1,15 +1,13 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
-import { readFileSync } from 'node:fs';
 import { fromFileUrl } from '@std/path';
 
-const src = readFileSync(
+const src = Deno.readTextFileSync(
     fromFileUrl(
         new URL(
             '../web-app/landing/index.ts',
             import.meta.url,
         ),
     ),
-    'utf8',
 );
 
 Deno.test('landing does not shove to dashboard', () => {

@@ -7,7 +7,6 @@ import {
     assertRejects,
     assertStrictEquals,
 } from '@std/assert';
-import { readFileSync } from 'node:fs';
 import {
     hasSchemaMarker,
 } from '../server/boot.ts';
@@ -59,16 +58,16 @@ function fakeClient(
     return { sql, texts };
 }
 
-const POSTGRES_URL = process.env['POSTGRES_URL'];
+const POSTGRES_URL = Deno.env.get('POSTGRES_URL');
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 function schemaName(): string {
-    const base = process.env['SCHEMA_NAME']
+    const base = Deno.env.get('SCHEMA_NAME')
         ?? (
             'fusion_test_'
             + String(Date.now())
             + '_'
-            + String(process.pid)
+            + String(Deno.pid)
         );
     const name = base + '_seed';
     if (!IDENT.test(name)) {
@@ -195,8 +194,8 @@ async () => {
 
 Deno.test('postgres-seed refuses leftover pairs before DDL',
 () => {
-    const src = readFileSync(
-        'server/postgres-seed.ts', 'utf8',
+    const src = Deno.readTextFileSync(
+        'server/postgres-seed.ts',
     );
     const legacy = src.indexOf(
         'assertNoLegacyMessageTables',

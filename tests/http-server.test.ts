@@ -4,10 +4,6 @@ import {
     assertNotMatch,
     assertStrictEquals,
 } from '@std/assert';
-import { mkdir, writeFile, rm } from
-    'node:fs/promises';
-import { readFileSync, readdirSync, statSync } from
-    'node:fs';
 import { join } from '@std/path';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
@@ -41,10 +37,10 @@ async function withServer(
     try {
         for (const [rel, body] of Object.entries(files)) {
             const path = join(root, rel);
-            await mkdir(join(path, '..'), {
+            await Deno.mkdir(join(path, '..'), {
                 recursive: true,
             });
-            await writeFile(path, body);
+            await Deno.writeTextFile(path, body);
         }
         const options = {
             adapter: memoryDbAdapter(),
@@ -63,7 +59,7 @@ async function withServer(
         );
     } finally {
         if (listener !== undefined) await listener.close();
-        await rm(root, { recursive: true, force: true });
+        await Deno.remove(root, { recursive: true });
     }
 }
 
@@ -216,11 +212,11 @@ Deno.test('no web-app HTML carries a CSP meta; the server does',
 () => {
     const files: string[] = [];
     const walk = (dir: string): void => {
-        for (const name of readdirSync(dir)) {
-            const path = join(dir, name);
-            if (statSync(path).isDirectory()) {
+        for (const entry of Deno.readDirSync(dir)) {
+            const path = join(dir, entry.name);
+            if (entry.isDirectory) {
                 walk(path);
-            } else if (name.endsWith('.html')) {
+            } else if (entry.name.endsWith('.html')) {
                 files.push(path);
             }
         }
@@ -229,13 +225,13 @@ Deno.test('no web-app HTML carries a CSP meta; the server does',
     assert(files.length >= 30);
     for (const path of files) {
         assertNotMatch(
-            readFileSync(path, 'utf8'),
+            Deno.readTextFileSync(path),
             /Content-Security-Policy/,
             path + ' carries a CSP meta',
         );
     }
     assertMatch(
-        readFileSync('server/http-server.ts', 'utf8'),
+        Deno.readTextFileSync('server/http-server.ts'),
         /Content-Security-Policy/,
     );
 });

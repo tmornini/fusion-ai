@@ -1,9 +1,4 @@
 import { assertEquals } from '@std/assert';
-import {
-    readdirSync,
-    readFileSync,
-    statSync,
-} from 'node:fs';
 import { join } from '@std/path';
 
 const SKIP_DIRS = new Set([
@@ -45,13 +40,12 @@ const TREES = [
 ] as const;
 
 function walk(dir: string, out: string[]): void {
-    for (const name of readdirSync(dir)) {
-        if (SKIP_DIRS.has(name)) {
+    for (const entry of Deno.readDirSync(dir)) {
+        if (SKIP_DIRS.has(entry.name)) {
             continue;
         }
-        const path = join(dir, name);
-        const st = statSync(path);
-        if (st.isDirectory()) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory) {
             walk(path, out);
         } else {
             out.push(path);
@@ -66,11 +60,16 @@ function hitsIn(path: string): string[] {
     if (path.includes('tests/fusion-angle-')) {
         return [];
     }
-    const buf = readFileSync(path);
+    // Raw bytes first: a binary file (a null byte) is
+    // never decoded as text, matching Node's Buffer
+    // sniff this replaced. TextDecoder, never
+    // Uint8Array.prototype.toString — the latter
+    // ignores its argument and stringifies as numbers.
+    const buf = Deno.readFileSync(path);
     if (buf.includes(0)) {
         return [];
     }
-    const src = buf.toString('utf8').replaceAll(
+    const src = new TextDecoder().decode(buf).replaceAll(
         'fusion-ai-browser',
         '',
     );

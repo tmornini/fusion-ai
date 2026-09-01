@@ -1,7 +1,6 @@
 import { assert, assertMatch, assertNotMatch } from '@std/assert';
-import { readFileSync } from 'node:fs';
 
-const VALIDATE = readFileSync('validate', 'utf8');
+const VALIDATE = Deno.readTextFileSync('validate');
 
 function longLineBlock(src: string): string {
     const start = src.indexOf('LONG_LINES=');

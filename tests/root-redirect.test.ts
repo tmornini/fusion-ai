@@ -1,15 +1,13 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
-import { readFileSync } from 'node:fs';
 import { fromFileUrl } from '@std/path';
 
-const src = readFileSync(
+const src = Deno.readTextFileSync(
     fromFileUrl(
         new URL(
             '../web-app/app/root-redirect.ts',
             import.meta.url,
         ),
     ),
-    'utf8',
 );
 
 Deno.test('apex hops via the destination helper', () => {

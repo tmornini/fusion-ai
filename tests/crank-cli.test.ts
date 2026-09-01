@@ -4,11 +4,7 @@ import {
     assertNotMatch,
     assertStrictEquals,
 } from '@std/assert';
-import {
-    existsSync,
-    readFileSync,
-    writeFileSync,
-} from 'node:fs';
+import { existsSync } from '@std/fs';
 import { join } from '@std/path';
 import {
     spawnSync,
@@ -19,7 +15,7 @@ function pathWithDockerStub(stamp: string): string {
     const dir = Deno.makeTempDirSync({
         prefix: 'fusion-docker-stub-',
     });
-    writeFileSync(
+    Deno.writeTextFileSync(
         join(dir, 'docker'),
         '#!/bin/bash\n'
         + `printf x >> "${stamp}"\n`
@@ -50,7 +46,7 @@ function runCrank(
 
 function dockerCalled(stamp: string): boolean {
     return existsSync(stamp)
-        && readFileSync(stamp, 'utf8').length > 0;
+        && Deno.readTextFileSync(stamp).length > 0;
 }
 
 Deno.test('crank with no args exits 1 with usage', () => {
@@ -101,7 +97,7 @@ Deno.test('crank --help exits 0', () => {
 });
 
 Deno.test('crank source owns the local stack', () => {
-    const src = readFileSync('crank', 'utf8');
+    const src = Deno.readTextFileSync('crank');
     assertMatch(src, /\.\/validate/);
     assertMatch(
         src,

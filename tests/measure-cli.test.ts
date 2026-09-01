@@ -4,7 +4,6 @@ import {
     assertNotMatch,
     assertStrictEquals,
 } from '@std/assert';
-import { readFileSync } from 'node:fs';
 import {
     DEFAULT_RUNS,
     MEASURE_DEMO_EMAIL,
@@ -301,8 +300,8 @@ Deno.test('local spawn is seed then ./fusion-angle serve', () => {
 });
 
 Deno.test('measure discovery has no identity sentinel', () => {
-    const src = readFileSync(
-        'web-app/app/measure.ts', 'utf8',
+    const src = Deno.readTextFileSync(
+        'web-app/app/measure.ts',
     );
     assertNotMatch(src, /identityId=current/);
     assertNotMatch(src, /Tony Stark/);

@@ -1,11 +1,6 @@
 import { assertEquals, assertStrictEquals } from '@std/assert';
 import { generateIdentifier } from
     '../shared/identifier.ts';
-import {
-    readdirSync,
-    readFileSync,
-    statSync,
-} from 'node:fs';
 import { fromFileUrl, join, relative } from '@std/path';
 import { handleRequest, PUT } from '../api/api.ts';
 import {
@@ -128,11 +123,11 @@ function legacyBody(
 
 function walkTs(dir: string): string[] {
     const out: string[] = [];
-    for (const name of readdirSync(dir)) {
-        const full = join(dir, name);
-        if (statSync(full).isDirectory()) {
+    for (const entry of Deno.readDirSync(dir)) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory) {
             out.push(...walkTs(full));
-        } else if (name.endsWith('.ts')) {
+        } else if (entry.name.endsWith('.ts')) {
             out.push(full);
         }
     }
@@ -240,7 +235,7 @@ Deno.test('G7: fieldValues hits equal named exceptions',
         join(repoRoot, 'web-app', 'app'),
     ]) {
         for (const full of walkTs(root)) {
-            const text = readFileSync(full, 'utf8');
+            const text = Deno.readTextFileSync(full);
             if (/fieldValues/.test(text)) {
                 hits.add(relative(repoRoot, full));
             }

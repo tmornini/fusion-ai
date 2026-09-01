@@ -6,7 +6,6 @@ import {
     assertRejects,
     assertStrictEquals,
 } from '@std/assert';
-import { readFileSync } from 'node:fs';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
     createRequestContext,
@@ -198,9 +197,8 @@ Deno.test(
     'InstanceHistoryWire has no version; etag is'
     + ' not 64-hex',
     () => {
-        const src = readFileSync(
+        const src = Deno.readTextFileSync(
             'web-app/app/adapters/record-instances.ts',
-            'utf8',
         );
         const start = src.indexOf(
             'interface InstanceHistoryWire',

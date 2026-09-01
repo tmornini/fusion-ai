@@ -5,11 +5,10 @@ import {
     assertStrictEquals,
 } from '@std/assert';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { fromFileUrl, relative } from '@std/path';
 
-const BUILD_SCRIPT = readFileSync('build', 'utf8');
-const BUILD_LIB_SCRIPT = readFileSync('build-lib', 'utf8');
+const BUILD_SCRIPT = Deno.readTextFileSync('build');
+const BUILD_LIB_SCRIPT = Deno.readTextFileSync('build-lib');
 
 // Deleted names no longer appear in live source. Hunt
 // the live mint symbols too, or a server-core import of
@@ -68,7 +67,7 @@ Deno.test('build emits one ZIP from the server-core entry', () => {
 Deno.test('client-graph pin matches mint and deleted names',
 () => {
     const input = 'api/access-token.ts';
-    const src = readFileSync(input, 'utf8');
+    const src = Deno.readTextFileSync(input);
     assertEquals(
         clientGraphHits(input, src),
         [
@@ -132,7 +131,7 @@ Deno.test(
                 fromFileUrl(specifier),
             );
             hits.push(...clientGraphHits(
-                path, readFileSync(path, 'utf8'),
+                path, Deno.readTextFileSync(path),
             ));
         }
         assertEquals(hits, []);

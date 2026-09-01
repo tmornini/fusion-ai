@@ -4,7 +4,6 @@ import {
     assertNotMatch,
     assertStrictEquals,
 } from '@std/assert';
-import { readFileSync } from 'node:fs';
 import { routes } from '../api/routes.ts';
 import {
     roomPathOf,
@@ -16,7 +15,7 @@ import { offeredVerbs, uriOf } from
 
 Deno.test('validate runs generate-api-documentation'
     + ' --check', () => {
-    const src = readFileSync('validate', 'utf8');
+    const src = Deno.readTextFileSync('validate');
     assertMatch(
         src,
         /generate-api-documentation --check/,

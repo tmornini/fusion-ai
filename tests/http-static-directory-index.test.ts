@@ -1,7 +1,5 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
 import { request } from 'node:http';
-import { mkdir, writeFile, rm } from
-    'node:fs/promises';
 import { join } from '@std/path';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
@@ -30,10 +28,10 @@ async function withServer(
     try {
         for (const [rel, body] of Object.entries(files)) {
             const path = join(root, rel);
-            await mkdir(join(path, '..'), {
+            await Deno.mkdir(join(path, '..'), {
                 recursive: true,
             });
-            await writeFile(path, body);
+            await Deno.writeTextFile(path, body);
         }
         const options = {
             adapter: memoryDbAdapter(),
@@ -52,7 +50,7 @@ async function withServer(
         );
     } finally {
         if (listener !== undefined) await listener.close();
-        await rm(root, { recursive: true, force: true });
+        await Deno.remove(root, { recursive: true });
     }
 }
 

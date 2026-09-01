@@ -1,8 +1,5 @@
 import { assertMatch, assertNotMatch, assertStrictEquals } from '@std/assert';
-import {
-    existsSync,
-    readFileSync,
-} from 'node:fs';
+import { existsSync } from '@std/fs';
 
 Deno.test('mark.png is committed under assets', () => {
     assertStrictEquals(
@@ -13,9 +10,8 @@ Deno.test('mark.png is committed under assets', () => {
 
 Deno.test('iconLogo is the PNG mark, not the atom',
 () => {
-    const src = readFileSync(
+    const src = Deno.readTextFileSync(
         'web-app/app/icons.ts',
-        'utf8',
     );
     assertMatch(src, /mark\.png/);
     assertMatch(src, /brand-mark/);
@@ -28,7 +24,7 @@ Deno.test('sidebars use the PNG mark', () => {
         'web-app/app/component-sidebar.html',
         'web-app/app/component-mobile-sidebar.html',
     ] as const) {
-        const src = readFileSync(path, 'utf8');
+        const src = Deno.readTextFileSync(path);
         assertMatch(src, /mark\.png/);
         assertMatch(src, /brand-mark/);
         assertNotMatch(src, /logo-orbital/);
@@ -38,9 +34,8 @@ Deno.test('sidebars use the PNG mark', () => {
 
 Deno.test('brand CSS inverts the mark in light theme',
 () => {
-    const src = readFileSync(
+    const src = Deno.readTextFileSync(
         'web-app/app/styles/components-brand.css',
-        'utf8',
     );
     assertMatch(src, /\.brand-mark/);
     assertMatch(src, /invert\(1\)/);
@@ -50,9 +45,8 @@ Deno.test('brand CSS inverts the mark in light theme',
 
 Deno.test('favicon.svg embeds the PNG and inverts in light',
 () => {
-    const src = readFileSync(
+    const src = Deno.readTextFileSync(
         'web-app/assets/favicon.svg',
-        'utf8',
     );
     assertMatch(src, /mark\.png/);
     assertMatch(
@@ -66,7 +60,7 @@ Deno.test('favicon.svg embeds the PNG and inverts in light',
 });
 
 Deno.test('build copies mark.png next to the favicons', () => {
-    const src = readFileSync('build-lib', 'utf8');
+    const src = Deno.readTextFileSync('build-lib');
     assertMatch(
         src,
         /cp web-app\/assets\/mark\.png/,
@@ -74,18 +68,16 @@ Deno.test('build copies mark.png next to the favicons', () => {
 });
 
 Deno.test('server declares image/png for .png', () => {
-    const src = readFileSync(
+    const src = Deno.readTextFileSync(
         'server/http-server.ts',
-        'utf8',
     );
     assertMatch(src, /'\.png': 'image\/png'/);
 });
 
 Deno.test('auth branding does not invert the mark',
 () => {
-    const src = readFileSync(
+    const src = Deno.readTextFileSync(
         'web-app/app/styles/components-brand.css',
-        'utf8',
     );
     assertMatch(
         src,

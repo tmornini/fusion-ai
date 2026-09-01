@@ -1,5 +1,4 @@
 import { assert, assertStrictEquals } from '@std/assert';
-import { readFileSync } from 'node:fs';
 import { fromFileUrl } from '@std/path';
 import { routes, type Route } from '../api/routes.ts';
 import {
@@ -20,7 +19,7 @@ import {
 const repoRoot = fromFileUrl(new URL('..', import.meta.url));
 
 function sourceText(relativePath: string): string {
-    return readFileSync(repoRoot + relativePath, 'utf8');
+    return Deno.readTextFileSync(repoRoot + relativePath);
 }
 
 // A write registration: a Route entry exposing put, post,

@@ -1,5 +1,4 @@
 import { assert, assertStrictEquals } from '@std/assert';
-import { rmSync } from 'node:fs';
 import { STARK_ORGANIZATION } from
     '../api/mock-data/seed-constants.ts';
 import {
@@ -46,6 +45,6 @@ async () => {
         assert(rows.length > 0);
     } finally {
         await origin.close();
-        rmSync(staticRoot, { recursive: true, force: true });
+        Deno.removeSync(staticRoot, { recursive: true });
     }
 });
