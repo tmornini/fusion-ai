@@ -1,10 +1,11 @@
-// before/after stay on node:test — Task 48's hooks.
 import {
     assertEquals,
     assertNotEquals,
     assertStrictEquals,
 } from '@std/assert';
-import { after, before } from 'node:test';
+import {
+    afterAll, beforeAll, describe, it,
+} from '@std/testing/bdd';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import { PostgresBackend } from
@@ -100,83 +101,85 @@ async function idsAtAddress(
     return rows.map((row) => row.id);
 }
 
-if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
-    Deno.test(
-        'postgres identifier order skipped without'
-        + ' POSTGRES_URL',
-        { ignore: true }, // POSTGRES_URL is unset
-        () => {},
-    );
-} else {
-    const schema = schemaName();
-    const sql = connectPostgres(
-        urlWithSearchPath(POSTGRES_URL, schema),
-    );
-    const backend = new PostgresBackend(sql);
-
-    before(async () => {
-        await sql.unsafe(
-            'CREATE SCHEMA ' + quoteIdent(schema),
+describe('pg identifier order', () => {
+    if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
+        it(
+            'postgres identifier order skipped without'
+            + ' POSTGRES_URL',
+            { ignore: true }, // POSTGRES_URL is unset
+            () => {},
         );
-        await backend.ensureTables(TABLE_NAMES);
-    });
+    } else {
+        const schema = schemaName();
+        const sql = connectPostgres(
+            urlWithSearchPath(POSTGRES_URL, schema),
+        );
+        const backend = new PostgresBackend(sql);
 
-    after(async () => {
-        try {
+        beforeAll(async () => {
             await sql.unsafe(
-                'DROP SCHEMA IF EXISTS '
-                + quoteIdent(schema)
-                + ' CASCADE',
+                'CREATE SCHEMA ' + quoteIdent(schema),
             );
-        } finally {
-            await sql.end();
-        }
-    });
+            await backend.ensureTables(TABLE_NAMES);
+        });
 
-    Deno.test(
-        'uuid ORDER BY matches compareIdentifiers',
-        async () => {
-            const prefixes = ['-', '0', 'A', '_', 'a'];
-            const ids = prefixes.map(
-                identifierForPrefix,
-            );
-            for (let i = 0; i < ids.length; i++) {
-                assertStrictEquals(
-                    ids[i]![0], prefixes[i],
+        afterAll(async () => {
+            try {
+                await sql.unsafe(
+                    'DROP SCHEMA IF EXISTS '
+                    + quoteIdent(schema)
+                    + ' CASCADE',
                 );
+            } finally {
+                await sql.end();
             }
-            const asciiOrder = [...ids];
-            const identifierOrder = [...ids].sort(
-                compareIdentifiers,
-            );
-            assertNotEquals(
-                identifierOrder, asciiOrder,
-            );
-            assertEquals(
-                identifierOrder.map((id) => id[0]),
-                ['A', 'a', '0', '-', '_'],
-            );
+        });
 
-            const postgres = new BackedDbAdapter(
-                backend,
-                async () => {},
-                async () => {},
-                () => {},
-            );
-            const memory = memoryDbAdapter();
-            await memory.postSchemaCreation();
-            for (const id of ids) {
-                await putPair(postgres, id);
-                await putPair(memory, id);
-            }
-            const pgIds = await idsAtAddress(
-                postgres,
-            );
-            const memIds = await idsAtAddress(
-                memory,
-            );
-            assertEquals(pgIds, identifierOrder);
-            assertEquals(memIds, identifierOrder);
-        },
-    );
-}
+        it(
+            'uuid ORDER BY matches compareIdentifiers',
+            async () => {
+                const prefixes = ['-', '0', 'A', '_', 'a'];
+                const ids = prefixes.map(
+                    identifierForPrefix,
+                );
+                for (let i = 0; i < ids.length; i++) {
+                    assertStrictEquals(
+                        ids[i]![0], prefixes[i],
+                    );
+                }
+                const asciiOrder = [...ids];
+                const identifierOrder = [...ids].sort(
+                    compareIdentifiers,
+                );
+                assertNotEquals(
+                    identifierOrder, asciiOrder,
+                );
+                assertEquals(
+                    identifierOrder.map((id) => id[0]),
+                    ['A', 'a', '0', '-', '_'],
+                );
+
+                const postgres = new BackedDbAdapter(
+                    backend,
+                    async () => {},
+                    async () => {},
+                    () => {},
+                );
+                const memory = memoryDbAdapter();
+                await memory.postSchemaCreation();
+                for (const id of ids) {
+                    await putPair(postgres, id);
+                    await putPair(memory, id);
+                }
+                const pgIds = await idsAtAddress(
+                    postgres,
+                );
+                const memIds = await idsAtAddress(
+                    memory,
+                );
+                assertEquals(pgIds, identifierOrder);
+                assertEquals(memIds, identifierOrder);
+            },
+        );
+    }
+});
