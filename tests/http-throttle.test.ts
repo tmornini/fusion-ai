@@ -39,13 +39,16 @@ async function withServer(
     }
 }
 
-// A dot-segment in `path` would be normalized away by
-// fetch's own URL parsing before the request is sent —
-// but measured directly (Deno.serve, raw socket vs.
-// fetch): the server-observed path is identical either
-// way, since Deno.serve normalizes the request URL
-// itself. So the throttle-keying this proves is unchanged
-// by dropping the raw socket.
+// fetch's own URL parsing normalizes a dot-segment out of
+// `path` client-side, so the literal string never reaches
+// the wire — but that no longer matters either way:
+// server/http-server.ts:466-467 unconditionally re-parses
+// `request.url` through `new URL(...)`, which normalizes
+// it again server-side regardless of transport. Measured
+// directly (raw socket vs. fetch, same listener): the
+// server-observed path was identical both ways. So the
+// throttle-keying this test proves is unchanged by
+// dropping the raw socket.
 function postRaw(
     base: string,
     path: string,
