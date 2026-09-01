@@ -4,9 +4,6 @@ import {
     assertRejects,
     assertStrictEquals,
 } from '@std/assert';
-import {
-    afterAll, beforeAll, describe, it,
-} from '@std/testing/bdd';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import {
@@ -208,300 +205,298 @@ function delay(ms: number): Promise<void> {
     });
 }
 
-describe('pg races', () => {
-    if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
-        it(
-            'postgres races skipped without POSTGRES_URL',
-            { ignore: true }, // POSTGRES_URL is unset
-            () => {},
+if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
+    Deno.test(
+        'postgres races skipped without POSTGRES_URL',
+        { ignore: true }, // POSTGRES_URL is unset
+        () => {},
+    );
+} else {
+    const schema = schemaName();
+    const sql = connectPostgres(
+        urlWithSearchPath(POSTGRES_URL, schema),
+    );
+    const backend = new PostgresBackend(sql);
+    const db = new BackedDbAdapter(
+        backend,
+        async () => {},
+        async () => {},
+        () => {},
+    );
+
+    Deno.test.beforeAll(async () => {
+        await sql.unsafe(
+            'CREATE SCHEMA ' + quoteIdent(schema),
         );
-    } else {
-        const schema = schemaName();
-        const sql = connectPostgres(
+        await backend.ensureTables(TABLE_NAMES);
+        await seedAdminSchema(db);
+    });
+
+    Deno.test.afterAll(async () => {
+        try {
+            await sql.unsafe(
+                'DROP SCHEMA IF EXISTS '
+                + quoteIdent(schema)
+                + ' CASCADE',
+            );
+        } finally {
+            await sql.end();
+        }
+    });
+
+    Deno.test('two first-writers: one 201, not a double insert',
+    async () => {
+        const token = await organizationToken();
+        const id = generateIdentifier();
+        const holder = connectPostgres(
             urlWithSearchPath(POSTGRES_URL, schema),
         );
-        const backend = new PostgresBackend(sql);
-        const db = new BackedDbAdapter(
-            backend,
-            async () => {},
-            async () => {},
-            () => {},
-        );
-
-        beforeAll(async () => {
-            await sql.unsafe(
-                'CREATE SCHEMA ' + quoteIdent(schema),
-            );
-            await backend.ensureTables(TABLE_NAMES);
-            await seedAdminSchema(db);
-        });
-
-        afterAll(async () => {
-            try {
-                await sql.unsafe(
-                    'DROP SCHEMA IF EXISTS '
-                    + quoteIdent(schema)
-                    + ' CASCADE',
-                );
-            } finally {
-                await sql.end();
-            }
-        });
-
-        it('two first-writers: one 201, not a double insert',
-        async () => {
-            const token = await organizationToken();
-            const id = generateIdentifier();
-            const holder = connectPostgres(
-                urlWithSearchPath(POSTGRES_URL, schema),
-            );
-            const addressKey = Number(await advisoryKey(
-                'fusion.address.' + FLOW_PREFIX + id,
-            ));
-            let raced: Promise<[Response, Response]>
-                | undefined;
-            try {
-                await holder.begin(async (tx) => {
-                    await tx.query`
-                        SELECT pg_advisory_xact_lock(
-                            ${addressKey}
-                        )
-                    `;
-                    raced = Promise.all([
-                        handleRequest(db, req(
-                            'PUT',
-                            '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
-                                + '' + id, token,
-                            flowDocument('A', generateIdentifier()),
-                            undefined,
-                            generateIdentifier(),
-                        )),
-                        handleRequest(db, req(
-                            'PUT',
-                            '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
-                                + '' + id, token,
-                            flowDocument('B', generateIdentifier()),
-                            undefined,
-                            generateIdentifier(),
-                        )),
-                    ]);
-                    await delay(300);
-                });
-                assert(raced !== undefined);
-                const [left, right] = await raced;
-                const statuses = [left.status, right.status];
-                assertStrictEquals(
-                    statuses.filter((s) => s === 201).length,
-                    1,
-                );
-                assert(
-                    statuses.some((s) =>
-                        s === 412 || s === 428,
-                    ),
-                );
-                assertStrictEquals(
-                    await putHeadsAt(db, FLOW_PREFIX, id),
-                    1,
-                );
-            } finally {
-                await holder.end();
-            }
-        });
-
-        it('If-Match race: one 201, one 412', async () => {
-            const token = await organizationToken();
-            const id = generateIdentifier();
-            const created = await handleRequest(db, req(
-                'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token
-                    , flowCreate(id),
-            ));
-            assertStrictEquals(created.status, 201);
-            const live = await handleRequest(
-                db, req('GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
-                    + id, token),
-            );
-            assertStrictEquals(live.status, 200);
-            const etag = live.headers.get('ETag');
-            assert(etag !== null && etag !== '');
-            const heads = await db.messagePairs.getAllWhere(
-                'uri_collection', FLOW_PREFIX,
-            );
-            const liveHead = heads
-                .filter((row) => row.uri_id === id)
-                .toSorted((a, b) =>
-                    a.response_at < b.response_at
-                        ? 1
-                        : a.response_at > b.response_at
-                            ? -1
-                            : b.id.localeCompare(a.id),
-                )[0];
-            assert(liveHead !== undefined);
-            const holder = connectPostgres(
-                urlWithSearchPath(POSTGRES_URL, schema),
-            );
-            let raced: Promise<[Response, Response]>
-                | undefined;
-            try {
-                await holder.begin(async (tx) => {
-                    await tx.query`
-                        SELECT id FROM message_pairs
-                        WHERE id = ${uuidTextOfIdentifier(
-                            liveHead.id,
-                        )}
-                        FOR UPDATE
-                    `;
-                    raced = Promise.all([
-                        handleRequest(db, req(
-                            'PUT',
-                            '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
-                                + '' + id, token,
-                            flowDocument(
-                                'Left', generateIdentifier(),
-                            ),
-                            { 'if-match': etag },
-                            generateIdentifier(),
-                        )),
-                        handleRequest(db, req(
-                            'PUT',
-                            '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
-                                + '' + id, token,
-                            flowDocument(
-                                'Right', generateIdentifier(),
-                            ),
-                            { 'if-match': etag },
-                            generateIdentifier(),
-                        )),
-                    ]);
-                    await delay(300);
-                });
-                assert(raced !== undefined);
-                const [left, right] = await raced;
-                const statuses = [left.status, right.status];
-                assertStrictEquals(
-                    statuses.filter((s) => s === 201).length,
-                    1,
-                );
-                assertStrictEquals(
-                    statuses.filter((s) => s === 412).length,
-                    1,
-                );
-            } finally {
-                await holder.end();
-            }
-        });
-
-        it('exact-hash dedup keeps one pair', async () => {
-            const token = await organizationToken();
-            const body = ideaDocument(
-                'Dedup', 'ev-race-dedup',
-            );
-            const op = generateIdentifier();
-            const [left, right] = await Promise.all([
-                handleRequest(db, req(
-                    'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
-                        + 'rZrIDSkakoKzerGHZzJnJw', token,
-                    body, undefined, op,
-                )),
-                handleRequest(db, req(
-                    'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
-                        + 'rZrIDSkakoKzerGHZzJnJw', token,
-                    body, undefined, op,
-                )),
-            ]);
-            assertStrictEquals(left.status, 201);
-            assertStrictEquals(right.status, 201);
+        const addressKey = Number(await advisoryKey(
+            'fusion.address.' + FLOW_PREFIX + id,
+        ));
+        let raced: Promise<[Response, Response]>
+            | undefined;
+        try {
+            await holder.begin(async (tx) => {
+                await tx.query`
+                    SELECT pg_advisory_xact_lock(
+                        ${addressKey}
+                    )
+                `;
+                raced = Promise.all([
+                    handleRequest(db, req(
+                        'PUT',
+                        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                            + '' + id, token,
+                        flowDocument('A', generateIdentifier()),
+                        undefined,
+                        generateIdentifier(),
+                    )),
+                    handleRequest(db, req(
+                        'PUT',
+                        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                            + '' + id, token,
+                        flowDocument('B', generateIdentifier()),
+                        undefined,
+                        generateIdentifier(),
+                    )),
+                ]);
+                await delay(300);
+            });
+            assert(raced !== undefined);
+            const [left, right] = await raced;
+            const statuses = [left.status, right.status];
             assertStrictEquals(
-                await messagePairsAt(
-                    db, IDEA_PREFIX, 'rZrIDSkakoKzerGHZzJnJw',
-                ),
+                statuses.filter((s) => s === 201).length,
                 1,
             );
-        });
+            assert(
+                statuses.some((s) =>
+                    s === 412 || s === 428,
+                ),
+            );
+            assertStrictEquals(
+                await putHeadsAt(db, FLOW_PREFIX, id),
+                1,
+            );
+        } finally {
+            await holder.end();
+        }
+    });
 
-        it('live deadlock maps to loud 500',
-        { timeout: 8000 },
-        async () => {
-            const leftHeld = Promise.withResolvers<void>();
-            const rightHeld = Promise.withResolvers<void>();
-            const left = backend.transaction(
-                ['message_pairs'],
-                'readonly',
-                async (tx) => {
-                    const pg = tx as PostgresTx;
-                    await pg.lock('fusion.test.deadlock.l');
-                    leftHeld.resolve();
-                    await rightHeld.promise;
-                    await pg.lock('fusion.test.deadlock.r');
-                },
-            );
-            const right = backend.transaction(
-                ['message_pairs'],
-                'readonly',
-                async (tx) => {
-                    const pg = tx as PostgresTx;
-                    await pg.lock('fusion.test.deadlock.r');
-                    rightHeld.resolve();
-                    await leftHeld.promise;
-                    await pg.lock('fusion.test.deadlock.l');
-                },
-            );
-            const settled = await Promise.allSettled([
-                left, right,
-            ]);
-            const rejected = settled.filter(
-                (row) => row.status === 'rejected',
-            );
-            assert(rejected.length >= 1);
-            const error = rejected[0]?.reason;
-            assert(error instanceof ApiError);
-            assertStrictEquals(error.status, HTTP_INTERNAL_ERROR);
-            assertStrictEquals(error.message, 'deadlock');
-        });
-
-        it('live statement timeout maps to 504',
-        async () => {
-            const holder = connectPostgres(
-                urlWithSearchPath(POSTGRES_URL, schema),
-            );
-            const tightUrl = new URL(
-                urlWithSearchPath(POSTGRES_URL, schema),
-            );
-            tightUrl.searchParams.set(
-                'statement_timeout', '500',
-            );
-            const tightSql = connectPostgres(tightUrl.href);
-            const tight = new PostgresBackend(tightSql);
-            const label = 'fusion.test.timeout';
-            try {
-                await holder.begin(async (tx) => {
-                    await tx.query`
-                        SELECT pg_advisory_xact_lock(
-                            ${Number(await advisoryKey(
-                                label,
-                            ))}
-                        )
-                    `;
-                    const error = await assertRejects(
-                        () => tight.transaction(
-                            ['message_pairs'],
-                            'readonly',
-                            (txn) => (
-                                txn as PostgresTx
-                            ).lock(label),
+    Deno.test('If-Match race: one 201, one 412', async () => {
+        const token = await organizationToken();
+        const id = generateIdentifier();
+        const created = await handleRequest(db, req(
+            'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token
+                , flowCreate(id),
+        ));
+        assertStrictEquals(created.status, 201);
+        const live = await handleRequest(
+            db, req('GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                + id, token),
+        );
+        assertStrictEquals(live.status, 200);
+        const etag = live.headers.get('ETag');
+        assert(etag !== null && etag !== '');
+        const heads = await db.messagePairs.getAllWhere(
+            'uri_collection', FLOW_PREFIX,
+        );
+        const liveHead = heads
+            .filter((row) => row.uri_id === id)
+            .toSorted((a, b) =>
+                a.response_at < b.response_at
+                    ? 1
+                    : a.response_at > b.response_at
+                        ? -1
+                        : b.id.localeCompare(a.id),
+            )[0];
+        assert(liveHead !== undefined);
+        const holder = connectPostgres(
+            urlWithSearchPath(POSTGRES_URL, schema),
+        );
+        let raced: Promise<[Response, Response]>
+            | undefined;
+        try {
+            await holder.begin(async (tx) => {
+                await tx.query`
+                    SELECT id FROM message_pairs
+                    WHERE id = ${uuidTextOfIdentifier(
+                        liveHead.id,
+                    )}
+                    FOR UPDATE
+                `;
+                raced = Promise.all([
+                    handleRequest(db, req(
+                        'PUT',
+                        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                            + '' + id, token,
+                        flowDocument(
+                            'Left', generateIdentifier(),
                         ),
-                    ) as ApiError;
-                    assertInstanceOf(error, ApiError);
-                    assertStrictEquals(
-                        error.status, HTTP_GATEWAY_TIMEOUT,
-                    );
-                    assertStrictEquals(
-                        error.message, 'gateway timeout',
-                    );
-                });
-            } finally {
-                await holder.end();
-                await tightSql.end();
-            }
-        });
-    }
-});
+                        { 'if-match': etag },
+                        generateIdentifier(),
+                    )),
+                    handleRequest(db, req(
+                        'PUT',
+                        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                            + '' + id, token,
+                        flowDocument(
+                            'Right', generateIdentifier(),
+                        ),
+                        { 'if-match': etag },
+                        generateIdentifier(),
+                    )),
+                ]);
+                await delay(300);
+            });
+            assert(raced !== undefined);
+            const [left, right] = await raced;
+            const statuses = [left.status, right.status];
+            assertStrictEquals(
+                statuses.filter((s) => s === 201).length,
+                1,
+            );
+            assertStrictEquals(
+                statuses.filter((s) => s === 412).length,
+                1,
+            );
+        } finally {
+            await holder.end();
+        }
+    });
+
+    Deno.test('exact-hash dedup keeps one pair', async () => {
+        const token = await organizationToken();
+        const body = ideaDocument(
+            'Dedup', 'ev-race-dedup',
+        );
+        const op = generateIdentifier();
+        const [left, right] = await Promise.all([
+            handleRequest(db, req(
+                'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                    + 'rZrIDSkakoKzerGHZzJnJw', token,
+                body, undefined, op,
+            )),
+            handleRequest(db, req(
+                'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                    + 'rZrIDSkakoKzerGHZzJnJw', token,
+                body, undefined, op,
+            )),
+        ]);
+        assertStrictEquals(left.status, 201);
+        assertStrictEquals(right.status, 201);
+        assertStrictEquals(
+            await messagePairsAt(
+                db, IDEA_PREFIX, 'rZrIDSkakoKzerGHZzJnJw',
+            ),
+            1,
+        );
+    });
+
+    Deno.test('live deadlock maps to loud 500',
+    { timeout: 8000 },
+    async () => {
+        const leftHeld = Promise.withResolvers<void>();
+        const rightHeld = Promise.withResolvers<void>();
+        const left = backend.transaction(
+            ['message_pairs'],
+            'readonly',
+            async (tx) => {
+                const pg = tx as PostgresTx;
+                await pg.lock('fusion.test.deadlock.l');
+                leftHeld.resolve();
+                await rightHeld.promise;
+                await pg.lock('fusion.test.deadlock.r');
+            },
+        );
+        const right = backend.transaction(
+            ['message_pairs'],
+            'readonly',
+            async (tx) => {
+                const pg = tx as PostgresTx;
+                await pg.lock('fusion.test.deadlock.r');
+                rightHeld.resolve();
+                await leftHeld.promise;
+                await pg.lock('fusion.test.deadlock.l');
+            },
+        );
+        const settled = await Promise.allSettled([
+            left, right,
+        ]);
+        const rejected = settled.filter(
+            (row) => row.status === 'rejected',
+        );
+        assert(rejected.length >= 1);
+        const error = rejected[0]?.reason;
+        assert(error instanceof ApiError);
+        assertStrictEquals(error.status, HTTP_INTERNAL_ERROR);
+        assertStrictEquals(error.message, 'deadlock');
+    });
+
+    Deno.test('live statement timeout maps to 504',
+    async () => {
+        const holder = connectPostgres(
+            urlWithSearchPath(POSTGRES_URL, schema),
+        );
+        const tightUrl = new URL(
+            urlWithSearchPath(POSTGRES_URL, schema),
+        );
+        tightUrl.searchParams.set(
+            'statement_timeout', '500',
+        );
+        const tightSql = connectPostgres(tightUrl.href);
+        const tight = new PostgresBackend(tightSql);
+        const label = 'fusion.test.timeout';
+        try {
+            await holder.begin(async (tx) => {
+                await tx.query`
+                    SELECT pg_advisory_xact_lock(
+                        ${Number(await advisoryKey(
+                            label,
+                        ))}
+                    )
+                `;
+                const error = await assertRejects(
+                    () => tight.transaction(
+                        ['message_pairs'],
+                        'readonly',
+                        (txn) => (
+                            txn as PostgresTx
+                        ).lock(label),
+                    ),
+                ) as ApiError;
+                assertInstanceOf(error, ApiError);
+                assertStrictEquals(
+                    error.status, HTTP_GATEWAY_TIMEOUT,
+                );
+                assertStrictEquals(
+                    error.message, 'gateway timeout',
+                );
+            });
+        } finally {
+            await holder.end();
+            await tightSql.end();
+        }
+    });
+}
