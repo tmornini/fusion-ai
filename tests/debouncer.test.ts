@@ -1,5 +1,5 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assertEquals, assertStrictEquals } from '@std/assert';
+import { FakeTime } from '@std/testing/time';
 
 // debouncer.ts → logger.ts → preferences.ts reads
 // localStorage, which is absent in Node. Stub it
@@ -14,114 +14,96 @@ import {
     Debouncer,
 } from '../web-app/app/debouncer.ts';
 
-test(
+Deno.test(
     'schedule waits the delay; the last scheduled'
     + ' save wins the burst',
-    (t) => {
-        t.after(() => { t.mock.timers.reset(); });
-        t.mock.timers.enable({
-            apis: ['setTimeout'],
-        });
+    () => {
+        using time = new FakeTime();
         const d = new Debouncer(800);
         const ran: string[] = [];
         d.schedule(() => ran.push('first'));
         d.schedule(() => ran.push('second'));
-        t.mock.timers.tick(799);
-        assert.deepEqual(ran, []);
-        t.mock.timers.tick(1);
-        assert.deepEqual(ran, ['second']);
+        time.tick(799);
+        assertEquals(ran, []);
+        time.tick(1);
+        assertEquals(ran, ['second']);
     },
 );
 
-test(
+Deno.test(
     'flush runs the pending save immediately and'
     + ' cancels the timer — no double fire',
-    (t) => {
-        t.after(() => { t.mock.timers.reset(); });
-        t.mock.timers.enable({
-            apis: ['setTimeout'],
-        });
+    () => {
+        using time = new FakeTime();
         const d = new Debouncer(800);
         let runs = 0;
         d.schedule(() => { runs += 1; });
         d.flush();
-        assert.equal(runs, 1);
-        t.mock.timers.tick(800);
-        assert.equal(runs, 1);
+        assertStrictEquals(runs, 1);
+        time.tick(800);
+        assertStrictEquals(runs, 1);
     },
 );
 
-test(
+Deno.test(
     'flush with nothing pending is a no-op',
-    (t) => {
-        t.after(() => { t.mock.timers.reset(); });
-        t.mock.timers.enable({
-            apis: ['setTimeout'],
-        });
+    () => {
+        using time = new FakeTime();
         const d = new Debouncer(800);
         let runs = 0;
         // Empty flush invents no save and leaves the
         // debouncer ready for a later schedule.
         d.flush();
-        assert.equal(runs, 0);
+        assertStrictEquals(runs, 0);
         d.schedule(() => { runs += 1; });
-        t.mock.timers.tick(800);
-        assert.equal(runs, 1);
+        time.tick(800);
+        assertStrictEquals(runs, 1);
     },
 );
 
-test(
+Deno.test(
     'a fired save clears pending — a later flush'
     + ' does not replay it',
-    (t) => {
-        t.after(() => { t.mock.timers.reset(); });
-        t.mock.timers.enable({
-            apis: ['setTimeout'],
-        });
+    () => {
+        using time = new FakeTime();
         const d = new Debouncer(800);
         let runs = 0;
         d.schedule(() => { runs += 1; });
-        t.mock.timers.tick(800);
-        assert.equal(runs, 1);
+        time.tick(800);
+        assertStrictEquals(runs, 1);
         d.flush();
-        assert.equal(runs, 1);
+        assertStrictEquals(runs, 1);
     },
 );
 
-test(
+Deno.test(
     'schedule after a fire starts a fresh burst',
-    (t) => {
-        t.after(() => { t.mock.timers.reset(); });
-        t.mock.timers.enable({
-            apis: ['setTimeout'],
-        });
+    () => {
+        using time = new FakeTime();
         const d = new Debouncer(800);
         const ran: string[] = [];
         d.schedule(() => ran.push('a'));
-        t.mock.timers.tick(800);
+        time.tick(800);
         d.schedule(() => ran.push('b'));
-        t.mock.timers.tick(800);
-        assert.deepEqual(ran, ['a', 'b']);
+        time.tick(800);
+        assertEquals(ran, ['a', 'b']);
     },
 );
 
-test(
+Deno.test(
     'isPending tracks a scheduled save until fire'
     + ' or flush',
-    (t) => {
-        t.after(() => { t.mock.timers.reset(); });
-        t.mock.timers.enable({
-            apis: ['setTimeout'],
-        });
+    () => {
+        using time = new FakeTime();
         const d = new Debouncer(800);
-        assert.equal(d.isPending(), false);
+        assertStrictEquals(d.isPending(), false);
         d.schedule(() => {});
-        assert.equal(d.isPending(), true);
-        t.mock.timers.tick(800);
-        assert.equal(d.isPending(), false);
+        assertStrictEquals(d.isPending(), true);
+        time.tick(800);
+        assertStrictEquals(d.isPending(), false);
         d.schedule(() => {});
-        assert.equal(d.isPending(), true);
+        assertStrictEquals(d.isPending(), true);
         d.flush();
-        assert.equal(d.isPending(), false);
+        assertStrictEquals(d.isPending(), false);
     },
 );
