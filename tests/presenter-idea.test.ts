@@ -1,5 +1,9 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import {
+    assert,
+    assertEquals,
+    assertMatch,
+    assertStrictEquals,
+} from '@std/assert';
 import {
     Idea,
     type IdeaEntity,
@@ -191,68 +195,68 @@ const FILLED_DRAFT: IdeaDraftFields = {
 
 // ideaDraftFromIdea / ideaPatchFromDraft
 
-test(
+Deno.test(
     'ideaDraftFromIdea copies every editable field'
     + ' from the entity',
     () => {
         const idea = makeIdea();
         const draft = ideaDraftFromIdea(idea);
-        assert.equal(
+        assertStrictEquals(
             draft.title, 'Self-serve onboarding',
         );
-        assert.equal(
+        assertStrictEquals(
             draft.problemStatement,
             'New users churn before activation',
         );
-        assert.equal(
+        assertStrictEquals(
             draft.targetUsers, 'Trial signups',
         );
-        assert.equal(
+        assertStrictEquals(
             draft.proposedSolution,
             'Guided checklist with milestones',
         );
-        assert.equal(
+        assertStrictEquals(
             draft.expectedOutcome,
             'Higher 7-day activation rate',
         );
-        assert.equal(
+        assertStrictEquals(
             draft.successMetrics,
             '20% lift in activation',
         );
     },
 );
 
-test(
+Deno.test(
     'ideaPatchFromDraft maps camelCase draft to'
     + ' snake_case entity columns',
     () => {
         const patch = ideaPatchFromDraft(
             FILLED_DRAFT,
         );
-        assert.equal(patch.title, 'Edited title');
-        assert.equal(
+        assertStrictEquals(patch.title, 'Edited title');
+        assertStrictEquals(
             patch.problem_statement,
             'Edited problem',
         );
-        assert.equal(
+        assertStrictEquals(
             patch.target_users, 'Edited users',
         );
-        assert.equal(
+        assertStrictEquals(
             patch.proposed_solution,
             'Edited solution',
         );
-        assert.equal(
+        assertStrictEquals(
             patch.expected_outcome,
             'Edited outcome',
         );
-        assert.equal(
+        assertStrictEquals(
             patch.success_metrics,
             'Edited metrics',
         );
     },
 );
 
-test(
+Deno.test(
     'ideaPatchFromDraft then ideaDraftFromIdea'
     + ' round-trips through a new Idea',
     () => {
@@ -264,7 +268,7 @@ test(
             { ...base, ...patch },
             makeStateDetail(),
         );
-        assert.deepEqual(
+        assertEquals(
             ideaDraftFromIdea(roundTripped),
             FILLED_DRAFT,
         );
@@ -273,7 +277,7 @@ test(
 
 // IdeaPresenter: pure getters + SafeHtml
 
-test(
+Deno.test(
     'IdeaPresenter.buildCard renders the title,'
     + ' state badge, and card data attributes',
     () => {
@@ -283,19 +287,19 @@ test(
         );
         const out = presenter
             .buildCard(true).toString();
-        assert.match(out, /Self-serve onboarding/);
-        assert.match(out, /badge badge-success/);
-        assert.match(out, /Active/);
-        assert.ok(!out.includes('Incomplete'));
-        assert.match(
+        assertMatch(out, /Self-serve onboarding/);
+        assertMatch(out, /badge badge-success/);
+        assertMatch(out, /Active/);
+        assert(!out.includes('Incomplete'));
+        assertMatch(
             out, /data-idea-card="gVvtDIaqhnkXZQcxZeSuiw"/,
         );
-        assert.match(out, /data-position="3"/);
-        assert.ok(!out.includes('undefined'));
+        assertMatch(out, /data-position="3"/);
+        assert(!out.includes('undefined'));
     },
 );
 
-test(
+Deno.test(
     'IdeaPresenter.buildCard shows the grip handle'
     + ' only when showGrip is true',
     () => {
@@ -307,14 +311,14 @@ test(
         const withoutGrip = presenter
             .buildCard(false)
             .toString();
-        assert.match(withGrip, /drag-handle/);
-        assert.ok(!withoutGrip.includes(
+        assertMatch(withGrip, /drag-handle/);
+        assert(!withoutGrip.includes(
             'drag-handle',
         ));
     },
 );
 
-test(
+Deno.test(
     'IdeaPresenter.buildCard exposes a Convert'
     + ' affordance only for approved ideas',
     () => {
@@ -325,12 +329,12 @@ test(
         const active = new IdeaPresenter(
             makeIdea({}, 'active'), 'X', 'y',
         );
-        assert.match(
+        assertMatch(
             approved.buildCard(false)
                 .toString(),
             /data-idea-convert="gVvtDIaqhnkXZQcxZeSuiw"/,
         );
-        assert.ok(
+        assert(
             !active.buildCard(false)
                 .toString()
                 .includes('data-idea-convert'),
@@ -338,7 +342,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'IdeaPresenter.buildStateBadge marks the'
     + ' badge dimmed when isActive is false',
     () => {
@@ -352,21 +356,21 @@ test(
             .buildStateBadge(true).toString();
         const neutral = presenter
             .buildStateBadge(null).toString();
-        assert.match(
+        assertMatch(
             dimmed, /data-dimmed="true"/,
         );
-        assert.match(lit, /data-dimmed="false"/);
-        assert.match(
+        assertMatch(lit, /data-dimmed="false"/);
+        assertMatch(
             neutral, /data-dimmed="false"/,
         );
-        assert.match(
+        assertMatch(
             dimmed, /data-state="in_review"/,
         );
-        assert.match(dimmed, /In Review/);
+        assertMatch(dimmed, /In Review/);
     },
 );
 
-test(
+Deno.test(
     'IdeaPresenter state predicates reflect the'
     + ' wrapped idea state',
     () => {
@@ -374,16 +378,16 @@ test(
             makeIdea({}, 'in_review'),
             'X', 'y',
         );
-        assert.equal(review.isReviewable(), true);
-        assert.equal(review.isConvertible(), false);
-        assert.equal(review.canSubmit(), false);
-        assert.equal(
+        assertStrictEquals(review.isReviewable(), true);
+        assertStrictEquals(review.isConvertible(), false);
+        assertStrictEquals(review.canSubmit(), false);
+        assertStrictEquals(
             review.stateGroup(), 'in_review',
         );
-        assert.equal(
+        assertStrictEquals(
             review.matchesState('in_review'), true,
         );
-        assert.equal(
+        assertStrictEquals(
             review.matchesState('active'), false,
         );
 
@@ -393,24 +397,24 @@ test(
             ),
             'X', 'y',
         );
-        assert.equal(active.canSubmit(), true);
-        assert.equal(active.isReviewable(), false);
-        assert.equal(active.positionSortKey(), 9);
-        assert.equal(active.idForLink(), 'gVvtDIaqhnkXZQcxZeSuiw');
+        assertStrictEquals(active.canSubmit(), true);
+        assertStrictEquals(active.isReviewable(), false);
+        assertStrictEquals(active.positionSortKey(), 9);
+        assertStrictEquals(active.idForLink(), 'gVvtDIaqhnkXZQcxZeSuiw');
     },
 );
 
-test(
+Deno.test(
     'Idea.readinessValue is ready when all four'
     + ' required fields are non-empty',
     () => {
         const ready = makeIdea();
-        assert.equal(ready.readinessValue(), 'ready');
-        assert.equal(ready.isReady(), true);
+        assertStrictEquals(ready.readinessValue(), 'ready');
+        assertStrictEquals(ready.isReady(), true);
     },
 );
 
-test(
+Deno.test(
     'Idea.readinessValue is incomplete when any'
     + ' required field is empty',
     () => {
@@ -424,16 +428,16 @@ test(
         ];
         for (const empty of requiredFields) {
             const idea = makeIdea(empty);
-            assert.equal(
+            assertStrictEquals(
                 idea.readinessValue(), 'incomplete',
                 JSON.stringify(empty),
             );
-            assert.equal(idea.isReady(), false);
+            assertStrictEquals(idea.isReady(), false);
         }
     },
 );
 
-test(
+Deno.test(
     'Idea.readinessValue stays ready when only'
     + ' optional fields are empty',
     () => {
@@ -441,11 +445,11 @@ test(
             target_users: '',
             success_metrics: '',
         });
-        assert.equal(idea.readinessValue(), 'ready');
+        assertStrictEquals(idea.readinessValue(), 'ready');
     },
 );
 
-test(
+Deno.test(
     'Idea.canBeSubmittedForReview gates on both'
     + ' lifecycle and readiness',
     () => {
@@ -478,7 +482,7 @@ test(
                 ? {}
                 : { expected_outcome: '' };
             const idea = makeIdea(overrides, row.state);
-            assert.equal(
+            assertStrictEquals(
                 idea.canBeSubmittedForReview(),
                 row.expected,
                 `${row.state}, ready=${row.ready}`,
@@ -487,7 +491,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'IdeaPresenter.buildCard renders the Incomplete'
     + ' pill only for active ideas missing a'
     + ' required field',
@@ -511,13 +515,13 @@ test(
             .buildCard(false).toString();
         const reviewOut = review
             .buildCard(false).toString();
-        assert.match(incOut, /Incomplete/);
-        assert.ok(!readyOut.includes('Incomplete'));
-        assert.ok(!reviewOut.includes('Incomplete'));
+        assertMatch(incOut, /Incomplete/);
+        assert(!readyOut.includes('Incomplete'));
+        assert(!reviewOut.includes('Incomplete'));
     },
 );
 
-test(
+Deno.test(
     'IdeaPresenter carries submitter name and'
     + ' submitted timestamp verbatim',
     () => {
@@ -525,11 +529,11 @@ test(
             makeIdea(), 'Grace Hopper',
             '2026-02-02T08:30:00.000000Z',
         );
-        assert.equal(
+        assertStrictEquals(
             presenter.submitterName(),
             'Grace Hopper',
         );
-        assert.equal(
+        assertStrictEquals(
             presenter.submittedAt(),
             '2026-02-02T08:30:00.000000Z',
         );
@@ -538,7 +542,7 @@ test(
 
 // IdeaEditPresenter
 
-test(
+Deno.test(
     'IdeaEditPresenter exposes its draft and the'
     + ' linked idea id',
     () => {
@@ -546,8 +550,8 @@ test(
             makeIdea(), FILLED_DRAFT,
             'Ada', '2026-01-15T10:00:00.000000Z',
         );
-        assert.equal(presenter.idForLink(), 'gVvtDIaqhnkXZQcxZeSuiw');
-        assert.deepEqual(
+        assertStrictEquals(presenter.idForLink(), 'gVvtDIaqhnkXZQcxZeSuiw');
+        assertEquals(
             presenter.draft(), FILLED_DRAFT,
         );
     },
@@ -555,7 +559,7 @@ test(
 
 // list state functions
 
-test(
+Deno.test(
     'buildInitialIdeaListState starts with the all'
     + ' filter and the supplied ideas',
     () => {
@@ -563,12 +567,12 @@ test(
         const state = buildInitialIdeaListState(
             ideas,
         );
-        assert.equal(state.filter.kind, 'all');
-        assert.equal(state.ideas, ideas);
+        assertStrictEquals(state.filter.kind, 'all');
+        assertStrictEquals(state.ideas, ideas);
     },
 );
 
-test(
+Deno.test(
     'applyIdeaListUpdate swaps ideas but keeps the'
     + ' active filter',
     () => {
@@ -580,15 +584,15 @@ test(
         const updated = applyIdeaListUpdate(
             initial, nextIdeas,
         );
-        assert.equal(updated.ideas, nextIdeas);
-        assert.deepEqual(
+        assertStrictEquals(updated.ideas, nextIdeas);
+        assertEquals(
             updated.filter,
             { kind: 'filtered', status: 'approved' },
         );
     },
 );
 
-test(
+Deno.test(
     'applyIdeaFilterToggle sets, replaces, and'
     + ' clears the status filter',
     () => {
@@ -596,47 +600,47 @@ test(
         const on = applyIdeaFilterToggle(
             base, 'in_review',
         );
-        assert.deepEqual(
+        assertEquals(
             on.filter,
             { kind: 'filtered', status: 'in_review' },
         );
         const switched = applyIdeaFilterToggle(
             on, 'approved',
         );
-        assert.deepEqual(
+        assertEquals(
             switched.filter,
             { kind: 'filtered', status: 'approved' },
         );
         const off = applyIdeaFilterToggle(
             switched, 'approved',
         );
-        assert.deepEqual(off.filter, { kind: 'all' });
+        assertEquals(off.filter, { kind: 'all' });
     },
 );
 
 // IdeaListPresenter
 
-test(
+Deno.test(
     'IdeaListPresenter.activeFilter reports the'
     + ' filtered status or null',
     () => {
         const all = new IdeaListPresenter(
             buildInitialIdeaListState([]),
         );
-        assert.equal(all.activeFilter(), null);
+        assertStrictEquals(all.activeFilter(), null);
         const filtered = new IdeaListPresenter(
             applyIdeaFilterToggle(
                 buildInitialIdeaListState([]),
                 'sent_back',
             ),
         );
-        assert.equal(
+        assertStrictEquals(
             filtered.activeFilter(), 'sent_back',
         );
     },
 );
 
-test(
+Deno.test(
     'IdeaListPresenter.renderList renders one card'
     + ' per idea in position order with a grip in'
     + ' the all view',
@@ -658,19 +662,19 @@ test(
         presenter.renderList(
             slot as unknown as HTMLElement,
         );
-        assert.equal(slot.writes, 1);
+        assertStrictEquals(slot.writes, 1);
         const out = slot.captured;
-        assert.match(out, /drag-handle/);
-        assert.ok(
+        assertMatch(out, /drag-handle/);
+        assert(
             out.indexOf('Alpha idea')
             < out.indexOf('Beta idea'),
         );
-        assert.match(out, /data-idea-card="i-a"/);
-        assert.match(out, /data-idea-card="i-b"/);
+        assertMatch(out, /data-idea-card="i-a"/);
+        assertMatch(out, /data-idea-card="i-b"/);
     },
 );
 
-test(
+Deno.test(
     'IdeaListPresenter.renderList in a filtered'
     + ' view keeps only matching ideas and omits'
     + ' the grip',
@@ -704,13 +708,13 @@ test(
             slot as unknown as HTMLElement,
         );
         const out = slot.captured;
-        assert.match(out, /Review me/);
-        assert.ok(!out.includes('Active one'));
-        assert.ok(!out.includes('drag-handle'));
+        assertMatch(out, /Review me/);
+        assert(!out.includes('Active one'));
+        assert(!out.includes('drag-handle'));
     },
 );
 
-test(
+Deno.test(
     'IdeaListPresenter.renderBadges renders one'
     + ' badge per present state',
     () => {
@@ -741,19 +745,19 @@ test(
         const badges = slot.captured.match(
             /data-state="/g,
         ) ?? [];
-        assert.equal(badges.length, 2);
-        assert.match(
+        assertStrictEquals(badges.length, 2);
+        assertMatch(
             slot.captured,
             /data-state="active"/,
         );
-        assert.match(
+        assertMatch(
             slot.captured,
             /data-state="in_review"/,
         );
     },
 );
 
-test(
+Deno.test(
     'IdeaListPresenter.renderBadges omits promoted'
     + ' and archived even when those ideas exist',
     () => {
@@ -786,20 +790,20 @@ test(
         presenter.renderBadges(
             slot as unknown as HTMLElement,
         );
-        assert.match(
+        assertMatch(
             slot.captured,
             /data-state="in_review"/,
         );
-        assert.match(
+        assertMatch(
             slot.captured,
             /data-state="approved"/,
         );
-        assert.ok(
+        assert(
             !slot.captured.includes(
                 'data-state="promoted"',
             ),
         );
-        assert.ok(
+        assert(
             !slot.captured.includes(
                 'data-state="archived"',
             ),
@@ -809,11 +813,11 @@ test(
 
 // IdeaCreatePresenter
 
-test(
+Deno.test(
     'ideaCreateDraftIsComplete requires title,'
     + ' problem, solution, and outcome',
     () => {
-        assert.equal(
+        assertStrictEquals(
             ideaCreateDraftIsComplete(
                 EMPTY_IDEA_CREATE_DRAFT,
             ),
@@ -825,41 +829,41 @@ test(
             problemStatement: 'P',
             proposedSolution: 'S',
         };
-        assert.equal(
+        assertStrictEquals(
             ideaCreateDraftIsComplete(partial),
             false,
         );
         const complete: IdeaCreateDraft = {
             ...partial, expectedOutcome: 'O',
         };
-        assert.equal(
+        assertStrictEquals(
             ideaCreateDraftIsComplete(complete),
             true,
         );
     },
 );
 
-test(
+Deno.test(
     'IdeaCreatePresenter.render keeps submit'
     + ' clickable while the draft is empty',
     () => {
         const out = new IdeaCreatePresenter(
             EMPTY_IDEA_CREATE_DRAFT,
         ).render().toString();
-        assert.match(out, /New Idea/);
-        assert.match(out, /Describe Your Idea/);
-        assert.match(out, /Submit Idea/);
-        assert.ok(
+        assertMatch(out, /New Idea/);
+        assertMatch(out, /Describe Your Idea/);
+        assertMatch(out, /Submit Idea/);
+        assert(
             !out.includes('disabled'),
             'the gate must speak, not mute:'
             + ' an incomplete submit surfaces a'
             + ' toast at the click handler',
         );
-        assert.ok(!out.includes('undefined'));
+        assert(!out.includes('undefined'));
     },
 );
 
-test(
+Deno.test(
     'IdeaCreatePresenter.render enables submit and'
     + ' echoes draft values into the form fields',
     () => {
@@ -873,17 +877,17 @@ test(
         };
         const out = new IdeaCreatePresenter(draft)
             .render().toString();
-        assert.ok(!out.includes('disabled'));
-        assert.match(out, /value="Smarter alerts"/);
-        assert.match(out, /Too much noise/);
-        assert.match(out, /On-call engineers/);
-        assert.match(out, /Group by root cause/);
-        assert.match(out, /Fewer pages/);
-        assert.match(out, /30% fewer alerts/);
+        assert(!out.includes('disabled'));
+        assertMatch(out, /value="Smarter alerts"/);
+        assertMatch(out, /Too much noise/);
+        assertMatch(out, /On-call engineers/);
+        assertMatch(out, /Group by root cause/);
+        assertMatch(out, /Fewer pages/);
+        assertMatch(out, /30% fewer alerts/);
     },
 );
 
-test(
+Deno.test(
     'IdeaCreatePresenter.render escapes draft'
     + ' values so markup cannot be injected',
     () => {
@@ -893,16 +897,16 @@ test(
         };
         const out = new IdeaCreatePresenter(draft)
             .render().toString();
-        assert.ok(
+        assert(
             !out.includes('<img src=x'),
         );
-        assert.match(out, /&lt;img src=x/);
+        assertMatch(out, /&lt;img src=x/);
     },
 );
 
 // IdeaConversionPresenter + helpers
 
-test(
+Deno.test(
     'buildInitialConversionDraft seeds the'
     + ' project name from the idea title and'
     + ' leaves the rest blank',
@@ -910,43 +914,43 @@ test(
         const draft = buildInitialConversionDraft(
             makeIdea({ title: 'Edge caching' }),
         );
-        assert.equal(
+        assertStrictEquals(
             draft.fields['project-name'],
             'Edge caching',
         );
-        assert.equal(
+        assertStrictEquals(
             draft.fields['time-days'], '',
         );
-        assert.equal(draft.fields['cost'], '');
-        assert.equal(
+        assertStrictEquals(draft.fields['cost'], '');
+        assertStrictEquals(
             draft.fields['success-criteria'], '',
         );
-        assert.equal(draft.baselines.size, 0);
+        assertStrictEquals(draft.baselines.size, 0);
     },
 );
 
-test(
+Deno.test(
     'conversion progress counts every required'
     + ' field including success-criteria',
     () => {
-        assert.equal(conversionRequiredCount(0), 4);
+        assertStrictEquals(conversionRequiredCount(0), 4);
         const draft = buildInitialConversionDraft(
             makeIdea(),
         );
         // project-name is pre-filled from the title.
-        assert.equal(
+        assertStrictEquals(
             conversionCompletedCount(draft), 1,
         );
-        assert.equal(
+        assertStrictEquals(
             conversionIsReady(draft, []), false,
         );
-        assert.equal(
+        assertStrictEquals(
             conversionFieldIsReady(
                 draft, 'project-name',
             ),
             true,
         );
-        assert.equal(
+        assertStrictEquals(
             conversionFieldIsReady(
                 draft, 'cost',
             ),
@@ -954,13 +958,13 @@ test(
         );
         draft.fields['success-criteria']
             = 'done when X';
-        assert.equal(
+        assertStrictEquals(
             conversionCompletedCount(draft), 2,
         );
     },
 );
 
-test(
+Deno.test(
     'conversionIsReady becomes true once every'
     + ' required field is set',
     () => {
@@ -973,16 +977,16 @@ test(
             },
             baselines: new Map(),
         };
-        assert.equal(
+        assertStrictEquals(
             conversionIsReady(draft, []), true,
         );
-        assert.equal(
+        assertStrictEquals(
             conversionCompletedCount(draft), 4,
         );
     },
 );
 
-test(
+Deno.test(
     'IdeaConversionPresenter.render shows the idea'
     + ' summary and a disabled Create button until'
     + ' required fields are complete',
@@ -998,22 +1002,22 @@ test(
         const out = new IdeaConversionPresenter(
             idea, draft, [], new Map(),
         ).render().toString();
-        assert.match(out, /Convert to Project/);
-        assert.match(out, /Edge caching/);
-        assert.match(out, /Slow far from origin/);
-        assert.match(out, /Global users/);
-        assert.match(out, /1\/4 required fields/);
-        assert.match(out, /Complete Required Fields/);
-        assert.match(out, /data-ready="false"/);
-        assert.match(out, /disabled/);
-        assert.match(
+        assertMatch(out, /Convert to Project/);
+        assertMatch(out, /Edge caching/);
+        assertMatch(out, /Slow far from origin/);
+        assertMatch(out, /Global users/);
+        assertMatch(out, /1\/4 required fields/);
+        assertMatch(out, /Complete Required Fields/);
+        assertMatch(out, /data-ready="false"/);
+        assertMatch(out, /disabled/);
+        assertMatch(
             out, /id="check-project-name"/,
         );
-        assert.ok(!out.includes('undefined'));
+        assert(!out.includes('undefined'));
     },
 );
 
-test(
+Deno.test(
     'IdeaConversionPresenter.render enables the'
     + ' Create button and marks ready when all'
     + ' required fields are present',
@@ -1031,16 +1035,16 @@ test(
         const out = new IdeaConversionPresenter(
             idea, draft, [], new Map(),
         ).render().toString();
-        assert.match(out, /4\/4 required fields/);
-        assert.match(out, /Ready to Create Project/);
-        assert.match(out, /data-ready="true"/);
-        assert.ok(!out.includes('disabled'));
-        assert.match(out, /value="New project"/);
-        assert.match(out, /value="50000"/);
+        assertMatch(out, /4\/4 required fields/);
+        assertMatch(out, /Ready to Create Project/);
+        assertMatch(out, /data-ready="true"/);
+        assert(!out.includes('disabled'));
+        assertMatch(out, /value="New project"/);
+        assertMatch(out, /value="50000"/);
     },
 );
 
-test(
+Deno.test(
     'IdeaConversionPresenter.render renders'
     + ' DISPLAY_ABSENT for blank idea fields and'
     + ' never the word Unknown',
@@ -1058,12 +1062,12 @@ test(
             [],
             new Map(),
         ).render().toString();
-        assert.ok(out.includes(DISPLAY_ABSENT));
-        assert.ok(!out.includes('Unknown'));
+        assert(out.includes(DISPLAY_ABSENT));
+        assert(!out.includes('Unknown'));
     },
 );
 
-test(
+Deno.test(
     'IdeaConversionPresenter.render escapes the'
     + ' idea title in the summary',
     () => {
@@ -1076,24 +1080,24 @@ test(
             [],
             new Map(),
         ).render().toString();
-        assert.ok(!out.includes('<b>boom</b>'));
-        assert.match(out, /&lt;b&gt;boom/);
+        assert(!out.includes('<b>boom</b>'));
+        assertMatch(out, /&lt;b&gt;boom/);
     },
 );
 
 // IdeaConversionPresenter Scores box
 
-test(
+Deno.test(
     'conversionRequiredCount adds active'
     + ' objectives to the static field count',
     () => {
-        assert.equal(conversionRequiredCount(0), 4);
-        assert.equal(conversionRequiredCount(2), 6);
-        assert.equal(conversionRequiredCount(5), 9);
+        assertStrictEquals(conversionRequiredCount(0), 4);
+        assertStrictEquals(conversionRequiredCount(2), 6);
+        assertStrictEquals(conversionRequiredCount(5), 9);
     },
 );
 
-test(
+Deno.test(
     'conversionIsReady requires a baseline for'
     + ' every active objective',
     () => {
@@ -1109,7 +1113,7 @@ test(
         const objectives = [
             makeObjective('obj-1', 0),
         ];
-        assert.equal(
+        assertStrictEquals(
             conversionIsReady(draft, objectives),
             false,
         );
@@ -1117,14 +1121,14 @@ test(
             fields: draft.fields,
             baselines: new Map([['obj-1', 30]]),
         };
-        assert.equal(
+        assertStrictEquals(
             conversionIsReady(ready, objectives),
             true,
         );
     },
 );
 
-test(
+Deno.test(
     'IdeaConversionPresenter renders the Scores'
     + ' empty banner when no active objectives',
     () => {
@@ -1135,23 +1139,23 @@ test(
         const out = new IdeaConversionPresenter(
             idea, draft, [], new Map(),
         ).render().toString();
-        assert.match(
+        assertMatch(
             out, /No active objectives yet/,
         );
-        assert.match(
+        assertMatch(
             out,
             /id="convert-open-organization"/,
         );
-        assert.ok(
+        assert(
             !out.includes('baseline-slider'),
         );
-        assert.match(
+        assertMatch(
             out, /1\/4 required fields/,
         );
     },
 );
 
-test(
+Deno.test(
     'IdeaConversionPresenter renders one'
     + ' baseline row per active objective',
     () => {
@@ -1176,30 +1180,30 @@ test(
         const out = new IdeaConversionPresenter(
             idea, draft, objectives, defs,
         ).render().toString();
-        assert.match(out, /Revenue/);
-        assert.match(out, /Quality/);
-        assert.match(
+        assertMatch(out, /Revenue/);
+        assertMatch(out, /Quality/);
+        assertMatch(
             out,
             /data-objective-id="obj-1"/,
         );
-        assert.match(
+        assertMatch(
             out,
             /data-objective-id="obj-2"/,
         );
-        assert.match(
+        assertMatch(
             out, /class="baseline-slider"/,
         );
-        assert.match(
+        assertMatch(
             out,
             /id="check-baseline-obj-1"/,
         );
-        assert.match(
+        assertMatch(
             out, /1\/6 required fields/,
         );
     },
 );
 
-test(
+Deno.test(
     'IdeaConversionPresenter enables Create'
     + ' once every field and baseline is set',
     () => {
@@ -1233,12 +1237,12 @@ test(
         const out = new IdeaConversionPresenter(
             idea, draft, objectives, defs,
         ).render().toString();
-        assert.match(
+        assertMatch(
             out, /6\/6 required fields/,
         );
-        assert.match(
+        assertMatch(
             out, /Ready to Create Project/,
         );
-        assert.match(out, /data-ready="true"/);
+        assertMatch(out, /data-ready="true"/);
     },
 );

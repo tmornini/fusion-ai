@@ -1,3 +1,4 @@
+import { assertStrictEquals, assertThrows } from '@std/assert';
 // state.ts (transitively imported via core.ts ->
 // presenters) reads localStorage and window /
 // document at module-eval time, which Node lacks.
@@ -16,8 +17,6 @@ globalThis.window = {
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
 const { Project, COST_DIVISOR } =
     await import('../api/types.ts');
@@ -49,7 +48,7 @@ function buildView() {
     return new ProjectView(project, [], [], []);
 }
 
-test(
+Deno.test(
     'projectPatchFromDraft rejects an empty cost',
     () => {
         const view = buildView();
@@ -59,14 +58,15 @@ test(
         };
         // Number('') is 0 — accepting it would store a
         // fabricated $0k baseline
-        assert.throws(
+        assertThrows(
             () => projectPatchFromDraft(view, draft),
-            /estimated cost must be a number/,
+            Error,
+            'estimated cost must be a number',
         );
     },
 );
 
-test(
+Deno.test(
     'projectPatchFromDraft rejects a non-numeric cost',
     () => {
         const view = buildView();
@@ -74,14 +74,15 @@ test(
             ...projectDraftFromView(view),
             costBaseline: 'lots',
         };
-        assert.throws(
+        assertThrows(
             () => projectPatchFromDraft(view, draft),
-            /estimated cost must be a number/,
+            Error,
+            'estimated cost must be a number',
         );
     },
 );
 
-test(
+Deno.test(
     'projectPatchFromDraft scales a numeric cost',
     () => {
         const view = buildView();
@@ -91,7 +92,7 @@ test(
         };
         const patch =
             projectPatchFromDraft(view, draft);
-        assert.equal(
+        assertStrictEquals(
             patch.fields.estimatedCost,
             7 * COST_DIVISOR,
         );

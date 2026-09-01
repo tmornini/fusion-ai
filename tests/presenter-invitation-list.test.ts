@@ -1,3 +1,4 @@
+import { assertMatch, assertNotMatch } from '@std/assert';
 // state.ts reads localStorage / window / document at
 // module-eval time; stub before importing presenters.
 // @ts-expect-error — Node global stub
@@ -12,8 +13,6 @@ globalThis.window = {
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
 const {
     InvitationListPresenter,
@@ -50,32 +49,32 @@ const PENDING = {
     state: 'pending' as const,
 };
 
-test('a pending invitation shows the org, inviter, and'
+Deno.test('a pending invitation shows the org, inviter, and'
     + ' Accept / Decline', () => {
     const rec = record();
     new InvitationListPresenter([PENDING]).render(rec.container);
     const out = rec.html();
-    assert.match(out, /data-invitation-id="jEoYCFtPjXFEgZqZNtOcEA"/);
-    assert.match(out, /Wayne Enterprises/);
-    assert.match(out, /Tony Stark/);
-    assert.match(out, /data-invitation-action="accept"/);
-    assert.match(out, /data-invitation-action="decline"/);
-    assert.match(out, /Pending/);
+    assertMatch(out, /data-invitation-id="jEoYCFtPjXFEgZqZNtOcEA"/);
+    assertMatch(out, /Wayne Enterprises/);
+    assertMatch(out, /Tony Stark/);
+    assertMatch(out, /data-invitation-action="accept"/);
+    assertMatch(out, /data-invitation-action="decline"/);
+    assertMatch(out, /Pending/);
 });
 
-test('a non-pending invitation offers no actions', () => {
+Deno.test('a non-pending invitation offers no actions', () => {
     const rec = record();
     new InvitationListPresenter([
         { ...PENDING, state: 'accepted' as const },
     ]).render(rec.container);
     const out = rec.html();
-    assert.match(out, /Accepted/);
-    assert.doesNotMatch(out, /data-invitation-action="accept"/);
-    assert.doesNotMatch(out,
+    assertMatch(out, /Accepted/);
+    assertNotMatch(out, /data-invitation-action="accept"/);
+    assertNotMatch(out,
         /data-invitation-action="decline"/);
 });
 
-test('an absent inviter omits the Invited by line', () => {
+Deno.test('an absent inviter omits the Invited by line', () => {
     const rec = record();
     new InvitationListPresenter([{
         id: 'inv3',
@@ -84,10 +83,10 @@ test('an absent inviter omits the Invited by line', () => {
         invitedAt: '2026-01-01T00:00:00.000000Z',
         state: 'pending' as const,
     }]).render(rec.container);
-    assert.doesNotMatch(rec.html(), /Invited by/);
+    assertNotMatch(rec.html(), /Invited by/);
 });
 
-test('an absent org name renders the absence glyph', () => {
+Deno.test('an absent org name renders the absence glyph', () => {
     const rec = record();
     new InvitationListPresenter([{
         id: 'inv4',
@@ -96,16 +95,16 @@ test('an absent org name renders the absence glyph', () => {
         invitedAt: '2026-01-01T00:00:00.000000Z',
         state: 'pending' as const,
     }]).render(rec.container);
-    assert.match(rec.html(), /—/);
+    assertMatch(rec.html(), /—/);
 });
 
-test('an empty invitee list shows the empty state', () => {
+Deno.test('an empty invitee list shows the empty state', () => {
     const rec = record();
     new InvitationListPresenter([]).render(rec.container);
-    assert.match(rec.html(), /No invitations/);
+    assertMatch(rec.html(), /No invitations/);
 });
 
-test('a sent invitation shows the invitee email and Revoke',
+Deno.test('a sent invitation shows the invitee email and Revoke',
 () => {
     const rec = record();
     new SentInvitationsPresenter([
@@ -119,12 +118,12 @@ test('a sent invitation shows the invitee email and Revoke',
         },
     ]).render(rec.container);
     const out = rec.html();
-    assert.match(out, /data-invitation-id="inv2"/);
-    assert.match(out, /sarah@x\.com/);
-    assert.match(out, /data-invitation-action="revoke"/);
+    assertMatch(out, /data-invitation-id="inv2"/);
+    assertMatch(out, /sarah@x\.com/);
+    assertMatch(out, /data-invitation-action="revoke"/);
 });
 
-test('an absent invitee email renders the absence glyph',
+Deno.test('an absent invitee email renders the absence glyph',
 () => {
     const rec = record();
     new SentInvitationsPresenter([{
@@ -134,11 +133,11 @@ test('an absent invitee email renders the absence glyph',
         invitedAt: '2026-01-01T00:00:00.000000Z',
         state: 'pending' as const,
     }]).render(rec.container);
-    assert.match(rec.html(), /—/);
+    assertMatch(rec.html(), /—/);
 });
 
-test('an empty sent list shows the empty state', () => {
+Deno.test('an empty sent list shows the empty state', () => {
     const rec = record();
     new SentInvitationsPresenter([]).render(rec.container);
-    assert.match(rec.html(), /No outstanding invitations/);
+    assertMatch(rec.html(), /No outstanding invitations/);
 });

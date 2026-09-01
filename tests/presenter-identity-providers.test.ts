@@ -1,3 +1,4 @@
+import { assertMatch } from '@std/assert';
 // state.ts reads localStorage / window / document at
 // module-eval time; stub before importing presenters.
 // @ts-expect-error — Node global stub
@@ -12,8 +13,6 @@ globalThis.window = {
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
 const {
     IdentityProvidersPresenter,
@@ -40,7 +39,7 @@ function record(): {
     };
 }
 
-test('renders a row per provider event', () => {
+Deno.test('renders a row per provider event', () => {
     const rec = record();
     new IdentityProvidersPresenter([
         {
@@ -55,15 +54,15 @@ test('renders a row per provider event', () => {
         },
     ]).render(rec.container);
     const out = rec.html();
-    assert.match(out, /google/);
-    assert.match(out, /g-1/);
-    assert.match(out, /linked/);
-    assert.match(out, /unlinked/);
+    assertMatch(out, /google/);
+    assertMatch(out, /g-1/);
+    assertMatch(out, /linked/);
+    assertMatch(out, /unlinked/);
 });
 
-test('renders an empty state when no events', () => {
+Deno.test('renders an empty state when no events', () => {
     const rec = record();
     new IdentityProvidersPresenter([])
         .render(rec.container);
-    assert.match(rec.html(), /No linked providers/);
+    assertMatch(rec.html(), /No linked providers/);
 });

@@ -1,3 +1,4 @@
+import { assert, assertStrictEquals } from '@std/assert';
 // project.ts (transitively) reads localStorage /
 // window at module-eval time, which Node lacks.
 // Stub before any import, then load via dynamic
@@ -17,8 +18,6 @@ globalThis.document = {
     addEventListener: () => {},
 };
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
 const { Project } = await import(
     '../api/types.ts'
@@ -51,7 +50,7 @@ function makeProject(id: string): InstanceType<
     });
 }
 
-test(
+Deno.test(
     'projected impact column renders for each'
     + ' project',
     () => {
@@ -77,17 +76,17 @@ test(
         } as unknown as HTMLElement;
         p.renderList(listEl);
         const html = listEl.innerHTML;
-        assert.ok(
+        assert(
             html.includes('+47'),
             'expected +47 in rendered html',
         );
-        assert.ok(
+        assert(
             html.includes(
                 'data-score-present="true"',
             ),
             'expected data-score-present="true"',
         );
-        assert.ok(
+        assert(
             html.includes(
                 'data-score-value="47"',
             ),
@@ -96,7 +95,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'missing score renders absent and sorts last',
     () => {
         const projects = [makeProject('pnXmXrxOWayANgDLdCjuBw')];
@@ -121,7 +120,7 @@ test(
         } as unknown as HTMLElement;
         p.renderList(listEl);
         const html = listEl.innerHTML;
-        assert.ok(
+        assert(
             html.includes(
                 'data-score-present="false"',
             ),
@@ -130,7 +129,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'applyProjectSortToggle orders by projected'
     + ' impact descending with no-score last',
     async () => {
@@ -171,7 +170,7 @@ test(
             buildInitialProjectListState(projects);
         const sorted =
             applyProjectSortToggle(initial);
-        assert.equal(
+        assertStrictEquals(
             sorted.sort.kind,
             'projected-impact-desc',
         );
@@ -186,26 +185,26 @@ test(
         const highIdx = html.indexOf('p-high');
         const lowIdx = html.indexOf('p-low');
         const noneIdx = html.indexOf('p-none');
-        assert.ok(
+        assert(
             highIdx < lowIdx,
             'p-high (+50) should render'
             + ' before p-low (-10)',
         );
-        assert.ok(
+        assert(
             lowIdx < noneIdx,
             'p-low (-10) should render before'
             + ' p-none (no score)',
         );
         const backToPosition =
             applyProjectSortToggle(sorted);
-        assert.equal(
+        assertStrictEquals(
             backToPosition.sort.kind,
             'position',
         );
     },
 );
 
-test(
+Deno.test(
     'sort toggle renders with correct label and'
     + ' aria-pressed state',
     () => {
@@ -218,13 +217,13 @@ test(
         } as unknown as HTMLElement;
         new ProjectListPresenter(state, new Map())
             .renderSortControls(sortEl);
-        assert.ok(
+        assert(
             sortEl.innerHTML.includes(
                 'aria-pressed="false"',
             ),
             'default sort should be unpressed',
         );
-        assert.ok(
+        assert(
             sortEl.innerHTML.includes(
                 'Sort by projected impact',
             ),
@@ -233,7 +232,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'sort toggle renders nothing on an empty'
     + ' project list',
     () => {
@@ -244,7 +243,7 @@ test(
         } as unknown as HTMLElement;
         new ProjectListPresenter(state, new Map())
             .renderSortControls(sortEl);
-        assert.equal(
+        assertStrictEquals(
             sortEl.innerHTML, '',
             'empty list should erase the sort chip',
         );

@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assert, assertStrictEquals } from '@std/assert';
 import {
     HumanMember,
     AIMember,
@@ -99,7 +98,7 @@ function htmlOf(
     return el.captured;
 }
 
-test(
+Deno.test(
     'ManagedMembersPresenter renders three sections'
     + ' with YOU above HUMANS above AIs',
     () => {
@@ -114,22 +113,22 @@ test(
         const youIdx = html.indexOf('YOU');
         const humansIdx = html.indexOf('HUMANS');
         const aisIdx = html.indexOf('AIs');
-        assert.ok(
+        assert(
             youIdx >= 0,
             'YOU section must render',
         );
-        assert.ok(
+        assert(
             humansIdx > youIdx,
             'HUMANS must follow YOU',
         );
-        assert.ok(
+        assert(
             aisIdx > humansIdx,
             'AIs must follow HUMANS',
         );
     },
 );
 
-test(
+Deno.test(
     'YOU section contains only the current member',
     () => {
         const html = htmlOf(
@@ -143,18 +142,18 @@ test(
             html.indexOf('YOU'),
             html.indexOf('HUMANS'),
         );
-        assert.ok(
+        assert(
             youBlock.includes('Demo'),
             'YOU block must show self name',
         );
-        assert.ok(
+        assert(
             !youBlock.includes('Alice'),
             'YOU block must not show others',
         );
     },
 );
 
-test(
+Deno.test(
     'HUMANS section excludes the current member',
     () => {
         const html = htmlOf(
@@ -167,20 +166,20 @@ test(
         const humansBlock = html.slice(
             html.indexOf('HUMANS'),
         );
-        assert.ok(
+        assert(
             humansBlock.includes('Alice'),
             'HUMANS must include other humans',
         );
         const demoMatches = humansBlock
             .split('Demo').length - 1;
-        assert.equal(
+        assertStrictEquals(
             demoMatches, 0,
             'HUMANS must not include self',
         );
     },
 );
 
-test(
+Deno.test(
     'Self card carries data-self="true"',
     () => {
         const html = htmlOf(
@@ -190,20 +189,20 @@ test(
             ],
             'self',
         );
-        assert.ok(
+        assert(
             html.includes('data-self="true"'),
             'self card must mark itself',
         );
         const selfTrueMatches = html
             .split('data-self="true"').length - 1;
-        assert.equal(
+        assertStrictEquals(
             selfTrueMatches, 1,
             'only one row carries data-self="true"',
         );
     },
 );
 
-test(
+Deno.test(
     'kind=ai filter hides YOU and HUMANS',
     () => {
         const html = htmlOf(
@@ -215,26 +214,26 @@ test(
             'self',
             s => applyManagedMembersKind(s, 'ai'),
         );
-        assert.ok(
+        assert(
             !html.includes('YOU'),
             'YOU must be hidden under kind=ai',
         );
-        assert.ok(
+        assert(
             !html.includes('HUMANS'),
             'HUMANS must be hidden under kind=ai',
         );
-        assert.ok(
+        assert(
             html.includes('AIs'),
             'AIs must remain visible',
         );
-        assert.ok(
+        assert(
             html.includes('Claude'),
             'Claude row must render',
         );
     },
 );
 
-test(
+Deno.test(
     'kind=human filter hides AIs but keeps YOU',
     () => {
         const html = htmlOf(
@@ -246,18 +245,18 @@ test(
             s =>
                 applyManagedMembersKind(s, 'human'),
         );
-        assert.ok(
+        assert(
             html.includes('YOU'),
             'YOU stays visible under kind=human',
         );
-        assert.ok(
+        assert(
             !html.includes('AIs'),
             'AIs hidden under kind=human',
         );
     },
 );
 
-test(
+Deno.test(
     'search filter applies to all three sections',
     () => {
         const html = htmlOf(
@@ -272,15 +271,15 @@ test(
                     s, 'alice',
                 ),
         );
-        assert.ok(
+        assert(
             !html.includes('Zelda'),
             'self filtered out by search',
         );
-        assert.ok(
+        assert(
             html.includes('Alice'),
             'Alice remains under search',
         );
-        assert.ok(
+        assert(
             !html.includes('Claude'),
             'Claude filtered out by search',
         );

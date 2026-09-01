@@ -1,3 +1,4 @@
+import { assert } from '@std/assert';
 // state.ts (transitively imported via core.ts ->
 // presenters) reads localStorage and window /
 // document at module-eval time, which Node lacks.
@@ -16,10 +17,8 @@ globalThis.window = {
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
-test('barrel exports all new presenters', async () => {
+Deno.test('barrel exports all new presenters', async () => {
     const P = await import('../web-app/app/presenters/index.ts');
     const expected = [
         'OrganizationObjectivesPresenter',
@@ -29,7 +28,7 @@ test('barrel exports all new presenters', async () => {
         'DashboardObjectiveAggregatesPresenter',
     ];
     for (const name of expected) {
-        assert.ok(
+        assert(
             name in P,
             'barrel missing export: ' + name,
         );
