@@ -1240,10 +1240,19 @@ Off the critical path; each with its oracle.
   the `process` half now costs one line:
   `deno check --frozen web-app` alone is green on the
   tree today and rejects a `process` reference under
-  `web-app/` with TS2591. It leaves `Deno.*` unfenced;
-  that half needs a lib array without `deno.ns`.
-  Oracle: that invocation in `./validate`, red on a
-  `process` reference under `web-app/`.
+  `web-app/` with TS2591. The `Deno.*` half is a much
+  bigger job and must not inherit that estimate: a lib
+  array without `deno.ns` is necessary but far from
+  sufficient — measured over `api shared web-app` it
+  yields 104 TS2304 errors, every one of them in a
+  `web-app/app/` tooling module (`measure.ts` 49,
+  `generate-api-documentation.ts` 14, `compose.ts` 14,
+  `generate-schema-svg.ts` 11, `cdp-client.ts` 10,
+  `measure-viz.ts` 6) and none in browser page code. So
+  that half needs the lib change PLUS the exclusion
+  registry the `process` half escaped. Oracle for the
+  `process` half: that invocation in `./validate`, red
+  on a `process` reference under `web-app/`.
 - The `exists()` helper is duplicated five times, byte
   for byte, all under `web-app/app/` — `compose.ts`,
   `generate-api-documentation.ts`, `measure-viz.ts`,
