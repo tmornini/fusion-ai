@@ -36,12 +36,10 @@ export {
     UTF8_REQUIRED,
     MISSING_MARKER,
     NO_ARGUMENTS,
-    requiredEnv,
     assertUtf8,
     hasSchemaMarker,
     assertSchemaMarker,
     bootErrorMessage,
-    type EnvBag,
 } from './postgres-gate.ts';
 
 export interface ListenEnv {
