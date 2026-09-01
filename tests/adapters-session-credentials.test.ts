@@ -1,24 +1,8 @@
-globalThis.localStorage = (() => {
-    const store = new Map<string, string>();
-    return {
-        getItem: (k: string) => store.get(k) ?? null,
-        setItem: (k: string, v: string) => {
-            store.set(k, v);
-        },
-        removeItem: (k: string) => {
-            store.delete(k);
-        },
-        clear: () => {
-            store.clear();
-        },
-        key: () => null,
-        get length() {
-            return store.size;
-        },
-    };
-})();
-
 import { assertEquals, assertStrictEquals, assertThrows } from '@std/assert';
+import {
+    withLocalStorage,
+    withLocalStorageAsync,
+} from './fixtures/local-storage.ts';
 import {
     getSessionCredentials,
     putSessionCredentials,
@@ -36,13 +20,36 @@ import { devToken, organizationToken } from './token-fixtures.ts';
 
 const KEY = STORAGE_KEY_AUTHORIZATION;
 
+// A fresh Map-backed fake per test — bodies below call
+// localStorage.clear()/getItem/setItem directly.
+function freshStorage(): Partial<Storage> {
+    const store = new Map<string, string>();
+    return {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+            store.set(k, v);
+        },
+        removeItem: (k: string) => {
+            store.delete(k);
+        },
+        clear: () => {
+            store.clear();
+        },
+        key: () => null,
+        get length() {
+            return store.size;
+        },
+    };
+}
+
 Deno.test('an unset credential reads as null (honest absence)',
-() => {
+() => withLocalStorage(freshStorage(), () => {
     localStorage.clear();
     assertStrictEquals(getSessionCredentials(), null);
-});
+}));
 
-Deno.test('a stored credential round-trips by value', async () => {
+Deno.test('a stored credential round-trips by value',
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     const creds = {
         accessToken: await devToken(),
@@ -50,27 +57,29 @@ Deno.test('a stored credential round-trips by value', async () => {
     };
     putSessionCredentials(creds);
     assertEquals(getSessionCredentials(), creds);
-});
+}));
 
-Deno.test('a non-JSON blob reads as Corrupt, never null', () => {
+Deno.test('a non-JSON blob reads as Corrupt, never null',
+() => withLocalStorage(freshStorage(), () => {
     localStorage.clear();
     localStorage.setItem(KEY, 'not json at all');
     assertThrows(
         () => getSessionCredentials(),
         SessionCredentialsCorruptError);
-});
+}));
 
-Deno.test('a blob missing a field reads as Corrupt', async () => {
+Deno.test('a blob missing a field reads as Corrupt',
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     localStorage.setItem(
         KEY, JSON.stringify({ access_token: await devToken() }));
     assertThrows(
         () => getSessionCredentials(),
         SessionCredentialsCorruptError);
-});
+}));
 
 Deno.test('a blob with an empty field reads as Corrupt',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     localStorage.setItem(KEY, JSON.stringify({
         access_token: await devToken(),
@@ -79,10 +88,10 @@ async () => {
     assertThrows(
         () => getSessionCredentials(),
         SessionCredentialsCorruptError);
-});
+}));
 
 Deno.test('a blob with an undecodable token reads as Corrupt',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     localStorage.setItem(KEY, JSON.stringify({
         access_token: await devToken(),
@@ -91,9 +100,10 @@ async () => {
     assertThrows(
         () => getSessionCredentials(),
         SessionCredentialsCorruptError);
-});
+}));
 
-Deno.test('a deleted credential reads as null again', async () => {
+Deno.test('a deleted credential reads as null again',
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     putSessionCredentials({
         accessToken: await devToken(),
@@ -101,16 +111,17 @@ Deno.test('a deleted credential reads as null again', async () => {
     });
     deleteSessionCredentials();
     assertStrictEquals(getSessionCredentials(), null);
-});
+}));
 
-Deno.test('deleting an absent credential is a no-op', () => {
+Deno.test('deleting an absent credential is a no-op',
+() => withLocalStorage(freshStorage(), () => {
     localStorage.clear();
     deleteSessionCredentials();
     assertStrictEquals(getSessionCredentials(), null);
-});
+}));
 
 Deno.test('a failed credential write propagates, not swallowed',
-() => {
+() => withLocalStorage(freshStorage(), () => {
     localStorage.clear();
     const original = localStorage.setItem;
     localStorage.setItem = () => {
@@ -124,10 +135,10 @@ Deno.test('a failed credential write propagates, not swallowed',
         'disk full',
     );
     localStorage.setItem = original;
-});
+}));
 
 Deno.test('cookie-session stores access in memory, not localStorage',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     setCookieSession(true);
     try {
@@ -145,10 +156,10 @@ async () => {
     } finally {
         setCookieSession(false);
     }
-});
+}));
 
 Deno.test('cookie-session put does not write refresh_token',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     putSessionToken(await devToken());
     setCookieSession(true);
@@ -162,4 +173,4 @@ async () => {
     } finally {
         setCookieSession(false);
     }
-});
+}));

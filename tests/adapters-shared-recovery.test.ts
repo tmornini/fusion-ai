@@ -1,23 +1,3 @@
-globalThis.localStorage = (() => {
-    const store = new Map<string, string>();
-    return {
-        getItem: (k: string) => store.get(k) ?? null,
-        setItem: (k: string, v: string) => {
-            store.set(k, v);
-        },
-        removeItem: (k: string) => {
-            store.delete(k);
-        },
-        clear: () => {
-            store.clear();
-        },
-        key: () => null,
-        get length() {
-            return store.size;
-        },
-    };
-})();
-
 // Minimal DOM stubs so redirectToLogin (getPageName reads
 // data-page; navigateTo sets window.location.href) runs in Node.
 // @ts-expect-error — Node global stub
@@ -43,6 +23,9 @@ import {
     createRecoveringRequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { captureConsole } from './fixtures/console-capture.ts';
+import {
+    withLocalStorageAsync,
+} from './fixtures/local-storage.ts';
 import { putSessionToken } from '../web-app/app/adapters/init.ts';
 import {
     getSessionCredentials,
@@ -86,6 +69,28 @@ const ORGANIZATION_A = generateIdentifier();
 const ORGANIZATION_B = generateIdentifier();
 
 const BASE = 'http://localhost';
+
+// A fresh Map-backed fake per test — bodies below call
+// localStorage.clear()/getItem/setItem directly.
+function freshStorage(): Partial<Storage> {
+    const store = new Map<string, string>();
+    return {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+            store.set(k, v);
+        },
+        removeItem: (k: string) => {
+            store.delete(k);
+        },
+        clear: () => {
+            store.clear();
+        },
+        key: () => null,
+        get length() {
+            return store.size;
+        },
+    };
+}
 
 async function freshDb() {
     const db = memoryDbAdapter();
@@ -225,7 +230,7 @@ async function expiredOrganizationToken(
 }
 
 Deno.test('a recover context silently refreshes a dead access token',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     const db = await freshDb();
     const pair = await issuePair(db);
@@ -242,10 +247,10 @@ async () => {
     const members = await ctx.GET('organizations/AjdvjuECVZEgZoFajaIEkg/'
         + 'members/');
     assert(Array.isArray(members));
-});
+}));
 
 Deno.test('concurrent 401s share exactly one refresh grant',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     const db = await freshDb();
     const pair = await issuePair(db);
@@ -271,11 +276,11 @@ async () => {
     assertStrictEquals(rotations.length, 1);
     // the session survived (nothing was branded reuse)
     assertNotStrictEquals(getSessionCredentials(), null);
-});
+}));
 
 Deno.test('a live credential with an anonymous-seed holder re-scopes'
 + ' rather than scrubbing the session',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     window.location.href = '';
     const db = await freshDb();
@@ -298,10 +303,10 @@ async () => {
     // the live session is preserved (not scrubbed) and now scoped
     assertNotStrictEquals(getSessionCredentials(), null);
     assertNotStrictEquals(getSessionToken(), seed);
-});
+}));
 
 Deno.test('recovery with both tokens dead scrubs and bounces',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     window.location.href = '';
     const db = await freshDb();
@@ -322,13 +327,13 @@ async () => {
     // ...and the tab was redirected to the login page
     assertMatch(
         window.location.href, /auth.*return=dashboard/);
-});
+}));
 
 // Corrupt credential is unrecoverable: scrub + bounce, and
 // the catch must leave a warn (empty catch destroys evidence).
 Deno.test('recovery with a corrupt credential scrubs, bounces,'
 + ' and warns',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     window.location.href = '';
     const db = await freshDb();
@@ -356,10 +361,11 @@ async () => {
             args.includes('corrupt session credential')),
         'corrupt credential must log.warn, not silent catch',
     );
-});
+}));
 
 Deno.test('a recovering context reads through the vessel token,'
-+ ' not a concurrently-moved global', async () => {
++ ' not a concurrently-moved global',
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     const db = await freshDb();
     await seedOrganizationAdmin(db, ORGANIZATION_A);
@@ -391,10 +397,11 @@ Deno.test('a recovering context reads through the vessel token,'
     );
     // the read ran in the vessel's org A, not the global's B
     assertEquals(rows.map(r => r.id), ['UQTJZvCoKlFjEoDlDUwekw']);
-});
+}));
 
 Deno.test('recovery re-scopes to the vessel org claim, not the'
-+ ' cross-tab preference', async () => {
++ ' cross-tab preference',
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     const db = await freshDb();
     await seedOrganizationAdmin(db, ORGANIZATION_A);
@@ -424,10 +431,10 @@ Deno.test('recovery re-scopes to the vessel org claim, not the'
     // identity the request carried, and that is org A
     assertStrictEquals(scoped, ctx.identity.organization);
     assertStrictEquals(scoped, ORGANIZATION_A);
-});
+}));
 
 Deno.test('recovery leaves the cross-tab active-org preference'
-+ ' untouched', async () => {
++ ' untouched', () => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     const db = await freshDb();
     await seedOrganizationAdmin(db, ORGANIZATION_A);
@@ -451,4 +458,4 @@ Deno.test('recovery leaves the cross-tab active-org preference'
     assertStrictEquals(
         localStorage.getItem(ACTIVE_ORGANIZATION_ID), ORGANIZATION_B,
     );
-});
+}));

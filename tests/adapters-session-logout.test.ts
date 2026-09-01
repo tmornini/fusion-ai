@@ -1,4 +1,25 @@
-globalThis.localStorage = (() => {
+import { assertRejects, assertStrictEquals } from '@std/assert';
+import {
+    withLocalStorageAsync,
+} from './fixtures/local-storage.ts';
+import {
+    type RequestContext,
+} from '../web-app/app/adapters/shared.ts';
+import {
+    postSessionLogout,
+} from '../web-app/app/adapters/session-logout.ts';
+import {
+    getSessionCredentials,
+    putSessionCredentials,
+} from '../web-app/app/adapters/session-credentials.ts';
+import { devToken, organizationToken } from './token-fixtures.ts';
+import { adminContext } from './context-fixtures.ts';
+import { deriveTokenRevocationsFor } from
+    '../api/derive-identity-spine.ts';
+
+// A fresh Map-backed fake per test — bodies below call
+// localStorage.clear() directly.
+function freshStorage(): Partial<Storage> {
     const store = new Map<string, string>();
     return {
         getItem: (k: string) => store.get(k) ?? null,
@@ -16,26 +37,10 @@ globalThis.localStorage = (() => {
             return store.size;
         },
     };
-})();
-
-import { assertRejects, assertStrictEquals } from '@std/assert';
-import {
-    type RequestContext,
-} from '../web-app/app/adapters/shared.ts';
-import {
-    postSessionLogout,
-} from '../web-app/app/adapters/session-logout.ts';
-import {
-    getSessionCredentials,
-    putSessionCredentials,
-} from '../web-app/app/adapters/session-credentials.ts';
-import { devToken, organizationToken } from './token-fixtures.ts';
-import { adminContext } from './context-fixtures.ts';
-import { deriveTokenRevocationsFor } from
-    '../api/derive-identity-spine.ts';
+}
 
 Deno.test('logout revokes this identity and clears credentials',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     const { db, ctx } = await adminContext();
     putSessionCredentials({
@@ -52,10 +57,10 @@ async () => {
     assertStrictEquals(rows[0]!.identity_id, 'XXZruirZyAOoRpNxaDnpSA');
     // Phase Final Stage B: identity spine tables retired.
     assertStrictEquals(getSessionCredentials(), null);
-});
+}));
 
 Deno.test('logout scrubs locally even when the revoke fails',
-async () => {
+() => withLocalStorageAsync(freshStorage(), async () => {
     localStorage.clear();
     putSessionCredentials({
         accessToken: await devToken(),
@@ -75,4 +80,4 @@ async () => {
     );
     // teardown ran in finally despite the server fault
     assertStrictEquals(getSessionCredentials(), null);
-});
+}));
