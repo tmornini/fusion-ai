@@ -1,5 +1,9 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import {
+    assertEquals,
+    assertMatch,
+    assertNotMatch,
+    assertStrictEquals,
+} from '@std/assert';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
@@ -39,34 +43,34 @@ function clientGraphHits(
     return hits;
 }
 
-test('build emits one ZIP from the server-core entry', () => {
-    assert.match(
+Deno.test('build emits one ZIP from the server-core entry', () => {
+    assertMatch(
         BUILD_SCRIPT,
         /fusion-angle-\$\{SHA\}\.zip/,
     );
-    assert.doesNotMatch(
+    assertNotMatch(
         BUILD_SCRIPT,
         /fusion-ai-browser/,
     );
-    assert.doesNotMatch(
+    assertNotMatch(
         BUILD_SCRIPT,
         /fusion-angle-browser/,
     );
-    assert.match(
+    assertMatch(
         BUILD_LIB_SCRIPT,
         /web-app\/app\/server-core\.ts/,
     );
-    assert.doesNotMatch(
+    assertNotMatch(
         BUILD_LIB_SCRIPT,
         /web-app\/app\/core\.ts/,
     );
 });
 
-test('client-graph pin matches mint and deleted names',
+Deno.test('client-graph pin matches mint and deleted names',
 () => {
     const input = 'api/access-token.ts';
     const src = readFileSync(input, 'utf8');
-    assert.deepEqual(
+    assertEquals(
         clientGraphHits(input, src),
         [
             'api/access-token.ts:api/access-token.ts',
@@ -74,7 +78,7 @@ test('client-graph pin matches mint and deleted names',
             'api/access-token.ts:mintAccessToken',
         ],
     );
-    assert.deepEqual(
+    assertEquals(
         clientGraphHits(
             'sample/path.ts',
             'SIGNING_KEY_MATERIAL',
@@ -85,7 +89,7 @@ test('client-graph pin matches mint and deleted names',
     );
 });
 
-test(
+Deno.test(
     'client graph omits token mint and signing key',
     () => {
         const info = spawnSync('deno', [
@@ -95,7 +99,7 @@ test(
             encoding: 'utf8',
             env: process.env,
         });
-        assert.equal(info.status, 0, info.stderr);
+        assertStrictEquals(info.status, 0, info.stderr);
         const graph = JSON.parse(info.stdout) as {
             roots: string[];
             modules: {
@@ -132,16 +136,16 @@ test(
                 path, readFileSync(path, 'utf8'),
             ));
         }
-        assert.deepEqual(hits, []);
+        assertEquals(hits, []);
     },
 );
 
-test('build --no-zip help names crank', () => {
-    assert.match(
+Deno.test('build --no-zip help names crank', () => {
+    assertMatch(
         BUILD_SCRIPT,
         /the fusion-angle executable — for \.\/crank/,
     );
-    assert.doesNotMatch(
+    assertNotMatch(
         BUILD_SCRIPT,
         /for \.\/serve/,
     );

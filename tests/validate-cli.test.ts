@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assertMatch, assertStrictEquals } from '@std/assert';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,7 +10,7 @@ function headSha(): string {
     }).trim();
 }
 
-test('validate skips when the HEAD SHA already passed',
+Deno.test('validate skips when the HEAD SHA already passed',
     () => {
     const stamp = join(
         mkdtempSync(join(tmpdir(), 'validate-ok-')),
@@ -27,8 +26,8 @@ test('validate skips when the HEAD SHA already passed',
             VALIDATE_PORCELAIN: '',
         },
     });
-    assert.equal(result.status, 0);
-    assert.match(
+    assertStrictEquals(result.status, 0);
+    assertMatch(
         result.stdout,
         /already validated [0-9a-f]{40}/,
     );

@@ -1,3 +1,4 @@
+import { assertMatch, assertNotMatch, assertStrictEquals } from '@std/assert';
 // state.ts (transitively imported via core.ts ->
 // presenters) reads localStorage and window /
 // document at module-eval time, which Node lacks.
@@ -16,8 +17,6 @@ globalThis.window = {
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
 const { Project } = await import('../api/types.ts');
 const { ProjectView } = await import(
@@ -76,7 +75,7 @@ function makeRecordingContainer(): {
     };
 }
 
-test(
+Deno.test(
     'reduceProjectSave lands in read mode with'
     + ' the fresh description and Edit, not Save',
     () => {
@@ -106,8 +105,8 @@ test(
             detail,
             flows: [],
         });
-        assert.equal(next.kind, 'reading');
-        assert.equal(
+        assertStrictEquals(next.kind, 'reading');
+        assertStrictEquals(
             next.view.descriptionText(),
             'Edited body',
         );
@@ -116,11 +115,11 @@ test(
             next.view, next.flows,
         ).renderShell(rec.container);
         const out = rec.allHtml();
-        assert.match(out, /Edited body/);
-        assert.match(
+        assertMatch(out, /Edited body/);
+        assertMatch(
             out, /data-project-action="edit"/,
         );
-        assert.doesNotMatch(
+        assertNotMatch(
             out, /data-project-action="save"/,
         );
     },

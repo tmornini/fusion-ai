@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assertMatch, assertStrictEquals } from '@std/assert';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -13,18 +12,18 @@ const src = readFileSync(
     'utf8',
 );
 
-test('apex hops via the destination helper', () => {
-    assert.match(src, /resolveApexLocation/);
-    assert.match(src, /probeRefreshSession/);
-    assert.equal(
+Deno.test('apex hops via the destination helper', () => {
+    assertMatch(src, /resolveApexLocation/);
+    assertMatch(src, /probeRefreshSession/);
+    assertStrictEquals(
         src.includes('auth/index.html'),
         false,
     );
-    assert.equal(
+    assertStrictEquals(
         src.includes('snapshots/index.html'),
         false,
     );
-    assert.equal(
+    assertStrictEquals(
         src.includes('getSchemaPresent'),
         false,
     );

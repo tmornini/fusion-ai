@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assertStrictEquals, assertThrows } from '@std/assert';
 import {
     STORAGE_KEY_THEME,
     STORAGE_KEY_SIDEBAR,
@@ -18,7 +17,7 @@ import {
 // state is plain domain defaults. initState() hydrates the
 // persisted preferences at boot; computeTheme() is the
 // observable that proves the theme was hydrated from storage.
-test(
+Deno.test(
     'initState hydrates the persisted theme preference',
     () => {
         const g =
@@ -39,7 +38,7 @@ test(
         };
         try {
             initState();
-            assert.equal(computeTheme(), 'dark');
+            assertStrictEquals(computeTheme(), 'dark');
         } finally {
             delete g.localStorage;
             delete g.window;
@@ -47,7 +46,7 @@ test(
     },
 );
 
-test('initState throws on a corrupt stored theme', () => {
+Deno.test('initState throws on a corrupt stored theme', () => {
     const g =
         globalThis as Record<string, unknown>;
     g.localStorage = {
@@ -58,9 +57,9 @@ test('initState throws on a corrupt stored theme', () => {
         matchMedia: () => ({ matches: false }),
     };
     try {
-        assert.throws(
+        assertThrows(
             () => initState(),
-            /corrupt stored theme/,
+            Error, 'corrupt stored theme',
         );
     } finally {
         delete g.localStorage;
@@ -68,7 +67,7 @@ test('initState throws on a corrupt stored theme', () => {
     }
 });
 
-test('initState throws on a corrupt stored sidebar', () => {
+Deno.test('initState throws on a corrupt stored sidebar', () => {
     const g =
         globalThis as Record<string, unknown>;
     g.localStorage = {
@@ -81,9 +80,9 @@ test('initState throws on a corrupt stored sidebar', () => {
         matchMedia: () => ({ matches: false }),
     };
     try {
-        assert.throws(
+        assertThrows(
             () => initState(),
-            /corrupt stored sidebar/,
+            Error, 'corrupt stored sidebar',
         );
     } finally {
         delete g.localStorage;
@@ -91,10 +90,10 @@ test('initState throws on a corrupt stored sidebar', () => {
     }
 });
 
-test('isStoredTheme accepts the three themes only', () => {
-    assert.equal(isStoredTheme('light'), true);
-    assert.equal(isStoredTheme('dark'), true);
-    assert.equal(isStoredTheme('system'), true);
-    assert.equal(isStoredTheme('purple'), false);
-    assert.equal(isStoredTheme(null), false);
+Deno.test('isStoredTheme accepts the three themes only', () => {
+    assertStrictEquals(isStoredTheme('light'), true);
+    assertStrictEquals(isStoredTheme('dark'), true);
+    assertStrictEquals(isStoredTheme('system'), true);
+    assertStrictEquals(isStoredTheme('purple'), false);
+    assertStrictEquals(isStoredTheme(null), false);
 });

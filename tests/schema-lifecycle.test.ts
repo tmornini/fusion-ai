@@ -1,5 +1,6 @@
-import { after, before, test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assertStrictEquals } from '@std/assert';
+// before/after stay on node:test — Task 48's hooks.
+import { after, before } from 'node:test';
 import { memoryDbAdapter } from
     '../api/db-memory.ts';
 import { connectPostgres } from
@@ -8,29 +9,29 @@ import { PostgresBackend } from
     '../api/backend-postgres.ts';
 import { TABLE_NAMES } from '../api/db.ts';
 
-test(
+Deno.test(
     'postSchemaCreation/hasSchema/deleteSchema'
     + ' lifecycle',
     async () => {
         const adapter = memoryDbAdapter();
-        assert.equal(
+        assertStrictEquals(
             await adapter.hasSchema(), false,
             'fresh storage has no schema',
         );
         await adapter.postSchemaCreation();
-        assert.equal(
+        assertStrictEquals(
             await adapter.hasSchema(), true,
             'postSchemaCreation makes hasSchema true',
         );
         await adapter.deleteSchema();
-        assert.equal(
+        assertStrictEquals(
             await adapter.hasSchema(), false,
             'deleteSchema returns to empty',
         );
     },
 );
 
-test(
+Deno.test(
     'postSchemaCreation is idempotent on re-run',
     async () => {
         const adapter = memoryDbAdapter();
@@ -56,7 +57,7 @@ test(
         await adapter.postSchemaCreation();
         const requests =
             await adapter.messagePairs.getAll();
-        assert.equal(
+        assertStrictEquals(
             requests.length, 1,
             'second postSchemaCreation preserves'
             + ' data',
@@ -64,13 +65,13 @@ test(
     },
 );
 
-test('DbAdapter has no snapshot dump or restore',
+Deno.test('DbAdapter has no snapshot dump or restore',
 () => {
     const adapter = memoryDbAdapter();
-    assert.equal(
+    assertStrictEquals(
         'getSnapshot' in adapter, false,
     );
-    assert.equal(
+    assertStrictEquals(
         'putSnapshot' in adapter, false,
     );
 });
@@ -107,10 +108,10 @@ function urlWithSearchPath(
 }
 
 if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
-    test(
+    Deno.test(
         'postgres column types skipped without'
         + ' POSTGRES_URL',
-        { skip: 'POSTGRES_URL is unset' },
+        { ignore: true }, // POSTGRES_URL is unset
         () => {},
     );
 } else {
@@ -139,7 +140,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         }
     });
 
-    test(
+    Deno.test(
         'message_pairs.id and message_pairs.operation_id are uuid',
         async () => {
             const rows = await sql.query<{
@@ -161,12 +162,12 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
                     row.column_name, row.data_type,
                 ]),
             );
-            assert.equal(typeOf.get('id'), 'uuid');
-            assert.equal(
+            assertStrictEquals(typeOf.get('id'), 'uuid');
+            assertStrictEquals(
                 typeOf.get('operation_id'), 'uuid',
             );
-            assert.equal(typeOf.get('uri_id'), 'text');
-            assert.equal(
+            assertStrictEquals(typeOf.get('uri_id'), 'text');
+            assertStrictEquals(
                 typeOf.get('requester_identity_id'),
                 'text',
             );

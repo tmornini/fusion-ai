@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assertMatch, assertNotMatch, assertStrictEquals } from '@std/assert';
 import {
     existsSync,
     mkdtempSync,
@@ -50,11 +49,11 @@ function runServe(
     return Object.assign(result, { stamp });
 }
 
-test('serve with no args exits 1 with usage', () => {
+Deno.test('serve with no args exits 1 with usage', () => {
     const result = runServe([]);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /Usage: \.\/serve/);
-    assert.equal(
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /Usage: \.\/serve/);
+    assertStrictEquals(
         existsSync(result.stamp) &&
             readFileSync(result.stamp, 'utf8')
                 .length > 0,
@@ -62,46 +61,46 @@ test('serve with no args exits 1 with usage', () => {
     );
 });
 
-test('serve missing port exits 1 with usage', () => {
+Deno.test('serve missing port exits 1 with usage', () => {
     const result = runServe(['bundle/']);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /Usage: \.\/serve/);
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /Usage: \.\/serve/);
 });
 
-test('serve dir without trailing slash exits 1',
+Deno.test('serve dir without trailing slash exits 1',
 () => {
     const result = runServe(['bundle', '8080']);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /Usage: \.\/serve/);
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /Usage: \.\/serve/);
 });
 
-test('serve --help exits 0', () => {
+Deno.test('serve --help exits 0', () => {
     const result = runServe(['--help']);
-    assert.equal(result.status, 0);
-    assert.match(result.stdout, /Usage: \.\/serve/);
+    assertStrictEquals(result.status, 0);
+    assertMatch(result.stdout, /Usage: \.\/serve/);
 });
 
-test('serve missing POSTGRES_URL exits 1', () => {
+Deno.test('serve missing POSTGRES_URL exits 1', () => {
     const result = runServe(['bundle/', '8080']);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /POSTGRES_URL/);
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /POSTGRES_URL/);
 });
 
-test('serve missing JWT exits 1', () => {
+Deno.test('serve missing JWT exits 1', () => {
     const result = runServe(['bundle/', '8080'], {
         POSTGRES_URL: 'postgres://fusion@127.0.0.1/x',
     });
-    assert.equal(result.status, 1);
-    assert.match(
+    assertStrictEquals(result.status, 1);
+    assertMatch(
         result.stderr,
         /JWT_HMAC_SIGNING_KEY/,
     );
 });
 
-test('serve does not invoke ./build', () => {
+Deno.test('serve does not invoke ./build', () => {
     const src = readFileSync('serve', 'utf8');
-    assert.doesNotMatch(src, /\.\/build/);
-    assert.match(src, /exec \.\/fusion-angle serve/);
-    assert.doesNotMatch(src, /DEFAULT_PORT/);
-    assert.doesNotMatch(src, /mktemp/);
+    assertNotMatch(src, /\.\/build/);
+    assertMatch(src, /exec \.\/fusion-angle serve/);
+    assertNotMatch(src, /DEFAULT_PORT/);
+    assertNotMatch(src, /mktemp/);
 });
