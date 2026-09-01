@@ -18,8 +18,7 @@ globalThis.localStorage = (() => {
     };
 })();
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assertRejects, assertStrictEquals } from '@std/assert';
 import {
     type RequestContext,
 } from '../web-app/app/adapters/shared.ts';
@@ -35,7 +34,7 @@ import { adminContext } from './context-fixtures.ts';
 import { deriveTokenRevocationsFor } from
     '../api/derive-identity-spine.ts';
 
-test('logout revokes this identity and clears credentials',
+Deno.test('logout revokes this identity and clears credentials',
 async () => {
     localStorage.clear();
     const { db, ctx } = await adminContext();
@@ -49,13 +48,13 @@ async () => {
     const rows = await deriveTokenRevocationsFor(
         db, 'XXZruirZyAOoRpNxaDnpSA',
     );
-    assert.equal(rows.length, 1);
-    assert.equal(rows[0]!.identity_id, 'XXZruirZyAOoRpNxaDnpSA');
+    assertStrictEquals(rows.length, 1);
+    assertStrictEquals(rows[0]!.identity_id, 'XXZruirZyAOoRpNxaDnpSA');
     // Phase Final Stage B: identity spine tables retired.
-    assert.equal(getSessionCredentials(), null);
+    assertStrictEquals(getSessionCredentials(), null);
 });
 
-test('logout scrubs locally even when the revoke fails',
+Deno.test('logout scrubs locally even when the revoke fails',
 async () => {
     localStorage.clear();
     putSessionCredentials({
@@ -69,8 +68,11 @@ async () => {
             throw new Error('revoke endpoint down');
         },
     } as unknown as RequestContext;
-    await assert.rejects(
-        () => postSessionLogout(ctx), /revoke endpoint down/);
+    await assertRejects(
+        () => postSessionLogout(ctx),
+        Error,
+        'revoke endpoint down',
+    );
     // teardown ran in finally despite the server fault
-    assert.equal(getSessionCredentials(), null);
+    assertStrictEquals(getSessionCredentials(), null);
 });

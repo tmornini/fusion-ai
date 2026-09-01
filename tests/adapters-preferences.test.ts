@@ -18,71 +18,75 @@ globalThis.localStorage = (() => {
     };
 })();
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import {
+    assert,
+    assertEquals,
+    assertStrictEquals,
+    assertThrows,
+} from '@std/assert';
 import {
     getPreference,
     putPreference,
 } from '../web-app/app/adapters/preferences.ts';
 import { captureConsole } from './console-capture.ts';
 
-test(
+Deno.test(
     'getPreference returns null for an unset key',
     () => {
-        assert.equal(
+        assertStrictEquals(
             getPreference('never-written-key'),
             null,
         );
     },
 );
 
-test(
+Deno.test(
     'putPreference then getPreference round-trips'
     + ' the value',
     () => {
         putPreference('fusion-angle:demo', 'hello');
-        assert.equal(
+        assertStrictEquals(
             getPreference('fusion-angle:demo'),
             'hello',
         );
     },
 );
 
-test(
+Deno.test(
     'putPreference overwrites a prior value for'
     + ' the same key',
     () => {
         putPreference('fusion-angle:color', 'blue');
         putPreference('fusion-angle:color', 'green');
-        assert.equal(
+        assertStrictEquals(
             getPreference('fusion-angle:color'),
             'green',
         );
     },
 );
 
-test(
+Deno.test(
     'distinct keys hold independent values',
     () => {
         putPreference('fusion-angle:a', 'one');
         putPreference('fusion-angle:b', 'two');
-        assert.equal(getPreference('fusion-angle:a'), 'one');
-        assert.equal(getPreference('fusion-angle:b'), 'two');
+        assertStrictEquals(getPreference('fusion-angle:a'), 'one');
+        assertStrictEquals(getPreference('fusion-angle:b'), 'two');
     },
 );
 
-test(
+Deno.test(
     'putPreference accepts an empty string value',
     () => {
         putPreference('fusion-angle:empty', '');
-        assert.equal(
+        assertStrictEquals(
             getPreference('fusion-angle:empty'),
             '',
         );
     },
 );
 
-test(
+Deno.test(
     'putPreference rethrows non-quota storage'
     + ' errors',
     () => {
@@ -95,9 +99,10 @@ test(
                     throw new Error('disk on fire');
                 },
             };
-            assert.throws(
+            assertThrows(
                 () => putPreference('k', 'v'),
-                /disk on fire/,
+                Error,
+                'disk on fire',
             );
         } finally {
             globalThis.localStorage = original;
@@ -105,7 +110,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'putPreference returns false on a'
     + ' QuotaExceededError without throwing',
     async () => {
@@ -127,8 +132,8 @@ test(
                     'warn',
                     () => putPreference('k', 'v'),
                 );
-            assert.equal(result, false);
-            assert.ok(
+            assertStrictEquals(result, false);
+            assert(
                 calls.some(args => args.includes(
                     'preference write skipped'
                     + ' due to quota',
@@ -142,7 +147,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'putPreference returns true on success',
     () => {
         const original = globalThis.localStorage;
@@ -156,11 +161,11 @@ test(
                     writes.push([k, v]);
                 },
             };
-            assert.equal(
+            assertStrictEquals(
                 putPreference('k', 'v'),
                 true,
             );
-            assert.deepEqual(writes, [['k', 'v']]);
+            assertEquals(writes, [['k', 'v']]);
         } finally {
             globalThis.localStorage = original;
         }

@@ -18,11 +18,17 @@ globalThis.localStorage = (() => {
     };
 })();
 
-import { test } from 'node:test';
+import {
+    assert,
+    assertEquals,
+    assertInstanceOf,
+    assertRejects,
+    assertStrictEquals,
+    assertThrows,
+} from '@std/assert';
 import {
     invitationLifecycleStatesFor,
 } from '../api/derive-states.ts';
-import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -262,11 +268,11 @@ async function eraseIdentityPii(
             },
         },
     ));
-    assert.equal(response.status, 204);
+    assertStrictEquals(response.status, 204);
 }
 
-test('validateInvitationEntity accepts a full body', () => {
-    assert.deepEqual(
+Deno.test('validateInvitationEntity accepts a full body', () => {
+    assertEquals(
         validateInvitationEntity({
             organization_id: 'BBjWJsjYIDkTRKIIPrzWRw',
             identity_id: 'toccYYkLEABmlbpHJalgtQ',
@@ -280,8 +286,8 @@ test('validateInvitationEntity accepts a full body', () => {
     );
 });
 
-test('validateInvitationEntity rejects an extra key', () => {
-    assert.throws(() =>
+Deno.test('validateInvitationEntity rejects an extra key', () => {
+    assertThrows(() =>
         validateInvitationEntity({
             organization_id: 'BBjWJsjYIDkTRKIIPrzWRw'
                 , identity_id: 'toccYYkLEABmlbpHJalgtQ',
@@ -289,8 +295,8 @@ test('validateInvitationEntity rejects an extra key', () => {
         }));
 });
 
-test('validateInvitationEntity rejects a bad timestamp', () => {
-    assert.throws(() =>
+Deno.test('validateInvitationEntity rejects a bad timestamp', () => {
+    assertThrows(() =>
         validateInvitationEntity({
             organization_id: 'BBjWJsjYIDkTRKIIPrzWRw'
                 , identity_id: 'toccYYkLEABmlbpHJalgtQ',
@@ -301,57 +307,57 @@ test('validateInvitationEntity rejects a bad timestamp', () => {
 // Phase Final Stage B: invitations table retired — store
 // round-trip pins live on message-plane document tests.
 
-test('grant by email appends a pending invitation', async () => {
+Deno.test('grant by email appends a pending invitation', async () => {
     const { db, ctx } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
-    assert.equal(
+    assertStrictEquals(
         await postInvitationGrant(ctx, 'sarah@x.com'), 'sent');
     // Phase Final Task 2: invitations ROW half stripped.
     const rows = await deriveInvitations(db);
-    assert.equal(rows.length, 1);
-    assert.equal(rows[0]!.organization_id, 'BBjWJsjYIDkTRKIIPrzWRw');
-    assert.equal(rows[0]!.identity_id, 'toccYYkLEABmlbpHJalgtQ');
-    assert.equal(rows[0]!.state, 'pending');
+    assertStrictEquals(rows.length, 1);
+    assertStrictEquals(rows[0]!.organization_id, 'BBjWJsjYIDkTRKIIPrzWRw');
+    assertStrictEquals(rows[0]!.identity_id, 'toccYYkLEABmlbpHJalgtQ');
+    assertStrictEquals(rows[0]!.state, 'pending');
     // Phase Final Stage B: roster tables retired.
 });
 
-test('grant stamps the org from the verified token', async () => {
+Deno.test('grant stamps the org from the verified token', async () => {
     // Tony is admin of both, but his token is scoped to Wayne;
     // the invitation must land in Wayne, never Stark.
     const { db, ctx } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(ctx, 'sarah@x.com');
     const rows = await deriveInvitations(db);
-    assert.equal(rows[0]!.organization_id, 'BBjWJsjYIDkTRKIIPrzWRw');
+    assertStrictEquals(rows[0]!.organization_id, 'BBjWJsjYIDkTRKIIPrzWRw');
 });
 
-test('grant by unknown email returns no-identity', async () => {
+Deno.test('grant by unknown email returns no-identity', async () => {
     const { ctx } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
-    assert.equal(
+    assertStrictEquals(
         await postInvitationGrant(ctx, 'nobody@x.com'),
         'no-identity');
 });
 
-test('grant for an existing member returns already-member',
+Deno.test('grant for an existing member returns already-member',
 async () => {
     // Tony invites Sarah to Stark, where she is already a member.
     const { ctx } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'AjdvjuECVZEgZoFajaIEkg');
-    assert.equal(
+    assertStrictEquals(
         await postInvitationGrant(ctx, 'sarah@x.com'),
         'already-member');
 });
 
-test('a non-admin cannot grant', async () => {
+Deno.test('a non-admin cannot grant', async () => {
     // Sarah is a Stark member but not an admin.
     const { ctx } = await ctxFor('toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
-    await assert.rejects(
-        postInvitationGrant(ctx, 'dave@x.com'));
+    await assertRejects(
+        () => postInvitationGrant(ctx, 'dave@x.com'));
 });
 
-test('the invitee reads their own pending invitation',
+Deno.test('the invitee reads their own pending invitation',
 async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -361,12 +367,12 @@ async () => {
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
     const mine = await getInvitations(toccYYkLEABmlbpHJalgtQ);
-    assert.equal(mine.length, 1);
-    assert.equal(mine[0]!.organizationName, 'Wayne');
-    assert.equal(mine[0]!.state, 'pending');
+    assertStrictEquals(mine.length, 1);
+    assertStrictEquals(mine[0]!.organizationName, 'Wayne');
+    assertStrictEquals(mine[0]!.state, 'pending');
 });
 
-test('the view omits the inviter name when PII is erased',
+Deno.test('the view omits the inviter name when PII is erased',
 async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -378,11 +384,11 @@ async () => {
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
     const mine = await getInvitations(toccYYkLEABmlbpHJalgtQ);
-    assert.equal(mine.length, 1);
-    assert.ok(!('invitedByName' in mine[0]!));
+    assertStrictEquals(mine.length, 1);
+    assert(!('invitedByName' in mine[0]!));
 });
 
-test('the view omits the org name when the org is gone',
+Deno.test('the view omits the org name when the org is gone',
 async () => {
     // Org '3': current is admin/member, but it carries no
     // organizations document at all — a states 'deleted' event
@@ -408,11 +414,11 @@ async () => {
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
     const mine = await getInvitations(toccYYkLEABmlbpHJalgtQ);
-    assert.equal(mine.length, 1);
-    assert.ok(!('organizationName' in mine[0]!));
+    assertStrictEquals(mine.length, 1);
+    assert(!('organizationName' in mine[0]!));
 });
 
-test('accept writes a membership in the invitation org',
+Deno.test('accept writes a membership in the invitation org',
 async () => {
     // THE security crux: Sarah is scoped to Stark, but accepting
     // a Wayne invite must write a WAYNE membership, never Stark.
@@ -428,14 +434,14 @@ async () => {
     const memberships = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === 'toccYYkLEABmlbpHJalgtQ');
     const organizations = memberships.map(m => m.organization_id).sort();
-    assert.deepEqual(organizations, ['AjdvjuECVZEgZoFajaIEkg'
+    assertEquals(organizations, ['AjdvjuECVZEgZoFajaIEkg'
         , 'BBjWJsjYIDkTRKIIPrzWRw']);
     const views = await getInvitations(toccYYkLEABmlbpHJalgtQ);
-    assert.equal(
+    assertStrictEquals(
         views.find(v => v.id === inv.id)?.state, 'accepted');
 });
 
-test('accept by a non-invitee is rejected', async () => {
+Deno.test('accept by a non-invitee is rejected', async () => {
     const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -444,11 +450,11 @@ test('accept by a non-invitee is rejected', async () => {
     const inv = (await deriveInvitations(db))[0]!;
     // Dave tries to accept Sarah's invitation.
     const dave = await ctxOn(db, daveId, 'AjdvjuECVZEgZoFajaIEkg');
-    await assert.rejects(
-        postInvitationAcceptance(dave, inv.id));
+    await assertRejects(
+        () => postInvitationAcceptance(dave, inv.id));
 });
 
-test('decline records declined and writes no membership',
+Deno.test('decline records declined and writes no membership',
 async () => {
     const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -461,14 +467,14 @@ async () => {
     const dave = await ctxOn(db, daveId, 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationDecline(dave, inv.id);
     const views = await getInvitations(dave);
-    assert.equal(
+    assertStrictEquals(
         views.find(v => v.id === inv.id)?.state, 'declined');
     const memberships = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === daveId);
-    assert.equal(memberships.length, 0);
+    assertStrictEquals(memberships.length, 0);
 });
 
-test('revoke records revoked (admin only)', async () => {
+Deno.test('revoke records revoked (admin only)', async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -479,11 +485,11 @@ test('revoke records revoked (admin only)', async () => {
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
     const views = await getInvitations(toccYYkLEABmlbpHJalgtQ);
-    assert.equal(
+    assertStrictEquals(
         views.find(v => v.id === inv.id)?.state, 'revoked');
 });
 
-test('a non-admin cannot revoke', async () => {
+Deno.test('a non-admin cannot revoke', async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -492,11 +498,13 @@ test('a non-admin cannot revoke', async () => {
     const inv = (await deriveInvitations(db))[0]!;
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
-    await assert.rejects(
-        postInvitationRevocation(toccYYkLEABmlbpHJalgtQ, inv.id));
+    await assertRejects(
+        () => postInvitationRevocation(
+            toccYYkLEABmlbpHJalgtQ, inv.id,
+        ));
 });
 
-test('accept after revoke is rejected, no membership', async () => {
+Deno.test('accept after revoke is rejected, no membership', async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -506,15 +514,17 @@ test('accept after revoke is rejected, no membership', async () => {
     await postInvitationRevocation(tony, inv.id);
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
-    await assert.rejects(
-        postInvitationAcceptance(toccYYkLEABmlbpHJalgtQ, inv.id));
+    await assertRejects(
+        () => postInvitationAcceptance(
+            toccYYkLEABmlbpHJalgtQ, inv.id,
+        ));
     const wayne = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === 'toccYYkLEABmlbpHJalgtQ'
             && m.organization_id === 'BBjWJsjYIDkTRKIIPrzWRw');
-    assert.equal(wayne.length, 0);
+    assertStrictEquals(wayne.length, 0);
 });
 
-test('accept after decline is rejected', async () => {
+Deno.test('accept after decline is rejected', async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -524,11 +534,13 @@ test('accept after decline is rejected', async () => {
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationDecline(toccYYkLEABmlbpHJalgtQ, inv.id);
-    await assert.rejects(
-        postInvitationAcceptance(toccYYkLEABmlbpHJalgtQ, inv.id));
+    await assertRejects(
+        () => postInvitationAcceptance(
+            toccYYkLEABmlbpHJalgtQ, inv.id,
+        ));
 });
 
-test('decline after accept is rejected', async () => {
+Deno.test('decline after accept is rejected', async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -538,18 +550,20 @@ test('decline after accept is rejected', async () => {
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationAcceptance(toccYYkLEABmlbpHJalgtQ, inv.id);
-    await assert.rejects(
-        postInvitationDecline(toccYYkLEABmlbpHJalgtQ, inv.id));
+    await assertRejects(
+        () => postInvitationDecline(
+            toccYYkLEABmlbpHJalgtQ, inv.id,
+        ));
 });
 
-test('granting the same email twice is idempotent', async () => {
+Deno.test('granting the same email twice is idempotent', async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'sarah@x.com');
     await postInvitationGrant(tony, 'sarah@x.com');
-    assert.equal((await deriveInvitations(db)).length, 1);
+    assertStrictEquals((await deriveInvitations(db)).length, 1);
 });
 
 // The dedup treats only a PENDING invitation as outstanding — a
@@ -557,7 +571,7 @@ test('granting the same email twice is idempotent', async () => {
 // above (still pending): here the invitee has answered, so the
 // re-grant must mint a FRESH invitation, never echo the declined
 // row's id.
-test('re-inviting a declined invitee mints a fresh invitation',
+Deno.test('re-inviting a declined invitee mints a fresh invitation',
 async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -569,21 +583,21 @@ async () => {
         , 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationDecline(toccYYkLEABmlbpHJalgtQ, first.id);
 
-    assert.equal(
+    assertStrictEquals(
         await postInvitationGrant(tony, 'sarah@x.com'), 'sent');
 
     const invs = await deriveInvitations(db);
-    assert.equal(invs.length, 2);
+    assertStrictEquals(invs.length, 2);
     const fresh = invs.find(inv => inv.id !== first.id);
-    assert.ok(fresh !== undefined);
+    assert(fresh !== undefined);
 
     const mine = await getInvitations(toccYYkLEABmlbpHJalgtQ);
     const stateById = new Map(mine.map(v => [v.id, v.state]));
-    assert.equal(stateById.get(first.id), 'declined');
-    assert.equal(stateById.get(fresh!.id), 'pending');
+    assertStrictEquals(stateById.get(first.id), 'declined');
+    assertStrictEquals(stateById.get(fresh!.id), 'pending');
 });
 
-test('sent invitations list the active org pending only',
+Deno.test('sent invitations list the active org pending only',
 async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -591,15 +605,15 @@ async () => {
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tonyWayne, 'sarah@x.com');
     const sent = await getSentInvitations(tonyWayne);
-    assert.equal(sent.length, 1);
-    assert.equal(sent[0]!.inviteeEmail, 'sarah@x.com');
+    assertStrictEquals(sent.length, 1);
+    assertStrictEquals(sent[0]!.inviteeEmail, 'sarah@x.com');
     // Switched to Stark, the Wayne invitation is out of scope.
     const tonyStark = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'AjdvjuECVZEgZoFajaIEkg');
-    assert.equal((await getSentInvitations(tonyStark)).length, 0);
+    assertStrictEquals((await getSentInvitations(tonyStark)).length, 0);
 });
 
-test('the sent view omits the email when PII is erased',
+Deno.test('the sent view omits the email when PII is erased',
 async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -609,8 +623,8 @@ async () => {
     await eraseIdentityPii(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw', 'toccYYkLEABmlbpHJalgtQ');
     const sent = await getSentInvitations(tony);
-    assert.equal(sent.length, 1);
-    assert.ok(!('inviteeEmail' in sent[0]!));
+    assertStrictEquals(sent.length, 1);
+    assert(!('inviteeEmail' in sent[0]!));
 });
 
 // Caller-minted ids + at (T11)
@@ -621,7 +635,7 @@ async () => {
 // POST twice), where the exact id is controllable — see
 // tests/api-invitations-fence.test.ts.
 
-test('grant: entity lands and event author is server-derived',
+Deno.test('grant: entity lands and event author is server-derived',
 async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -629,9 +643,9 @@ async () => {
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'sarah@x.com');
     const invs = await deriveInvitations(db);
-    assert.equal(invs.length, 1);
+    assertStrictEquals(invs.length, 1);
     // Entity landed with a non-empty id.
-    assert.ok(invs[0]!.id !== '');
+    assert(invs[0]!.id !== '');
     // State event exists and carries an at.
     const life = await invitationLifecycleStatesFor(
         db, invs[0]!.id,
@@ -642,11 +656,11 @@ async () => {
             : a.id < b.id ? -1
             : a.id > b.id ? 1 : 0,
     ).at(-1)!;
-    assert.ok(ev.at !== '');
-    assert.equal(ev.member_id, 'XXZruirZyAOoRpNxaDnpSA');
+    assert(ev.at !== '');
+    assertStrictEquals(ev.member_id, 'XXZruirZyAOoRpNxaDnpSA');
 });
 
-test('accept: event author is server-derived, membership lands',
+Deno.test('accept: event author is server-derived, membership lands',
 async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -667,18 +681,18 @@ async () => {
             : a.id < b.id ? -1
             : a.id > b.id ? 1 : 0,
     ).at(-1)!;
-    assert.ok(ev.id !== '');
-    assert.ok(ev.at !== '');
-    assert.equal(ev.member_id, 'toccYYkLEABmlbpHJalgtQ');
+    assert(ev.id !== '');
+    assert(ev.at !== '');
+    assertStrictEquals(ev.member_id, 'toccYYkLEABmlbpHJalgtQ');
     // Membership landed at a non-empty id.
     const wayne = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === 'toccYYkLEABmlbpHJalgtQ'
             && m.organization_id === 'BBjWJsjYIDkTRKIIPrzWRw');
-    assert.equal(wayne.length, 1);
-    assert.ok(wayne[0]!.id !== '');
+    assertStrictEquals(wayne.length, 1);
+    assert(wayne[0]!.id !== '');
 });
 
-test('decline: event author is server-derived', async () => {
+Deno.test('decline: event author is server-derived', async () => {
     const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -696,12 +710,12 @@ test('decline: event author is server-derived', async () => {
             : a.id < b.id ? -1
             : a.id > b.id ? 1 : 0,
     ).at(-1)!;
-    assert.ok(ev.id !== '');
-    assert.ok(ev.at !== '');
-    assert.equal(ev.member_id, daveId);
+    assert(ev.id !== '');
+    assert(ev.at !== '');
+    assertStrictEquals(ev.member_id, daveId);
 });
 
-test('revoke: event author is server-derived', async () => {
+Deno.test('revoke: event author is server-derived', async () => {
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -718,27 +732,27 @@ test('revoke: event author is server-derived', async () => {
             : a.id < b.id ? -1
             : a.id > b.id ? 1 : 0,
     ).at(-1)!;
-    assert.ok(ev.id !== '');
-    assert.ok(ev.at !== '');
-    assert.equal(ev.member_id, 'XXZruirZyAOoRpNxaDnpSA');
+    assert(ev.id !== '');
+    assert(ev.at !== '');
+    assertStrictEquals(ev.member_id, 'XXZruirZyAOoRpNxaDnpSA');
 });
 
 // A notify fires only after a write commits — an idempotent
 // no-op writes nothing, so it must ring nothing.
 
-test('a repeated grant (existing pending) posts no notification',
+Deno.test('a repeated grant (existing pending) posts no notification',
 async () => {
     const posted: NotificationEvent[] = [];
     const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'sarah@x.com');
-    assert.equal(posted.length, 1);
+    assertStrictEquals(posted.length, 1);
     await postInvitationGrant(tony, 'sarah@x.com');
-    assert.equal(posted.length, 1);
+    assertStrictEquals(posted.length, 1);
 });
 
-test('a repeated accept posts no notification', async () => {
+Deno.test('a repeated accept posts no notification', async () => {
     const posted: NotificationEvent[] = [];
     const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -748,12 +762,12 @@ test('a repeated accept posts no notification', async () => {
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationAcceptance(toccYYkLEABmlbpHJalgtQ, inv.id);
-    assert.equal(posted.length, 2);   // grant, accept
+    assertStrictEquals(posted.length, 2);   // grant, accept
     await postInvitationAcceptance(toccYYkLEABmlbpHJalgtQ, inv.id);
-    assert.equal(posted.length, 2);
+    assertStrictEquals(posted.length, 2);
 });
 
-test('a repeated decline posts no notification', async () => {
+Deno.test('a repeated decline posts no notification', async () => {
     const posted: NotificationEvent[] = [];
     const { db, daveId } = await seedWithNotify(
         e => posted.push(e),
@@ -764,12 +778,12 @@ test('a repeated decline posts no notification', async () => {
     const inv = (await deriveInvitations(db))[0]!;
     const dave = await ctxOn(db, daveId, 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationDecline(dave, inv.id);
-    assert.equal(posted.length, 2);   // grant, decline
+    assertStrictEquals(posted.length, 2);   // grant, decline
     await postInvitationDecline(dave, inv.id);
-    assert.equal(posted.length, 2);
+    assertStrictEquals(posted.length, 2);
 });
 
-test('a repeated revoke posts no notification', async () => {
+Deno.test('a repeated revoke posts no notification', async () => {
     const posted: NotificationEvent[] = [];
     const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
@@ -777,14 +791,14 @@ test('a repeated revoke posts no notification', async () => {
     await postInvitationGrant(tony, 'sarah@x.com');
     const inv = (await deriveInvitations(db))[0]!;
     await postInvitationRevocation(tony, inv.id);
-    assert.equal(posted.length, 2);   // grant, revoke
-    await assert.rejects(
+    assertStrictEquals(posted.length, 2);   // grant, revoke
+    await assertRejects(
         () => postInvitationRevocation(tony, inv.id),
     );
-    assert.equal(posted.length, 2);
+    assertStrictEquals(posted.length, 2);
 });
 
-test('cookie-session accept remints via refresh POST',
+Deno.test('cookie-session accept remints via refresh POST',
 async () => {
     setCookieSession(true);
     try {
@@ -817,18 +831,18 @@ async () => {
             },
         };
         await postInvitationAcceptance(recording, inv.id);
-        assert.equal(refreshBodies.length, 1);
-        assert.deepEqual(refreshBodies[0], {
+        assertStrictEquals(refreshBodies.length, 1);
+        assertEquals(refreshBodies[0], {
             grant_type: 'refresh',
         });
-        assert.equal(getSessionToken(), 'reminted-access');
+        assertStrictEquals(getSessionToken(), 'reminted-access');
     } finally {
         setCookieSession(false);
         deleteSessionToken();
     }
 });
 
-test('a failed re-mint after accept surfaces, seat kept',
+Deno.test('a failed re-mint after accept surfaces, seat kept',
 async () => {
     setCookieSession(true);
     try {
@@ -856,23 +870,22 @@ async () => {
                 return sarah.POST(resource, body);
             },
         };
-        await assert.rejects(
-            postInvitationAcceptance(recording, inv.id),
-            (err: unknown) =>
-                err instanceof SessionRemintFailedError
-                && err.cause === refused,
-        );
+        const err = await assertRejects(
+            () => postInvitationAcceptance(recording, inv.id),
+        ) as Error;
+        assertInstanceOf(err, SessionRemintFailedError);
+        assertStrictEquals(err.cause, refused);
         const organizations =
             (await deriveMembershipsAll(db))
                 .filter(m =>
                     m.identity_id === 'toccYYkLEABmlbpHJalgtQ')
                 .map(m => m.organization_id)
                 .sort();
-        assert.deepEqual(organizations, [
+        assertEquals(organizations, [
             'AjdvjuECVZEgZoFajaIEkg',
             'BBjWJsjYIDkTRKIIPrzWRw',
         ]);
-        assert.equal(getSessionToken(), 'pre-accept');
+        assertStrictEquals(getSessionToken(), 'pre-accept');
     } finally {
         setCookieSession(false);
         deleteSessionToken();

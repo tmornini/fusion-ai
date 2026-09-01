@@ -26,8 +26,14 @@ globalThis.document = {
     documentElement: { getAttribute: () => 'dashboard' },
 } as unknown as Document;
 
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import {
+    assert,
+    assertEquals,
+    assertMatch,
+    assertNotStrictEquals,
+    assertRejects,
+    assertStrictEquals,
+} from '@std/assert';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -218,7 +224,7 @@ async function expiredOrganizationToken(
     });
 }
 
-test('a recover context silently refreshes a dead access token',
+Deno.test('a recover context silently refreshes a dead access token',
 async () => {
     localStorage.clear();
     const db = await freshDb();
@@ -235,10 +241,10 @@ async () => {
     // the 401 triggers refresh + org re-scope + one retry
     const members = await ctx.GET('organizations/AjdvjuECVZEgZoFajaIEkg/'
         + 'members/');
-    assert.ok(Array.isArray(members));
+    assert(Array.isArray(members));
 });
 
-test('concurrent 401s share exactly one refresh grant',
+Deno.test('concurrent 401s share exactly one refresh grant',
 async () => {
     localStorage.clear();
     const db = await freshDb();
@@ -257,17 +263,17 @@ async () => {
         ctx.GET('organizations/AjdvjuECVZEgZoFajaIEkg/members/'),
         ctx.GET('identities/XXZruirZyAOoRpNxaDnpSA/organizations/'),
     ]);
-    assert.ok(Array.isArray(members));
-    assert.ok(Array.isArray(organizations));
+    assert(Array.isArray(members));
+    assert(Array.isArray(organizations));
     // exactly ONE rotation event: the refresh jti was spent once
     const rotations = (await deriveIdentityTokens(db))
         .filter(row => row.action === 'rotated');
-    assert.equal(rotations.length, 1);
+    assertStrictEquals(rotations.length, 1);
     // the session survived (nothing was branded reuse)
-    assert.notEqual(getSessionCredentials(), null);
+    assertNotStrictEquals(getSessionCredentials(), null);
 });
 
-test('a live credential with an anonymous-seed holder re-scopes'
+Deno.test('a live credential with an anonymous-seed holder re-scopes'
 + ' rather than scrubbing the session',
 async () => {
     localStorage.clear();
@@ -288,13 +294,13 @@ async () => {
     // recovery re-installs the live token, re-scopes, and retries
     const members = await ctx.GET('organizations/AjdvjuECVZEgZoFajaIEkg/'
         + 'members/');
-    assert.ok(Array.isArray(members));
+    assert(Array.isArray(members));
     // the live session is preserved (not scrubbed) and now scoped
-    assert.notEqual(getSessionCredentials(), null);
-    assert.notEqual(getSessionToken(), seed);
+    assertNotStrictEquals(getSessionCredentials(), null);
+    assertNotStrictEquals(getSessionToken(), seed);
 });
 
-test('recovery with both tokens dead scrubs and bounces',
+Deno.test('recovery with both tokens dead scrubs and bounces',
 async () => {
     localStorage.clear();
     window.location.href = '';
@@ -308,19 +314,19 @@ async () => {
     const ctx = createRecoveringRequestContext(
         db, dead);
     // the 401 is unrecoverable: the original error propagates
-    await assert.rejects(
+    await assertRejects(
         () => ctx.GET('organizations/AjdvjuECVZEgZoFajaIEkg/members/')
             , UnauthorizedError);
     // the dead credential was scrubbed...
-    assert.equal(getSessionCredentials(), null);
+    assertStrictEquals(getSessionCredentials(), null);
     // ...and the tab was redirected to the login page
-    assert.match(
+    assertMatch(
         window.location.href, /auth.*return=dashboard/);
 });
 
 // Corrupt credential is unrecoverable: scrub + bounce, and
 // the catch must leave a warn (empty catch destroys evidence).
-test('recovery with a corrupt credential scrubs, bounces,'
+Deno.test('recovery with a corrupt credential scrubs, bounces,'
 + ' and warns',
 async () => {
     localStorage.clear();
@@ -335,24 +341,24 @@ async () => {
         async () => {
             const ctx = createRecoveringRequestContext(
                 db, dead);
-            await assert.rejects(
+            await assertRejects(
                 () => ctx.GET('organizations/AjdvjuECVZEgZoFajaIEkg/members/'
                     + ''), UnauthorizedError);
         },
     );
-    assert.equal(
+    assertStrictEquals(
         localStorage.getItem(STORAGE_KEY_AUTHORIZATION),
         null);
-    assert.match(
+    assertMatch(
         window.location.href, /auth.*return=dashboard/);
-    assert.ok(
+    assert(
         warns.some(args =>
             args.includes('corrupt session credential')),
         'corrupt credential must log.warn, not silent catch',
     );
 });
 
-test('a recovering context reads through the vessel token,'
+Deno.test('a recovering context reads through the vessel token,'
 + ' not a concurrently-moved global', async () => {
     localStorage.clear();
     const db = await freshDb();
@@ -384,10 +390,10 @@ test('a recovering context reads through the vessel token,'
         'organizations/' + ORGANIZATION_A + '/ideas/',
     );
     // the read ran in the vessel's org A, not the global's B
-    assert.deepEqual(rows.map(r => r.id), ['UQTJZvCoKlFjEoDlDUwekw']);
+    assertEquals(rows.map(r => r.id), ['UQTJZvCoKlFjEoDlDUwekw']);
 });
 
-test('recovery re-scopes to the vessel org claim, not the'
+Deno.test('recovery re-scopes to the vessel org claim, not the'
 + ' cross-tab preference', async () => {
     localStorage.clear();
     const db = await freshDb();
@@ -416,11 +422,11 @@ test('recovery re-scopes to the vessel org claim, not the'
         principalFromToken(getSessionToken()).organization;
     // one vessel truth: the recovered session matches the
     // identity the request carried, and that is org A
-    assert.equal(scoped, ctx.identity.organization);
-    assert.equal(scoped, ORGANIZATION_A);
+    assertStrictEquals(scoped, ctx.identity.organization);
+    assertStrictEquals(scoped, ORGANIZATION_A);
 });
 
-test('recovery leaves the cross-tab active-org preference'
+Deno.test('recovery leaves the cross-tab active-org preference'
 + ' untouched', async () => {
     localStorage.clear();
     const db = await freshDb();
@@ -439,10 +445,10 @@ test('recovery leaves the cross-tab active-org preference'
     const ctx = createRecoveringRequestContext(db, deadA);
     await ctx.GET('organizations/' + ORGANIZATION_A + '/ideas/');
     // the background recovery scopes ITS session to vessel org A...
-    assert.equal(
+    assertStrictEquals(
         principalFromToken(getSessionToken()).organization, ORGANIZATION_A);
     // ...but never clobbers the foreground tab's chosen org
-    assert.equal(
+    assertStrictEquals(
         localStorage.getItem(ACTIVE_ORGANIZATION_ID), ORGANIZATION_B,
     );
 });
