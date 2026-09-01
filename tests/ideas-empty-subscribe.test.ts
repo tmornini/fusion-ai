@@ -160,6 +160,21 @@ Deno.test(
                     at: SUBMITTED_AT,
                 },
             );
+            // The two PUTs alone must not wake the page:
+            // drain as generously as the post-bell assert
+            // does, then prove the list is still empty.
+            for (let i = 0; i < 25; i++) {
+                await new Promise(
+                    r => setImmediate(r),
+                );
+            }
+            assert(
+                !listStub.innerHTML.includes(
+                    'Cross-tab idea',
+                ),
+                'the raw PUTs alone must not wake'
+                + ' the empty page',
+            );
             const poster = new BroadcastChannel(
                 CHANNEL_NAME,
             );

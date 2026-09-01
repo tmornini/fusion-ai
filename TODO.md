@@ -355,10 +355,6 @@ Off the critical path; each with its oracle.
   `web-app/app/presenters/project-score-history.ts` is four
   identical 11-line copies (:139, :161, :182, :201) — a
   `#definitionAt(objectiveId, at)` helper collapses each
-- `tests/ideas-empty-subscribe.test.ts` enforces its
-  load-bearing property by comment, not assertion: assert
-  the two raw PUTs alone do not wake the page before
-  posting the bell
 - `tests/presenter-project-score-history.test.ts:224,:259`
   assert substrings the row-selection predicate already
   implies, leaving the detail cell unpinned — assert
