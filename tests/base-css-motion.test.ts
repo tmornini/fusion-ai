@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { assert } from '@std/assert';
 import { readFileSync } from 'node:fs';
 
 const src = readFileSync(
@@ -7,27 +6,27 @@ const src = readFileSync(
     'utf8',
 );
 
-test(
+Deno.test(
     'reduced motion names page-content view '
     + 'transitions so fade-in-up cannot win',
     () => {
         const media = src.indexOf(
             '@media (prefers-reduced-motion: reduce) {',
         );
-        assert.ok(media >= 0);
+        assert(media >= 0);
         const close = src.indexOf('\n}', media);
-        assert.ok(close > media);
+        assert(close > media);
         const block = src.slice(media, close);
-        assert.ok(
+        assert(
             block.includes(
                 '::view-transition-old(page-content)',
             ),
         );
-        assert.ok(
+        assert(
             block.includes(
                 '::view-transition-new(page-content)',
             ),
         );
-        assert.ok(block.includes('animation: none;'));
+        assert(block.includes('animation: none;'));
     },
 );

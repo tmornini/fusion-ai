@@ -1,5 +1,9 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import {
+    assert,
+    assertMatch,
+    assertNotMatch,
+    assertStrictEquals,
+} from '@std/assert';
 import {
     existsSync,
     mkdtempSync,
@@ -51,81 +55,81 @@ function dockerCalled(stamp: string): boolean {
         && readFileSync(stamp, 'utf8').length > 0;
 }
 
-test('crank with no args exits 1 with usage', () => {
+Deno.test('crank with no args exits 1 with usage', () => {
     const result = runCrank([]);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /Usage: \.\/crank/);
-    assert.equal(dockerCalled(result.stamp), false);
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /Usage: \.\/crank/);
+    assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-test('crank missing port exits 1 with usage', () => {
+Deno.test('crank missing port exits 1 with usage', () => {
     const result = runCrank(['--mock-data']);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /Usage: \.\/crank/);
-    assert.equal(dockerCalled(result.stamp), false);
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /Usage: \.\/crank/);
+    assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-test('crank missing mode exits 1 with usage', () => {
+Deno.test('crank missing mode exits 1 with usage', () => {
     const result = runCrank(['8080']);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /Usage: \.\/crank/);
-    assert.equal(dockerCalled(result.stamp), false);
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /Usage: \.\/crank/);
+    assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-test('crank two modes exits 1 with usage', () => {
+Deno.test('crank two modes exits 1 with usage', () => {
     const result = runCrank([
         '--mock-data',
         '--bootstrap',
         '8080',
     ]);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /Usage: \.\/crank/);
-    assert.match(result.stderr, /exclusive/);
-    assert.equal(dockerCalled(result.stamp), false);
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /Usage: \.\/crank/);
+    assertMatch(result.stderr, /exclusive/);
+    assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-test('crank unknown flag exits 1 with usage', () => {
+Deno.test('crank unknown flag exits 1 with usage', () => {
     const result = runCrank(['--bogus', '8080']);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /Usage: \.\/crank/);
-    assert.equal(dockerCalled(result.stamp), false);
+    assertStrictEquals(result.status, 1);
+    assertMatch(result.stderr, /Usage: \.\/crank/);
+    assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-test('crank --help exits 0', () => {
+Deno.test('crank --help exits 0', () => {
     const result = runCrank(['--help']);
-    assert.equal(result.status, 0);
-    assert.match(result.stdout, /Usage: \.\/crank/);
-    assert.equal(dockerCalled(result.stamp), false);
+    assertStrictEquals(result.status, 0);
+    assertMatch(result.stdout, /Usage: \.\/crank/);
+    assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-test('crank source owns the local stack', () => {
+Deno.test('crank source owns the local stack', () => {
     const src = readFileSync('crank', 'utf8');
-    assert.match(src, /\.\/validate/);
-    assert.match(
+    assertMatch(src, /\.\/validate/);
+    assertMatch(
         src,
         /docker compose up -d --wait postgres/,
     );
-    assert.match(src, /\.\/test-postgres/);
-    assert.match(src, /\.\/build --no-zip/);
-    assert.match(
+    assertMatch(src, /\.\/test-postgres/);
+    assertMatch(src, /\.\/build --no-zip/);
+    assertMatch(
         src,
         /\.\/postgres-wipe --postgres local/,
     );
-    assert.match(
+    assertMatch(
         src,
         /\.\/postgres-seed --postgres local/,
     );
-    assert.match(src, /\.\/serve /);
-    assert.doesNotMatch(
+    assertMatch(src, /\.\/serve /);
+    assertNotMatch(
         src,
         /docker compose up -d --wait["\n]*$/,
     );
-    assert.doesNotMatch(src, /echo \$POSTGRES_URL/);
-    assert.doesNotMatch(
+    assertNotMatch(src, /echo \$POSTGRES_URL/);
+    assertNotMatch(
         src,
         /echo \$POSTGRES_PASSWORD/,
     );
-    assert.doesNotMatch(
+    assertNotMatch(
         src,
         /echo \$JWT_HMAC_SIGNING_KEY/,
     );
@@ -133,7 +137,7 @@ test('crank source owns the local stack', () => {
     const upAt = src.indexOf(
         'docker compose up -d --wait postgres',
     );
-    assert.ok(trapAt >= 0, 'trap missing');
-    assert.ok(upAt >= 0, 'compose up missing');
-    assert.ok(trapAt < upAt, 'trap after Docker');
+    assert(trapAt >= 0, 'trap missing');
+    assert(upAt >= 0, 'compose up missing');
+    assert(trapAt < upAt, 'trap after Docker');
 });

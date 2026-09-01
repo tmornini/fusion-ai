@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assert, assertStrictEquals } from '@std/assert';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -19,7 +18,7 @@ import {
 const MEMBERS_PATH = '/api/organizations/'
     + STARK_ORGANIZATION + '/members/';
 
-test('the in-process origin serves the seeded API',
+Deno.test('the in-process origin serves the seeded API',
 async () => {
     const staticRoot = mkdtempSync(join(
         process.env['TMPDIR'] ?? tmpdir(),
@@ -28,14 +27,14 @@ async () => {
     process.env['FUSION_ANGLE_STATIC_ROOT'] = staticRoot;
     const origin = await startOrigin();
     try {
-        assert.ok(
+        assert(
             passwordOf(origin.credentials, ADMIN_EMAIL)
                 .length > 0,
         );
         const anonymous = await fetch(
             origin.baseUrl + MEMBERS_PATH,
         );
-        assert.equal(anonymous.status, 401);
+        assertStrictEquals(anonymous.status, 401);
         const bearer = await fetch(
             origin.baseUrl + MEMBERS_PATH,
             { headers: {
@@ -43,11 +42,11 @@ async () => {
                     + await adminToken(),
             } },
         );
-        assert.equal(bearer.status, 200);
+        assertStrictEquals(bearer.status, 200);
         const rows = await bearer.json() as Array<{
             identity_id: string;
         }>;
-        assert.ok(rows.length > 0);
+        assert(rows.length > 0);
     } finally {
         await origin.close();
         rmSync(staticRoot, { recursive: true, force: true });

@@ -1,6 +1,5 @@
+import { assertEquals, assertStrictEquals } from '@std/assert';
 import './hmac-test-key.ts';
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 
 // Integration: initCommandPalette() performs no
@@ -15,7 +14,7 @@ import { memoryDbAdapter } from '../api/db-memory.ts';
 // the
 // call completes without throwing — guarding
 // against a regression to eager loading.
-test(
+Deno.test(
     'initCommandPalette does not throw'
     + ' when schema is absent',
     async () => {
@@ -34,7 +33,7 @@ test(
                 await initAdapter(
                     () => memoryDbAdapter(),
                 );
-            assert.equal(
+            assertStrictEquals(
                 hasSchema, false,
                 'precondition: no schema',
             );
@@ -68,7 +67,7 @@ test(
                     onRejection,
                 );
             }
-            assert.deepEqual(
+            assertEquals(
                 unhandled, [],
                 'no MissingTableError leaked',
             );

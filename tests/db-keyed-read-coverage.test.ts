@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assert, assertEquals, assertStrictEquals } from '@std/assert';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { TABLE_INDEXES } from '../api/db.ts';
@@ -22,16 +21,16 @@ const KEYED_READS: ReadonlyArray<{
     { table: 'message_pairs', column: 'uri_collection' },
 ];
 
-test('no caller getAllWhere uri_id', async () => {
-    assert.equal(
+Deno.test('no caller getAllWhere uri_id', async () => {
+    assertStrictEquals(
         KEYED_READS.some((r) => r.column === 'uri_id'),
         false,
     );
 });
 
-test('message_pairs carry no unique follows index', () => {
+Deno.test('message_pairs carry no unique follows index', () => {
     const cols = TABLE_INDEXES['message_pairs'] ?? [];
-    assert.equal(
+    assertStrictEquals(
         cols.some(
             (spec) =>
                 typeof spec !== 'string'
@@ -41,10 +40,10 @@ test('message_pairs carry no unique follows index', () => {
     );
 });
 
-test('every keyed read has a matching secondary index', () => {
+Deno.test('every keyed read has a matching secondary index', () => {
     for (const { table, column } of KEYED_READS) {
         const cols = TABLE_INDEXES[table] ?? [];
-        assert.ok(
+        assert(
             cols.includes(column),
             `${table} is read by ${column} via getWhere, but `
             + 'TABLE_INDEXES has no such index '
@@ -72,7 +71,7 @@ function apiTypeScriptFiles(dir: string): string[] {
     return out;
 }
 
-test('KEYED_READS lists every getAllWhere literal',
+Deno.test('KEYED_READS lists every getAllWhere literal',
 () => {
     const call = /getAllWhere\(\s*'([^']+)'/g;
     const found = new Set<string>();
@@ -88,7 +87,7 @@ test('KEYED_READS lists every getAllWhere literal',
     const listed = new Set(
         KEYED_READS.map((row) => row.column),
     );
-    assert.deepEqual(
+    assertEquals(
         [...found].sort(),
         [...listed].sort(),
     );

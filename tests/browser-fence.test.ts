@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assertMatch, assertNotStrictEquals } from '@std/assert';
 import { spawnSync } from 'node:child_process';
 import {
     mkdtempSync, writeFileSync, rmSync,
@@ -7,7 +6,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-test('browser project rejects process (TS2591)', () => {
+Deno.test('browser project rejects process (TS2591)', () => {
     const dir = mkdtempSync(
         join(tmpdir(), 'deno-fence-'),
     );
@@ -21,9 +20,9 @@ test('browser project rejects process (TS2591)', () => {
         );
         const out = String(result.stdout)
             + String(result.stderr);
-        assert.notEqual(result.status, 0);
-        assert.match(out, /TS2591/);
-        assert.match(out, /Cannot find name 'process'/);
+        assertNotStrictEquals(result.status, 0);
+        assertMatch(out, /TS2591/);
+        assertMatch(out, /Cannot find name 'process'/);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
