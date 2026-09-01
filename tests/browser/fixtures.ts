@@ -59,7 +59,7 @@ export type Origin = {
 
 export async function startOrigin(): Promise<Origin> {
     const staticRoot =
-        process.env['FUSION_ANGLE_STATIC_ROOT'];
+        Deno.env.get('FUSION_ANGLE_STATIC_ROOT');
     if (staticRoot === undefined || staticRoot === '') {
         throw new Error(
             'FUSION_ANGLE_STATIC_ROOT is required'
@@ -353,14 +353,14 @@ export class Browser {
     }
 
     static async launch(): Promise<Browser> {
-        const attach = process.env['CHROME_DEBUG_URL'];
+        const attach = Deno.env.get('CHROME_DEBUG_URL');
         if (attach !== undefined && attach !== '') {
             return new Browser(
                 await CdpClient.connect(attach), null, null,
             );
         }
         const userDataDir = mkdtempSync(join(
-            process.env['TMPDIR'] ?? tmpdir(),
+            Deno.env.get('TMPDIR') ?? tmpdir(),
             'fusion-browser-',
         ));
         // launchChrome spawns detached and unrefs, so an
