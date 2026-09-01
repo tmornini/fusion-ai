@@ -271,12 +271,12 @@ grep -rnE "['\"]node:|\bprocess\b" web-app/app/*.ts \
 ```
 
 Twelve lines. One is the `node:crypto` import above. Two are
-`api/access-token.ts:31` and `:35`, which read the Node-compat
-`process` global through optional chaining
-(`runtime.process?.env?.[…]`) — a real reader that the
-narrower `process\.` pattern silently clears, leaving a
+`api/access-token.ts:31` and `:35`, where the Node-compat
+`process` global is typed and then read through optional
+chaining (`runtime.process?.env?.[…]`) — a real reader that
+the narrower `process\.` pattern silently clears, leaving a
 one-line false all-clear. The remaining nine are the English
-word in comments, plus one page keyword string,
+word: eight in comments, one in the page keyword string
 `'flow, process,'` at `web-app/app/page-registry.ts:177`.
 
 Dropping the quote anchor adds nine more non-specifier hits:
