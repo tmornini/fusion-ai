@@ -1,6 +1,7 @@
-// before/after stay on node:test — Task 48's hooks.
 import { assert, assertNotMatch } from '@std/assert';
-import { after, before } from 'node:test';
+import {
+    afterAll, beforeAll, describe, it,
+} from '@std/testing/bdd';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import { PostgresBackend } from
@@ -269,137 +270,139 @@ function assertIndexPlan(
     assertNotMatch(text, /Seq Scan/);
 }
 
-if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
-    Deno.test(
-        'postgres explain skipped without POSTGRES_URL',
-        { ignore: true }, // POSTGRES_URL is unset
-        () => {},
-    );
-} else {
-    const schema = schemaName();
-    const sql = connectPostgres(
-        urlWithSearchPath(POSTGRES_URL, schema),
-    );
-    const backend = new PostgresBackend(sql);
-    const ideaId = id22(IDEA_N);
-    const ideaHash = hex64(IDEA_N);
-
-    before(async () => {
-        await sql.unsafe(
-            'CREATE SCHEMA ' + quoteIdent(schema),
+describe('pg explain', () => {
+    if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
+        it(
+            'postgres explain skipped without POSTGRES_URL',
+            { ignore: true }, // POSTGRES_URL is unset
+            () => {},
         );
-        await backend.ensureTables(TABLE_NAMES);
-        await seedRows(backend);
-        await sql.query`ANALYZE message_pairs`;
-    });
+    } else {
+        const schema = schemaName();
+        const sql = connectPostgres(
+            urlWithSearchPath(POSTGRES_URL, schema),
+        );
+        const backend = new PostgresBackend(sql);
+        const ideaId = id22(IDEA_N);
+        const ideaHash = hex64(IDEA_N);
 
-    after(async () => {
-        try {
+        beforeAll(async () => {
             await sql.unsafe(
-                'DROP SCHEMA IF EXISTS '
-                + quoteIdent(schema)
-                + ' CASCADE',
+                'CREATE SCHEMA ' + quoteIdent(schema),
             );
-        } finally {
-            await sql.end();
-        }
-    });
+            await backend.ensureTables(TABLE_NAMES);
+            await seedRows(backend);
+            await sql.query`ANALYZE message_pairs`;
+        });
 
-    Deno.test('pk uses message_pairs_pkey', async () => {
-        const plans = await sql.query<
-            Record<string, unknown>
-        >`
-            EXPLAIN
-            SELECT * FROM message_pairs
-            WHERE id = ${uuidTextOfIdentifier(ideaId)}
-        `;
-        assertIndexPlan(
-            explainText(plans),
-            ['message_pairs_pkey'],
-        );
-    });
+        afterAll(async () => {
+            try {
+                await sql.unsafe(
+                    'DROP SCHEMA IF EXISTS '
+                    + quoteIdent(schema)
+                    + ' CASCADE',
+                );
+            } finally {
+                await sql.end();
+            }
+        });
 
-    Deno.test('small collection uses collection index',
-    async () => {
-        const plans = await sql.query<
-            Record<string, unknown>
-        >`
-            EXPLAIN
-            SELECT * FROM message_pairs
-            WHERE uri_collection = ${IDEA_COLLECTION}
-            ORDER BY response_at, id
-        `;
-        assertIndexPlan(
-            explainText(plans),
-            ['message_pairs_collection'],
-        );
-    });
+        it('pk uses message_pairs_pkey', async () => {
+            const plans = await sql.query<
+                Record<string, unknown>
+            >`
+                EXPLAIN
+                SELECT * FROM message_pairs
+                WHERE id = ${uuidTextOfIdentifier(ideaId)}
+            `;
+            assertIndexPlan(
+                explainText(plans),
+                ['message_pairs_pkey'],
+            );
+        });
 
-    Deno.test('request_hash uses message_pairs_replay', async () => {
-        const plans = await sql.query<
-            Record<string, unknown>
-        >`
-            EXPLAIN
-            SELECT * FROM message_pairs
-            WHERE request_hash = ${ideaHash}
-        `;
-        assertIndexPlan(
-            explainText(plans),
-            ['message_pairs_replay'],
-        );
-    });
+        it('small collection uses collection index',
+        async () => {
+            const plans = await sql.query<
+                Record<string, unknown>
+            >`
+                EXPLAIN
+                SELECT * FROM message_pairs
+                WHERE uri_collection = ${IDEA_COLLECTION}
+                ORDER BY response_at, id
+            `;
+            assertIndexPlan(
+                explainText(plans),
+                ['message_pairs_collection'],
+            );
+        });
 
-    Deno.test('address uses address index', async () => {
-        const plans = await sql.query<
-            Record<string, unknown>
-        >`
-            EXPLAIN
-            SELECT * FROM message_pairs
-            WHERE uri_collection = ${VERSION_COLLECTION}
-              AND uri_id = ${VERSION_URI_ID}
-            ORDER BY response_at, id
-        `;
-        assertIndexPlan(
-            explainText(plans),
-            ['message_pairs_address'],
-        );
-    });
+        it('request_hash uses message_pairs_replay', async () => {
+            const plans = await sql.query<
+                Record<string, unknown>
+            >`
+                EXPLAIN
+                SELECT * FROM message_pairs
+                WHERE request_hash = ${ideaHash}
+            `;
+            assertIndexPlan(
+                explainText(plans),
+                ['message_pairs_replay'],
+            );
+        });
 
-    Deno.test('body containment uses message_pairs_body',
-    async () => {
-        const plans = await sql.query<
-            Record<string, unknown>
-        >`
-            EXPLAIN
-            SELECT * FROM message_pairs
-            WHERE uri_collection = ${AUTH_COLLECTION}
-              AND message_body(response) @>
-                  ${AUTH_CONTAINMENT}::jsonb
-            ORDER BY response_at, id
-        `;
-        assertIndexPlan(
-            explainText(plans),
-            ['message_pairs_body'],
-        );
-    });
+        it('address uses address index', async () => {
+            const plans = await sql.query<
+                Record<string, unknown>
+            >`
+                EXPLAIN
+                SELECT * FROM message_pairs
+                WHERE uri_collection = ${VERSION_COLLECTION}
+                  AND uri_id = ${VERSION_URI_ID}
+                ORDER BY response_at, id
+            `;
+            assertIndexPlan(
+                explainText(plans),
+                ['message_pairs_address'],
+            );
+        });
 
-    Deno.test('latestPutDelete uses address and pkey',
-    async () => {
-        const plans = await sql.query<
-            Record<string, unknown>
-        >`
-            EXPLAIN
-            SELECT id, method
-            FROM message_pairs
-            WHERE uri_collection = ${VERSION_COLLECTION}
-              AND uri_id = ${VERSION_URI_ID}
-              AND method IN ('PUT', 'DELETE')
-            ORDER BY response_at DESC, id DESC
-            LIMIT 1
-        `;
-        const text = explainText(plans);
-        assertNotMatch(text, /requests_pkey/);
-        assertNotMatch(text, /Join/);
-        assertIndexPlan(text, ['message_pairs_address']);
-    });
-}
+        it('body containment uses message_pairs_body',
+        async () => {
+            const plans = await sql.query<
+                Record<string, unknown>
+            >`
+                EXPLAIN
+                SELECT * FROM message_pairs
+                WHERE uri_collection = ${AUTH_COLLECTION}
+                  AND message_body(response) @>
+                      ${AUTH_CONTAINMENT}::jsonb
+                ORDER BY response_at, id
+            `;
+            assertIndexPlan(
+                explainText(plans),
+                ['message_pairs_body'],
+            );
+        });
+
+        it('latestPutDelete uses address and pkey',
+        async () => {
+            const plans = await sql.query<
+                Record<string, unknown>
+            >`
+                EXPLAIN
+                SELECT id, method
+                FROM message_pairs
+                WHERE uri_collection = ${VERSION_COLLECTION}
+                  AND uri_id = ${VERSION_URI_ID}
+                  AND method IN ('PUT', 'DELETE')
+                ORDER BY response_at DESC, id DESC
+                LIMIT 1
+            `;
+            const text = explainText(plans);
+            assertNotMatch(text, /requests_pkey/);
+            assertNotMatch(text, /Join/);
+            assertIndexPlan(text, ['message_pairs_address']);
+        });
+    }
+});
