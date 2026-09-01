@@ -10,7 +10,7 @@ import {
     readFileSync,
     statSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join } from '@std/path';
 import { fileURLToPath } from 'node:url';
 import {
     sha256Hex,

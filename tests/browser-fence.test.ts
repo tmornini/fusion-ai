@@ -4,7 +4,7 @@ import {
     mkdtempSync, writeFileSync, rmSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join } from '@std/path';
 
 Deno.test('browser project rejects process (TS2591)', () => {
     const dir = mkdtempSync(

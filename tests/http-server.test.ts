@@ -9,7 +9,7 @@ import { mkdtemp, mkdir, writeFile, rm } from
 import { readFileSync, readdirSync, statSync } from
     'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join } from '@std/path';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
     HTTP_NOT_FOUND,

@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertStrictEquals } from '@std/assert';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from '@std/path';
 import { TABLE_INDEXES } from '../api/db.ts';
 
 // Every call-site keyed read in the codebase: a place that

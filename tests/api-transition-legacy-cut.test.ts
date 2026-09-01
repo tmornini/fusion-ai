@@ -6,7 +6,7 @@ import {
     readFileSync,
     statSync,
 } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative } from '@std/path';
 import { fileURLToPath } from 'node:url';
 import { handleRequest, PUT } from '../api/api.ts';
 import {

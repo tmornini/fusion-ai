@@ -6,7 +6,7 @@ import {
 } from '@std/assert';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { relative } from 'node:path';
+import { relative } from '@std/path';
 import { fileURLToPath } from 'node:url';
 
 const BUILD_SCRIPT = readFileSync('build', 'utf8');

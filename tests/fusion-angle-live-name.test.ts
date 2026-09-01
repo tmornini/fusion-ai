@@ -4,7 +4,7 @@ import {
     readFileSync,
     statSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join } from '@std/path';
 
 const SKIP_DIRS = new Set([
     '.git',

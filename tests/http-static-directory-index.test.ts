@@ -3,7 +3,7 @@ import { request } from 'node:http';
 import { mkdtemp, mkdir, writeFile, rm } from
     'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join } from '@std/path';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
     HTTP_NOT_FOUND,
