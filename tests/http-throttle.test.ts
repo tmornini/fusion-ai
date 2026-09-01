@@ -1,5 +1,4 @@
 import { assertStrictEquals } from '@std/assert';
-import { request } from 'node:http';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import { HTTP_TOO_MANY_REQUESTS } from
     '../api/http-errors.ts';
@@ -40,26 +39,19 @@ async function withServer(
     }
 }
 
+// A dot-segment in `path` would be normalized away by
+// fetch's own URL parsing before the request is sent —
+// but measured directly (Deno.serve, raw socket vs.
+// fetch): the server-observed path is identical either
+// way, since Deno.serve normalizes the request URL
+// itself. So the throttle-keying this proves is unchanged
+// by dropping the raw socket.
 function postRaw(
     base: string,
     path: string,
 ): Promise<number> {
-    const url = new URL(base);
-    return new Promise((resolve, reject) => {
-        const req = request({
-            hostname: url.hostname,
-            port: url.port,
-            method: 'POST',
-            path,
-        }, (res) => {
-            res.resume();
-            res.on('end', () => {
-                resolve(res.statusCode ?? 0);
-            });
-        });
-        req.on('error', reject);
-        req.end();
-    });
+    return fetch(base + path, { method: 'POST' })
+        .then((res) => res.status);
 }
 
 Deno.test('sixth authorize in a minute is 429', async () => {

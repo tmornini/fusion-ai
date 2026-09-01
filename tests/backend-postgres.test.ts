@@ -7,6 +7,15 @@ import {
     assertRejects,
     assertStrictEquals,
 } from '@std/assert';
+// Kept deliberately (measured, not assumed): npm:postgres
+// hands latin1OfBytea (api/backend-postgres.ts) a real
+// Buffer, whose own toString(encoding) is what the fast
+// path there checks for. A plain Uint8Array's inherited
+// toString ignores its argument, so swapping this for
+// `new Uint8Array(bytes)` would silently move this test
+// onto the fallback branch (Octets.fromBytes(...)
+// .toLatin1()) and stop covering the Buffer path — the
+// one the real driver actually returns.
 import { Buffer } from 'node:buffer';
 import {
     POSTGRES_DROP_SCHEMA,

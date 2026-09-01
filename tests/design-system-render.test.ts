@@ -1,5 +1,5 @@
 import { assertStrictEquals } from '@std/assert';
-import { createHash } from 'node:crypto';
+import { sha256Hex } from '../shared/digest.ts';
 import { buildDesignSystemPage }
     from '../web-app/design-system/index.ts';
 
@@ -7,10 +7,10 @@ import { buildDesignSystemPage }
 // de-splice: removing ${''} line-wrap splices is provably
 // output-neutral, so this fingerprint must hold until a
 // section moves out to index.html.
-Deno.test('design-system render is byte-stable', () => {
+Deno.test('design-system render is byte-stable',
+async () => {
     const rendered = buildDesignSystemPage().toString();
-    const digest = createHash('sha256')
-        .update(rendered).digest('hex');
+    const digest = await sha256Hex(rendered);
     assertStrictEquals(rendered.length, 56274);
     assertStrictEquals(
         digest,

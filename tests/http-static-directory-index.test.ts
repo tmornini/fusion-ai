@@ -1,5 +1,4 @@
 import { assertMatch, assertStrictEquals } from '@std/assert';
-import { request } from 'node:http';
 import { join } from '@std/path';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
@@ -54,45 +53,15 @@ async function withServer(
     }
 }
 
-// Node fetch overwrites Sec-Fetch-Mode to the request
-// mode (`cors`). A document navigation can only be
-// sent on the raw socket.
+// PROBE 11 (Task 30, re-verified independently): unlike
+// Node's fetch, Deno's fetch does not overwrite a
+// caller-supplied Sec-Fetch-Mode, so the document
+// navigation this proves no longer needs a raw socket.
 function getDocument(
     url: string,
 ): Promise<Response> {
-    const parsed = new URL(url);
-    return new Promise((resolve, reject) => {
-        const req = request({
-            hostname: parsed.hostname,
-            port: parsed.port,
-            path: parsed.pathname,
-            agent: false,
-            headers: {
-                'sec-fetch-mode': 'navigate',
-            },
-        }, (incoming) => {
-            const chunks: Buffer[] = [];
-            incoming.on('data', (chunk: Buffer) => {
-                chunks.push(chunk);
-            });
-            incoming.on('end', () => {
-                resolve(new Response(
-                    Buffer.concat(chunks),
-                    {
-                        status:
-                            incoming.statusCode ?? 0,
-                        headers: {
-                            'content-type':
-                                incoming.headers
-                                    ['content-type']
-                                ?? '',
-                        },
-                    },
-                ));
-            });
-        });
-        req.on('error', reject);
-        req.end();
+    return fetch(url, {
+        headers: { 'sec-fetch-mode': 'navigate' },
     });
 }
 
