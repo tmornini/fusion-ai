@@ -4,37 +4,27 @@ import {
     assertNotMatch,
     assertStrictEquals,
 } from '@std/assert';
-// state.ts (transitively imported via core.ts ->
-// presenters) reads localStorage and window /
-// document at module-eval time, which Node lacks.
-// Stub before any import, then load the page-module
-// reducer with dynamic import() so the stubs are in
-// place. Same pattern as presenter-member-detail.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import {
+    makeHumanMember, makeAIMember,
+} from './member-fixtures.ts';
+import {
+    reduceRefresh, reduceSave, humanMemberPiiPatchIfDirty,
+} from '../web-app/members/detail.ts';
+import { HumanMember } from '../api/types.ts';
+import {
+    HumanMemberDetailPresenter,
+} from '../web-app/app/presenters/human-member-detail.ts';
+
+// None of these four modules reads localStorage (checked
+// against the full product tree); window/document are
+// stubbed because HumanMemberDetailPresenter walks a real
+// DOM tree via renderShell/mutateSlot.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
 } as unknown as Window & typeof globalThis;
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
-
-
-const { makeHumanMember, makeAIMember } = await import(
-    './member-fixtures.ts'
-);
-
-const { reduceRefresh, reduceSave, humanMemberPiiPatchIfDirty } =
-    await import('../web-app/members/detail.ts');
-
-const { HumanMember } = await import('../api/types.ts');
-
-const { HumanMemberDetailPresenter } = await import(
-    '../web-app/app/presenters/human-member-detail.ts'
-);
 
 const HUMAN_DRAFT = {
     name: 'Sarah-edited Chen',

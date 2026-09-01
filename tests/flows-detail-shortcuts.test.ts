@@ -1,14 +1,14 @@
-// state.ts (transitively imported via the adapters ->
-// presenters) reads localStorage and window / document
-// at module-eval time, which Node lacks. Stub before
-// any import, then load the page-module reducer with
-// dynamic import() so the stubs are in place. Same
-// pattern as members-detail-reduce.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import { assertStrictEquals } from '@std/assert';
+import {
+    reduceDesignerShortcut,
+    isDesignerEditableTarget,
+    type DesignerShortcutInput,
+} from '../web-app/flows/detail.ts';
+
+// flows/detail.ts never reads localStorage (checked
+// against the full product tree); window/document are
+// stubbed for the HTMLInputElement/HTMLTextAreaElement/
+// HTMLSelectElement fakes below.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
@@ -43,18 +43,6 @@ const g = globalThis as Record<
 g.HTMLInputElement = FakeInput;
 g.HTMLTextAreaElement = FakeTextArea;
 g.HTMLSelectElement = FakeSelect;
-
-import { assertStrictEquals } from '@std/assert';
-import type {
-    DesignerShortcutInput,
-} from '../web-app/flows/detail.ts';
-
-const {
-    reduceDesignerShortcut,
-    isDesignerEditableTarget,
-} = await import(
-    '../web-app/flows/detail.ts'
-);
 
 function chord(
     overrides: Partial<DesignerShortcutInput>,

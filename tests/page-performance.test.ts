@@ -1,20 +1,5 @@
 import { assert, assertEquals, assertStrictEquals } from '@std/assert';
-
-// page-performance → logger → preferences reads
-// localStorage, which is absent in Node. Stub it
-// before any import that touches logger. Return
-// 'info' so recordPageReady's info line emits.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: (key: string) => (
-        key === 'fusion-angle:log-level'
-            ? 'info'
-            : null
-    ),
-    setItem: () => {},
-};
-
-const {
+import {
     MEASURE_BOOT_DB_OPEN,
     MEASURE_BOOT_AUTH_GATE,
     MEASURE_BOOT_ORGANIZATION_SCOPE,
@@ -31,9 +16,23 @@ const {
     assemblePagePerformanceFields,
     readMeasureDurationMs,
     recordPageReady,
-} = await import(
-    '../web-app/app/page-performance.ts'
-);
+} from '../web-app/app/page-performance.ts';
+import { withLocalStorage } from
+    './fixtures/local-storage.ts';
+
+// page-performance -> logger -> preferences reads
+// localStorage lazily, only inside recordPageReady's own
+// log.info call — the one test below that calls it installs
+// the fake for that call. Return 'info' so its info line
+// emits.
+const INFO_LEVEL_STORAGE: Partial<Storage> = {
+    getItem: (key: string) => (
+        key === 'fusion-angle:log-level'
+            ? 'info'
+            : null
+    ),
+    setItem: () => {},
+};
 
 /** Capture a single console method call as args. */
 function capture(
@@ -244,7 +243,7 @@ Deno.test(
 Deno.test(
     'recordPageReady emits one info log with'
     + ' page-performance context',
-    () => {
+    () => withLocalStorage(INFO_LEVEL_STORAGE, () => {
         // Seed one boot phase so phases is non-empty.
         markStart(MEASURE_BOOT_DB_OPEN);
         busyWaitMs(1);
@@ -295,5 +294,5 @@ Deno.test(
             fields.domContentLoadedMs,
             undefined,
         );
-    },
+    }),
 );

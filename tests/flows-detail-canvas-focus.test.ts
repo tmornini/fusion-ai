@@ -4,16 +4,24 @@ import {
     assertStrictEquals,
     assertThrows,
 } from '@std/assert';
-// Same module-eval stubs as flows-detail-shortcuts,
-// plus SVGElement: restoreCanvasFocus type-tests
-// candidates with `instanceof SVGElement` before
-// calling focus(). The fake class IS the stub, so its
-// instances pass the check.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-};
+import {
+    canvasFocusOf, restoreCanvasFocus,
+} from '../web-app/flows/detail.ts';
+import {
+    buildInteractionState,
+    canvasFocusInputOf,
+    withCanvasFocusRestore,
+} from '../web-app/app/flow-interactions.ts';
+import { reduceFsm } from
+    '../web-app/app/flow-fsm-reduce.ts';
+
+// None of flows/detail.ts, flow-interactions.ts, or
+// flow-fsm-reduce.ts reads localStorage (checked against
+// the full product tree). Same window/document stubs as
+// flows-detail-shortcuts, plus SVGElement:
+// restoreCanvasFocus type-tests candidates with
+// `instanceof SVGElement` before calling focus(). The
+// fake class IS the stub, so its instances pass the check.
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
@@ -90,20 +98,6 @@ class FakeWrap {
 
 // @ts-expect-error — Node global stub
 globalThis.SVGElement = FakeSvgElement;
-
-
-const { canvasFocusOf, restoreCanvasFocus } =
-    await import('../web-app/flows/detail.ts');
-const {
-    buildInteractionState,
-    canvasFocusInputOf,
-    withCanvasFocusRestore,
-} = await import(
-    '../web-app/app/flow-interactions.ts'
-);
-const { reduceFsm } = await import(
-    '../web-app/app/flow-fsm-reduce.ts'
-);
 
 type FsmState = ReturnType<
     typeof buildInteractionState

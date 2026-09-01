@@ -1,19 +1,17 @@
 import { assert, assertStrictEquals } from '@std/assert';
+import { log } from '../web-app/app/logger.ts';
+import { withLocalStorage } from
+    './fixtures/local-storage.ts';
 
-// logger.ts → preferences.ts calls
-// localStorage, which does not exist in
-// Node. Stub it before the first import so
-// getConfiguredLevel() returns 'warn'.
-// @ts-expect-error — Node global stub
-globalThis.localStorage = {
+// logger.ts -> preferences.ts calls localStorage.getItem
+// lazily, once per log.* call (getConfiguredLevel is not
+// memoized) — so each test below installs the fake for
+// its own call rather than at import time. A null getItem
+// makes getConfiguredLevel() return 'warn'.
+const NULL_STORAGE: Partial<Storage> = {
     getItem: (_key: string) => null,
     setItem: () => {},
 };
-
-// Import after the stub is in place.
-const { log } = await import(
-    '../web-app/app/logger.ts'
-);
 
 // RFC-3339 zulu with fractional seconds
 // (Date.toISOString form).
@@ -61,7 +59,7 @@ function fieldsOf(
 
 Deno.test(
     'log.error emits RFC-3339 ts and level',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const calls = capture(
             'error',
             () => log.error(
@@ -91,12 +89,12 @@ Deno.test(
             undefined,
             'unbound log has no requestId',
         );
-    },
+    }),
 );
 
 Deno.test(
     'log.error without .with has no requestId',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const calls = capture(
             'error',
             () => log.error(
@@ -118,12 +116,12 @@ Deno.test(
                 '[req:',
             ),
         );
-    },
+    }),
 );
 
 Deno.test(
     'log.with carries full requestId',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const fullId =
             'abcdefghijklmnopqrstug';
         const calls = capture(
@@ -145,12 +143,12 @@ Deno.test(
                 '[req:',
             ),
         );
-    },
+    }),
 );
 
 Deno.test(
     'log.with includes context and level fields',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const calls = capture(
             'error',
             () => log
@@ -172,12 +170,12 @@ Deno.test(
             typeof fields.ts === 'string'
             && TS_RE.test(fields.ts),
         );
-    },
+    }),
 );
 
 Deno.test(
     'log.with works without context arg',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const calls = capture(
             'error',
             () => log
@@ -194,12 +192,12 @@ Deno.test(
             fields.requestId,
             'abcdefghijklmnopqrstug',
         );
-    },
+    }),
 );
 
 Deno.test(
     'plain object data merges into fields',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const err = new Error('boom');
         const calls = capture(
             'error',
@@ -221,12 +219,12 @@ Deno.test(
         );
         assertStrictEquals(fields.context, 'core');
         assertStrictEquals(call[2], err);
-    },
+    }),
 );
 
 Deno.test(
     'reserved field keys ignore extras',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const calls = capture(
             'error',
             () => log
@@ -269,12 +267,12 @@ Deno.test(
             fields.page, 'dashboard',
             'non-reserved extras still merge',
         );
-    },
+    }),
 );
 
 Deno.test(
     'Error data is not merged into fields',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const err = new Error('boom');
         const calls = capture(
             'error',
@@ -292,13 +290,13 @@ Deno.test(
         assertStrictEquals(
             fields.message, undefined,
         );
-    },
+    }),
 );
 
 Deno.test(
     'log.with respects configured level'
     + ' (debug skipped at warn)',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         // Default level is 'warn' because
         // localStorage.getItem returns null.
         const calls = capture(
@@ -312,13 +310,13 @@ Deno.test(
             'debug should be suppressed'
             + ' at warn level',
         );
-    },
+    }),
 );
 
 Deno.test(
     'log.error respects configured level'
     + ' (debug skipped at warn)',
-    () => {
+    () => withLocalStorage(NULL_STORAGE, () => {
         const calls = capture(
             'debug',
             () => log.debug('low-priority'),
@@ -328,5 +326,5 @@ Deno.test(
             'debug should be suppressed'
             + ' at warn level',
         );
-    },
+    }),
 );
