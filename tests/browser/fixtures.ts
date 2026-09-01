@@ -3,7 +3,6 @@
 // test, compositor input, condition waits. Runs only
 // under ./test-browser (FUSION_ANGLE_STATIC_ROOT).
 
-import { after, before } from 'node:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -456,10 +455,10 @@ export class Browser {
 
 export function useBrowser(): { get(): Browser } {
     let browser: Browser | null = null;
-    before(async () => {
+    Deno.test.beforeAll(async () => {
         browser = await Browser.launch();
     });
-    after(async () => {
+    Deno.test.afterAll(async () => {
         await browser?.close();
     });
     return {
