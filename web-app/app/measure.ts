@@ -68,6 +68,7 @@ import {
 import {
     CHROME_READY_MS,
     CdpClient,
+    type KillableChild,
     chromeBinary,
     evaluateJson,
     killProcessTree,
@@ -457,7 +458,7 @@ async function main(): Promise<void> {
     );
 
     let serverProc: ChildProcess | null = null;
-    let chromeProc: ChildProcess | null = null;
+    let chromeProc: KillableChild | null = null;
     let cdp: CdpClient | null = null;
 
     try {
