@@ -1,10 +1,13 @@
 import { assertMatch, assertNotMatch, assertStrictEquals } from '@std/assert';
 import { existsSync } from '@std/fs';
 import { join } from '@std/path';
-import {
-    spawnSync,
-    type SpawnSyncReturns,
-} from 'node:child_process';
+
+type ServeResult = {
+    readonly status: number;
+    readonly stdout: string;
+    readonly stderr: string;
+    readonly stamp: string;
+};
 
 function pathWithDockerStub(stamp: string): string {
     const dir = Deno.makeTempDirSync({
@@ -17,34 +20,48 @@ function pathWithDockerStub(stamp: string): string {
         + 'exit 99\n',
         { mode: 0o755 },
     );
-    return `${dir}:${process.env['PATH'] ?? ''}`;
+    // Deno.Command's env MERGES onto the ambient
+    // environment (it does not replace it), so only the
+    // PATH override needs to be named here.
+    return `${dir}:${Deno.env.get('PATH') ?? ''}`;
 }
 
-function runServe(
+async function runServe(
     args: string[],
-    extraEnv: NodeJS.ProcessEnv = {},
-): SpawnSyncReturns<string> & { stamp: string } {
+    extraEnv: Record<string, string> = {},
+): Promise<ServeResult> {
     const stamp = join(
         Deno.makeTempDirSync({ prefix: 'fusion-stamp-' }),
         'called',
     );
-    const result = spawnSync('./serve', args, {
-        encoding: 'utf8',
-        timeout: 4000,
+    // POSTGRES_URL and JWT_HMAC_SIGNING_KEY are blanked
+    // deliberately: ./test exports the latter ambiently,
+    // and a merge (unlike Node's env-replace) would
+    // otherwise leak it through.
+    // signal only bounds the async output() — the sync
+    // outputSync() ignores it and blocks regardless.
+    const output = await new Deno.Command('./serve', {
+        args,
+        signal: AbortSignal.timeout(4000),
         env: {
             PATH: pathWithDockerStub(stamp),
-            HOME: process.env['HOME'] ?? '',
-            TMPDIR: process.env['TMPDIR'] ?? '/tmp',
             POSTGRES_URL: '',
             JWT_HMAC_SIGNING_KEY: '',
             ...extraEnv,
         },
-    });
-    return Object.assign(result, { stamp });
+    }).output();
+    const decoder = new TextDecoder();
+    return {
+        status: output.code,
+        stdout: decoder.decode(output.stdout),
+        stderr: decoder.decode(output.stderr),
+        stamp,
+    };
 }
 
-Deno.test('serve with no args exits 1 with usage', () => {
-    const result = runServe([]);
+Deno.test('serve with no args exits 1 with usage',
+async () => {
+    const result = await runServe([]);
     assertStrictEquals(result.status, 1);
     assertMatch(result.stderr, /Usage: \.\/serve/);
     assertStrictEquals(
@@ -55,33 +72,35 @@ Deno.test('serve with no args exits 1 with usage', () => {
     );
 });
 
-Deno.test('serve missing port exits 1 with usage', () => {
-    const result = runServe(['bundle/']);
+Deno.test('serve missing port exits 1 with usage',
+async () => {
+    const result = await runServe(['bundle/']);
     assertStrictEquals(result.status, 1);
     assertMatch(result.stderr, /Usage: \.\/serve/);
 });
 
 Deno.test('serve dir without trailing slash exits 1',
-() => {
-    const result = runServe(['bundle', '8080']);
+async () => {
+    const result = await runServe(['bundle', '8080']);
     assertStrictEquals(result.status, 1);
     assertMatch(result.stderr, /Usage: \.\/serve/);
 });
 
-Deno.test('serve --help exits 0', () => {
-    const result = runServe(['--help']);
+Deno.test('serve --help exits 0', async () => {
+    const result = await runServe(['--help']);
     assertStrictEquals(result.status, 0);
     assertMatch(result.stdout, /Usage: \.\/serve/);
 });
 
-Deno.test('serve missing POSTGRES_URL exits 1', () => {
-    const result = runServe(['bundle/', '8080']);
+Deno.test('serve missing POSTGRES_URL exits 1',
+async () => {
+    const result = await runServe(['bundle/', '8080']);
     assertStrictEquals(result.status, 1);
     assertMatch(result.stderr, /POSTGRES_URL/);
 });
 
-Deno.test('serve missing JWT exits 1', () => {
-    const result = runServe(['bundle/', '8080'], {
+Deno.test('serve missing JWT exits 1', async () => {
+    const result = await runServe(['bundle/', '8080'], {
         POSTGRES_URL: 'postgres://fusion@127.0.0.1/x',
     });
     assertStrictEquals(result.status, 1);

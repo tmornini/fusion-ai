@@ -4,7 +4,6 @@ import {
     assertNotMatch,
     assertStrictEquals,
 } from '@std/assert';
-import { spawnSync } from 'node:child_process';
 import { fromFileUrl, relative } from '@std/path';
 
 const BUILD_SCRIPT = Deno.readTextFileSync('build');
@@ -90,15 +89,22 @@ Deno.test('client-graph pin matches mint and deleted names',
 Deno.test(
     'client graph omits token mint and signing key',
     () => {
-        const info = spawnSync('deno', [
-            'info', '--frozen', '--json',
-            'web-app/app/server-core.ts',
-        ], {
-            encoding: 'utf8',
-            env: process.env,
-        });
-        assertStrictEquals(info.status, 0, info.stderr);
-        const graph = JSON.parse(info.stdout) as {
+        // No env override: Deno.Command already inherits
+        // the full ambient environment when env is omitted,
+        // same as Node's own spawnSync default.
+        const info = new Deno.Command('deno', {
+            args: [
+                'info', '--frozen', '--json',
+                'web-app/app/server-core.ts',
+            ],
+        }).outputSync();
+        const decoder = new TextDecoder();
+        assertStrictEquals(
+            info.code, 0, decoder.decode(info.stderr),
+        );
+        const graph = JSON.parse(
+            decoder.decode(info.stdout),
+        ) as {
             roots: string[];
             modules: {
                 specifier: string;
@@ -127,7 +133,7 @@ Deno.test(
         for (const specifier of seen) {
             if (!specifier.startsWith('file://')) continue;
             const path = relative(
-                process.cwd(),
+                Deno.cwd(),
                 fromFileUrl(specifier),
             );
             hits.push(...clientGraphHits(

@@ -6,10 +6,13 @@ import {
 } from '@std/assert';
 import { existsSync } from '@std/fs';
 import { join } from '@std/path';
-import {
-    spawnSync,
-    type SpawnSyncReturns,
-} from 'node:child_process';
+
+type CrankResult = {
+    readonly status: number;
+    readonly stdout: string;
+    readonly stderr: string;
+    readonly stamp: string;
+};
 
 function pathWithDockerStub(stamp: string): string {
     const dir = Deno.makeTempDirSync({
@@ -22,26 +25,33 @@ function pathWithDockerStub(stamp: string): string {
         + 'exit 99\n',
         { mode: 0o755 },
     );
-    return `${dir}:${process.env['PATH'] ?? ''}`;
+    // Deno.Command's env MERGES onto the ambient
+    // environment (it does not replace it), so only the
+    // PATH override needs to be named here.
+    return `${dir}:${Deno.env.get('PATH') ?? ''}`;
 }
 
-function runCrank(
+async function runCrank(
     args: string[],
-): SpawnSyncReturns<string> & { stamp: string } {
+): Promise<CrankResult> {
     const stamp = join(
         Deno.makeTempDirSync({ prefix: 'fusion-stamp-' }),
         'called',
     );
-    const result = spawnSync('./crank', args, {
-        encoding: 'utf8',
-        timeout: 4000,
-        env: {
-            PATH: pathWithDockerStub(stamp),
-            HOME: process.env['HOME'] ?? '',
-            TMPDIR: process.env['TMPDIR'] ?? '/tmp',
-        },
-    });
-    return Object.assign(result, { stamp });
+    // signal only bounds the async output() — the sync
+    // outputSync() ignores it and blocks regardless.
+    const output = await new Deno.Command('./crank', {
+        args,
+        signal: AbortSignal.timeout(4000),
+        env: { PATH: pathWithDockerStub(stamp) },
+    }).output();
+    const decoder = new TextDecoder();
+    return {
+        status: output.code,
+        stdout: decoder.decode(output.stdout),
+        stderr: decoder.decode(output.stderr),
+        stamp,
+    };
 }
 
 function dockerCalled(stamp: string): boolean {
@@ -49,29 +59,33 @@ function dockerCalled(stamp: string): boolean {
         && Deno.readTextFileSync(stamp).length > 0;
 }
 
-Deno.test('crank with no args exits 1 with usage', () => {
-    const result = runCrank([]);
+Deno.test('crank with no args exits 1 with usage',
+async () => {
+    const result = await runCrank([]);
     assertStrictEquals(result.status, 1);
     assertMatch(result.stderr, /Usage: \.\/crank/);
     assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-Deno.test('crank missing port exits 1 with usage', () => {
-    const result = runCrank(['--mock-data']);
+Deno.test('crank missing port exits 1 with usage',
+async () => {
+    const result = await runCrank(['--mock-data']);
     assertStrictEquals(result.status, 1);
     assertMatch(result.stderr, /Usage: \.\/crank/);
     assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-Deno.test('crank missing mode exits 1 with usage', () => {
-    const result = runCrank(['8080']);
+Deno.test('crank missing mode exits 1 with usage',
+async () => {
+    const result = await runCrank(['8080']);
     assertStrictEquals(result.status, 1);
     assertMatch(result.stderr, /Usage: \.\/crank/);
     assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-Deno.test('crank two modes exits 1 with usage', () => {
-    const result = runCrank([
+Deno.test('crank two modes exits 1 with usage',
+async () => {
+    const result = await runCrank([
         '--mock-data',
         '--bootstrap',
         '8080',
@@ -82,15 +96,16 @@ Deno.test('crank two modes exits 1 with usage', () => {
     assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-Deno.test('crank unknown flag exits 1 with usage', () => {
-    const result = runCrank(['--bogus', '8080']);
+Deno.test('crank unknown flag exits 1 with usage',
+async () => {
+    const result = await runCrank(['--bogus', '8080']);
     assertStrictEquals(result.status, 1);
     assertMatch(result.stderr, /Usage: \.\/crank/);
     assertStrictEquals(dockerCalled(result.stamp), false);
 });
 
-Deno.test('crank --help exits 0', () => {
-    const result = runCrank(['--help']);
+Deno.test('crank --help exits 0', async () => {
+    const result = await runCrank(['--help']);
     assertStrictEquals(result.status, 0);
     assertMatch(result.stdout, /Usage: \.\/crank/);
     assertStrictEquals(dockerCalled(result.stamp), false);
