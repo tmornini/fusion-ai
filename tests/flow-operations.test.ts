@@ -1,5 +1,3 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
 // flow-operations.ts → logger.ts → preferences.ts
 // reads localStorage, which is absent in Node.
@@ -10,6 +8,15 @@ globalThis.localStorage = {
     setItem: () => {},
 };
 
+import {
+    assert,
+    assertEquals,
+    assertInstanceOf,
+    assertMatch,
+    assertRejects,
+    assertStrictEquals,
+    assertStringIncludes,
+} from '@std/assert';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -287,7 +294,7 @@ async function seedCurrentGraph(
 
 // -- performAddEdge ---------------------------
 
-test(
+Deno.test(
     'performAddEdge: success returns the new'
     + ' edge and persists it',
     async () => {
@@ -298,13 +305,13 @@ test(
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, NODE_A, NODE_B,
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.edge.fromNodeId, NODE_A);
-        assert.equal(op.edge.toNodeId, NODE_B);
-        assert.equal(op.advanceHistory, true);
+        assertStrictEquals(op.edge.fromNodeId, NODE_A);
+        assertStrictEquals(op.edge.toNodeId, NODE_B);
+        assertStrictEquals(op.advanceHistory, true);
         const g = await persistedGraph(db);
-        assert.equal(g.edges.length, 1);
+        assertStrictEquals(g.edges.length, 1);
         // Undo-as-replay (Phase 14 Task 8): commitFlowMutation
         // no longer archives the pre-edit state through
         // postFlowVersion — undo resolves its target from the
@@ -312,13 +319,13 @@ test(
         // history instead, so this save's own putFlow
         // document message pair is now sufficient;
         // flow_versions stays untouched.
-        assert.equal(
+        assertStrictEquals(
             await flowVersionCount(db), 0,
         );
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: from a start node with no'
     + ' outgoing edge succeeds',
     async () => {
@@ -330,11 +337,11 @@ test(
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, NODE_S, NODE_A,
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: locked flow fails',
     async () => {
         const { db } = await setupFlow();
@@ -344,61 +351,51 @@ test(
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, NODE_A, NODE_B,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(op.toast, /locked/i);
+        assertMatch(op.toast, /locked/i);
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: unknown fromId throws',
     async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_B),
         ]));
-        await assert.rejects(
+        const err = await assertRejects(
             () => performAddEdge(
                 createRequestContext(db, DEV_TOKEN), snap, MISSING_ID, NODE_B,
             ),
-            (error: unknown) => {
-                assert.ok(error instanceof Error);
-                assert.ok(
-                    error.message.includes(
-                        'unknown fromId ' + MISSING_ID,
-                    ),
-                );
-                return true;
-            },
+        ) as Error;
+        assertInstanceOf(err, Error);
+        assertStringIncludes(
+            err.message, 'unknown fromId ' + MISSING_ID,
         );
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: unknown toId throws',
     async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([
             buildNode(NODE_A),
         ]));
-        await assert.rejects(
+        const err = await assertRejects(
             () => performAddEdge(
                 createRequestContext(db, DEV_TOKEN), snap, NODE_A, MISSING_ID,
             ),
-            (error: unknown) => {
-                assert.ok(error instanceof Error);
-                assert.ok(
-                    error.message.includes(
-                        'unknown toId ' + MISSING_ID,
-                    ),
-                );
-                return true;
-            },
+        ) as Error;
+        assertInstanceOf(err, Error);
+        assertStringIncludes(
+            err.message, 'unknown toId ' + MISSING_ID,
         );
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: from an end node fails',
     async () => {
         const { db } = await setupFlow();
@@ -409,13 +406,13 @@ test(
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, NODE_E, NODE_A,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(op.toast, /end state/i);
+        assertMatch(op.toast, /end state/i);
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: to a start node fails',
     async () => {
         const { db } = await setupFlow();
@@ -426,13 +423,13 @@ test(
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, NODE_A, NODE_S,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(op.toast, /start state/i);
+        assertMatch(op.toast, /start state/i);
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: duplicate edge fails',
     async () => {
         const { db } = await setupFlow();
@@ -443,13 +440,13 @@ test(
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, NODE_A, NODE_B,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(op.toast, /already exists/i);
+        assertMatch(op.toast, /already exists/i);
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: a second edge out of the'
     + ' start node fails',
     async () => {
@@ -464,15 +461,15 @@ test(
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, NODE_S, NODE_B,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(
+        assertMatch(
             op.toast, /only one outgoing/i,
         );
     },
 );
 
-test(
+Deno.test(
     'performAddEdge: a commit failure yields a'
     + ' fail result',
     async () => {
@@ -487,12 +484,12 @@ test(
                 snap, NODE_A, NODE_B,
             ),
         );
-        assert.equal(
+        assertStrictEquals(
             (await op).kind, 'fail',
         );
         const settled = await op;
         if (settled.kind !== 'fail') return;
-        assert.match(
+        assertMatch(
             settled.toast, /failed to create/i,
         );
     },
@@ -500,7 +497,7 @@ test(
 
 // -- performAddNodeAtPosition -----------------
 
-test(
+Deno.test(
     'performAddNodeAtPosition: returns node,'
     + ' edge, selectId and centers on the point',
     async () => {
@@ -511,29 +508,29 @@ test(
         const op = await performAddNodeAtPosition(
             createRequestContext(db, DEV_TOKEN), snap, NODE_A, 300, 200,
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.edge.fromNodeId, NODE_A);
-        assert.equal(
+        assertStrictEquals(op.edge.fromNodeId, NODE_A);
+        assertStrictEquals(
             op.edge.toNodeId, op.node.id,
         );
-        assert.equal(op.selectId, op.node.id);
-        assert.equal(op.advanceHistory, true);
-        assert.equal(
+        assertStrictEquals(op.selectId, op.node.id);
+        assertStrictEquals(op.advanceHistory, true);
+        assertStrictEquals(
             op.node.positionX,
             300 - NODE_WIDTH / 2,
         );
-        assert.equal(
+        assertStrictEquals(
             op.node.positionY,
             200 - NODE_HEIGHT / 2,
         );
         const g = await persistedGraph(db);
-        assert.equal(g.nodes.length, 2);
-        assert.equal(g.edges.length, 1);
+        assertStrictEquals(g.nodes.length, 2);
+        assertStrictEquals(g.edges.length, 1);
     },
 );
 
-test(
+Deno.test(
     'performAddNodeAtPosition: locked flow fails',
     async () => {
         const { db } = await setupFlow();
@@ -543,34 +540,29 @@ test(
         const op = await performAddNodeAtPosition(
             createRequestContext(db, DEV_TOKEN), snap, NODE_A, 0, 0,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
-test(
+Deno.test(
     'performAddNodeAtPosition: unknown fromNodeId'
     + ' throws',
     async () => {
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph([]));
-        await assert.rejects(
+        const err = await assertRejects(
             () => performAddNodeAtPosition(
                 createRequestContext(db, DEV_TOKEN), snap, MISSING_ID, 0, 0,
             ),
-            (error: unknown) => {
-                assert.ok(error instanceof Error);
-                assert.ok(
-                    error.message.includes(
-                        'unknown fromNodeId ' + MISSING_ID,
-                    ),
-                );
-                return true;
-            },
+        ) as Error;
+        assertInstanceOf(err, Error);
+        assertStringIncludes(
+            err.message, 'unknown fromNodeId ' + MISSING_ID,
         );
     },
 );
 
-test(
+Deno.test(
     'performAddNodeAtPosition: from an end node'
     + ' fails',
     async () => {
@@ -581,13 +573,13 @@ test(
         const op = await performAddNodeAtPosition(
             createRequestContext(db, DEV_TOKEN), snap, NODE_E, 0, 0,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(op.toast, /end state/i);
+        assertMatch(op.toast, /end state/i);
     },
 );
 
-test(
+Deno.test(
     'performAddNodeAtPosition: from a start node'
     + ' that already has an outgoing edge fails',
     async () => {
@@ -602,15 +594,15 @@ test(
         const op = await performAddNodeAtPosition(
             createRequestContext(db, DEV_TOKEN), snap, NODE_S, 0, 0,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(
+        assertMatch(
             op.toast, /only one outgoing/i,
         );
     },
 );
 
-test(
+Deno.test(
     'performAddNodeAtPosition: a commit failure'
     + ' yields a fail result',
     async () => {
@@ -625,9 +617,9 @@ test(
             ),
         );
         const settled = await op;
-        assert.equal(settled.kind, 'fail');
+        assertStrictEquals(settled.kind, 'fail');
         if (settled.kind !== 'fail') return;
-        assert.match(
+        assertMatch(
             settled.toast, /failed to add state/i,
         );
     },
@@ -635,7 +627,7 @@ test(
 
 // -- performDeleteSelectedNodes ---------------
 
-test(
+Deno.test(
     'performDeleteSelectedNodes: removes the'
     + ' selected intermediate node',
     async () => {
@@ -650,19 +642,19 @@ test(
                 createRequestContext(db, DEV_TOKEN),
                 withNodeSelection(base, NODE_A),
             );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.advanceHistory, true);
-        assert.equal(
+        assertStrictEquals(op.advanceHistory, true);
+        assertStrictEquals(
             op.nodes.some(n => n.id === NODE_A),
             false,
         );
         const g = await persistedGraph(db);
-        assert.equal(g.nodes.length, 2);
+        assertStrictEquals(g.nodes.length, 2);
     },
 );
 
-test(
+Deno.test(
     'performDeleteSelectedNodes: keeps start/end'
     + ' when the selection mixes them with an'
     + ' intermediate',
@@ -680,14 +672,14 @@ test(
                     base, NODE_S, NODE_A, NODE_E,
                 ),
             );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
         const ids = op.nodes.map(n => n.id).sort();
-        assert.deepEqual(ids, [NODE_E, NODE_S].sort());
+        assertEquals(ids, [NODE_E, NODE_S].sort());
     },
 );
 
-test(
+Deno.test(
     'performDeleteSelectedNodes: locked flow'
     + ' fails',
     async () => {
@@ -702,11 +694,11 @@ test(
                     withNodeSelection(base, NODE_A),
                 ),
             );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
-test(
+Deno.test(
     'performDeleteSelectedNodes: an edge'
     + ' selection is a no-op',
     async () => {
@@ -720,11 +712,11 @@ test(
                 createRequestContext(db, DEV_TOKEN),
                 withEdgeSelection(base, 'YiJPbufDpkyrZcZCYbUJpg'),
             );
-        assert.equal(op.kind, 'noop');
+        assertStrictEquals(op.kind, 'noop');
     },
 );
 
-test(
+Deno.test(
     'performDeleteSelectedNodes: a selection of'
     + ' only start/end nodes is a no-op',
     async () => {
@@ -738,11 +730,11 @@ test(
                 createRequestContext(db, DEV_TOKEN),
                 withNodeSelection(base, NODE_S, NODE_E),
             );
-        assert.equal(op.kind, 'noop');
+        assertStrictEquals(op.kind, 'noop');
     },
 );
 
-test(
+Deno.test(
     'performDeleteSelectedNodes: a commit'
     + ' failure yields a fail result',
     async () => {
@@ -758,9 +750,9 @@ test(
             ),
         );
         const settled = await op;
-        assert.equal(settled.kind, 'fail');
+        assertStrictEquals(settled.kind, 'fail');
         if (settled.kind !== 'fail') return;
-        assert.match(
+        assertMatch(
             settled.toast, /failed to delete state/i,
         );
     },
@@ -768,7 +760,7 @@ test(
 
 // -- performDeleteSelectedEdge ----------------
 
-test(
+Deno.test(
     'performDeleteSelectedEdge: removes the'
     + ' selected edge',
     async () => {
@@ -782,16 +774,16 @@ test(
                 createRequestContext(db, DEV_TOKEN),
                 withEdgeSelection(base, 'YiJPbufDpkyrZcZCYbUJpg'),
             );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.edgeId, 'YiJPbufDpkyrZcZCYbUJpg');
-        assert.equal(op.advanceHistory, true);
+        assertStrictEquals(op.edgeId, 'YiJPbufDpkyrZcZCYbUJpg');
+        assertStrictEquals(op.advanceHistory, true);
         const g = await persistedGraph(db);
-        assert.equal(g.edges.length, 0);
+        assertStrictEquals(g.edges.length, 0);
     },
 );
 
-test(
+Deno.test(
     'performDeleteSelectedEdge: locked flow'
     + ' fails',
     async () => {
@@ -807,11 +799,11 @@ test(
                     withEdgeSelection(base, 'YiJPbufDpkyrZcZCYbUJpg'),
                 ),
             );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
-test(
+Deno.test(
     'performDeleteSelectedEdge: a node selection'
     + ' is a no-op',
     async () => {
@@ -824,11 +816,11 @@ test(
                 createRequestContext(db, DEV_TOKEN),
                 withNodeSelection(base, NODE_A),
             );
-        assert.equal(op.kind, 'noop');
+        assertStrictEquals(op.kind, 'noop');
     },
 );
 
-test(
+Deno.test(
     'performDeleteSelectedEdge: a commit failure'
     + ' yields a fail result',
     async () => {
@@ -845,9 +837,9 @@ test(
             ),
         );
         const settled = await op;
-        assert.equal(settled.kind, 'fail');
+        assertStrictEquals(settled.kind, 'fail');
         if (settled.kind !== 'fail') return;
-        assert.match(
+        assertMatch(
             settled.toast,
             /failed to delete transition/i,
         );
@@ -856,7 +848,7 @@ test(
 
 // -- performAddAttributeRef -------------------
 
-test(
+Deno.test(
     'performAddAttributeRef: appends a ref to the'
     + ' single selected node',
     async () => {
@@ -869,19 +861,19 @@ test(
             withNodeSelection(base, NODE_A),
             'VPckAwjJsTGCEkKaOOGRGw', 'editable', true,
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.nodeId, NODE_A);
-        assert.equal(
+        assertStrictEquals(op.nodeId, NODE_A);
+        assertStrictEquals(
             op.ref.attributeId, 'VPckAwjJsTGCEkKaOOGRGw',
         );
-        assert.equal(op.ref.mode, 'editable');
-        assert.equal(op.ref.isRequired, true);
-        assert.equal(op.advanceHistory, true);
+        assertStrictEquals(op.ref.mode, 'editable');
+        assertStrictEquals(op.ref.isRequired, true);
+        assertStrictEquals(op.advanceHistory, true);
     },
 );
 
-test(
+Deno.test(
     'performAddAttributeRef: locked flow fails',
     async () => {
         const { db } = await setupFlow();
@@ -893,11 +885,11 @@ test(
             locked(withNodeSelection(base, NODE_A)),
             'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
-test(
+Deno.test(
     'performAddAttributeRef: no single selected'
     + ' node is a no-op',
     async () => {
@@ -909,17 +901,17 @@ test(
             createRequestContext(db, DEV_TOKEN), withNoSelection(base),
             'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
-        assert.equal(noneOp.kind, 'noop');
+        assertStrictEquals(noneOp.kind, 'noop');
         const manyOp = await performAddAttributeRef(
             createRequestContext(db, DEV_TOKEN),
             withNodeSelection(base, NODE_A, NODE_B),
             'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
-        assert.equal(manyOp.kind, 'noop');
+        assertStrictEquals(manyOp.kind, 'noop');
     },
 );
 
-test(
+Deno.test(
     'performAddAttributeRef: a selected id that'
     + ' is not a node is a no-op',
     async () => {
@@ -932,11 +924,11 @@ test(
             withNodeSelection(base, 'ghost'),
             'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
-        assert.equal(op.kind, 'noop');
+        assertStrictEquals(op.kind, 'noop');
     },
 );
 
-test(
+Deno.test(
     'performAddAttributeRef: a commit failure'
     + ' yields a fail result',
     async () => {
@@ -953,9 +945,9 @@ test(
             ),
         );
         const settled = await op;
-        assert.equal(settled.kind, 'fail');
+        assertStrictEquals(settled.kind, 'fail');
         if (settled.kind !== 'fail') return;
-        assert.match(
+        assertMatch(
             settled.toast,
             /failed to add attribute/i,
         );
@@ -964,7 +956,7 @@ test(
 
 // -- performRemoveAttributeRef ----------------
 
-test(
+Deno.test(
     'performRemoveAttributeRef: removes the ref'
     + ' from the single selected node',
     async () => {
@@ -981,15 +973,15 @@ test(
             withNodeSelection(base, NODE_A),
             'VPckAwjJsTGCEkKaOOGRGw',
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.nodeId, NODE_A);
-        assert.equal(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
-        assert.equal(op.advanceHistory, true);
+        assertStrictEquals(op.nodeId, NODE_A);
+        assertStrictEquals(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
+        assertStrictEquals(op.advanceHistory, true);
     },
 );
 
-test(
+Deno.test(
     'performRemoveAttributeRef: locked flow fails',
     async () => {
         const { db } = await setupFlow();
@@ -1005,11 +997,11 @@ test(
             locked(withNodeSelection(base, NODE_A)),
             'VPckAwjJsTGCEkKaOOGRGw',
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
-test(
+Deno.test(
     'performRemoveAttributeRef: no single selected'
     + ' node is a no-op',
     async () => {
@@ -1025,11 +1017,11 @@ test(
             createRequestContext(db, DEV_TOKEN),
             withNoSelection(base), 'VPckAwjJsTGCEkKaOOGRGw',
         );
-        assert.equal(op.kind, 'noop');
+        assertStrictEquals(op.kind, 'noop');
     },
 );
 
-test(
+Deno.test(
     'performRemoveAttributeRef: a commit failure'
     + ' yields a fail result',
     async () => {
@@ -1050,9 +1042,9 @@ test(
             ),
         );
         const settled = await op;
-        assert.equal(settled.kind, 'fail');
+        assertStrictEquals(settled.kind, 'fail');
         if (settled.kind !== 'fail') return;
-        assert.match(
+        assertMatch(
             settled.toast,
             /failed to remove attribute/i,
         );
@@ -1061,7 +1053,7 @@ test(
 
 // -- performUpdateAttributeMode ---------------
 
-test(
+Deno.test(
     'performUpdateAttributeMode: updates the mode'
     + ' on the matching ref',
     async () => {
@@ -1080,16 +1072,16 @@ test(
             withNodeSelection(base, NODE_A),
             'VPckAwjJsTGCEkKaOOGRGw', 'readonly',
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.nodeId, NODE_A);
-        assert.equal(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
-        assert.equal(op.mode, 'readonly');
-        assert.equal(op.advanceHistory, true);
+        assertStrictEquals(op.nodeId, NODE_A);
+        assertStrictEquals(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
+        assertStrictEquals(op.mode, 'readonly');
+        assertStrictEquals(op.advanceHistory, true);
     },
 );
 
-test(
+Deno.test(
     'performUpdateAttributeMode: locked flow fails',
     async () => {
         const { db } = await setupFlow();
@@ -1105,11 +1097,11 @@ test(
             locked(withNodeSelection(base, NODE_A)),
             'VPckAwjJsTGCEkKaOOGRGw', 'readonly',
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
-test(
+Deno.test(
     'performUpdateAttributeMode: no single selected'
     + ' node is a no-op',
     async () => {
@@ -1125,13 +1117,13 @@ test(
             createRequestContext(db, DEV_TOKEN), withNoSelection(base),
             'VPckAwjJsTGCEkKaOOGRGw', 'readonly',
         );
-        assert.equal(op.kind, 'noop');
+        assertStrictEquals(op.kind, 'noop');
     },
 );
 
 // -- performUpdateAttributeRequired -----------
 
-test(
+Deno.test(
     'performUpdateAttributeRequired: updates the'
     + ' isRequired flag on the matching ref',
     async () => {
@@ -1151,16 +1143,16 @@ test(
                 withNodeSelection(base, NODE_A),
                 'VPckAwjJsTGCEkKaOOGRGw', true,
             );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.nodeId, NODE_A);
-        assert.equal(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
-        assert.equal(op.isRequired, true);
-        assert.equal(op.advanceHistory, true);
+        assertStrictEquals(op.nodeId, NODE_A);
+        assertStrictEquals(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
+        assertStrictEquals(op.isRequired, true);
+        assertStrictEquals(op.advanceHistory, true);
     },
 );
 
-test(
+Deno.test(
     'performUpdateAttributeRequired: locked flow'
     + ' fails',
     async () => {
@@ -1180,11 +1172,11 @@ test(
                 ),
                 'VPckAwjJsTGCEkKaOOGRGw', true,
             );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
-test(
+Deno.test(
     'performUpdateAttributeRequired: no single'
     + ' selected node is a no-op',
     async () => {
@@ -1201,7 +1193,7 @@ test(
                 createRequestContext(db, DEV_TOKEN), withNoSelection(base),
                 'VPckAwjJsTGCEkKaOOGRGw', true,
             );
-        assert.equal(op.kind, 'noop');
+        assertStrictEquals(op.kind, 'noop');
     },
 );
 
@@ -1213,7 +1205,7 @@ test(
 // source swaps from "versions is empty" to "hasUndoHistory is
 // false", but the observable shape (freshSnap is the SAME
 // object, by reference) is unchanged.
-test(
+Deno.test(
     'performUndo: with no history is a no-op'
     + ' that returns the same snapshot',
     async () => {
@@ -1225,16 +1217,16 @@ test(
             createRequestContext(db, DEV_TOKEN), snap,
             buildFlowHistorySnapshot(false),
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.freshSnap, snap);
-        assert.equal(
+        assertStrictEquals(op.freshSnap, snap);
+        assertStrictEquals(
             op.newHistory.hasUndoHistory, false,
         );
     },
 );
 
-test(
+Deno.test(
     'performUndo: locked flow fails',
     async () => {
         const { db } = await setupFlow();
@@ -1245,7 +1237,7 @@ test(
             createRequestContext(db, DEV_TOKEN), snap,
             buildFlowHistorySnapshot(true),
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
@@ -1257,7 +1249,7 @@ test(
 // The setup swaps the raw versions PUT for a genuine
 // seedCurrentGraph save (the 2-node baseline, undo's own
 // target), followed by the 3-node "current" save.
-test(
+Deno.test(
     'performUndo: restores the previous save (one'
     + ' step back), and stages a redo entry',
     async () => {
@@ -1279,21 +1271,21 @@ test(
             createRequestContext(db, DEV_TOKEN), snap,
             buildFlowHistorySnapshot(true),
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(
+        assertStrictEquals(
             op.freshSnap.nodes.length, 2,
         );
         // Genesis is a THIRD document message pair still further back —
         // there is more to undo, unlike the old flow_versions
         // count (which hit zero after consuming its one row).
-        assert.equal(
+        assertStrictEquals(
             op.newHistory.hasUndoHistory, true,
         );
-        assert.equal(
+        assertStrictEquals(
             op.newHistory.redoStack.length, 1,
         );
-        assert.equal(
+        assertStrictEquals(
             op.newHistory.redoStack[0]!
                 .nodes.length,
             3,
@@ -1302,15 +1294,15 @@ test(
         // undo path any more (Step 0: publish/consume both
         // stop) — this stays a meaningful regression guard,
         // not a tautology.
-        assert.equal(
+        assertStrictEquals(
             await flowVersionCount(db), 0,
         );
         const g = await persistedGraph(db);
-        assert.equal(g.nodes.length, 2);
+        assertStrictEquals(g.nodes.length, 2);
     },
 );
 
-test(
+Deno.test(
     'performUndo: keeps the panel open on a'
     + ' surviving node and restores memberIds',
     async () => {
@@ -1348,29 +1340,29 @@ test(
             snap,
             buildFlowHistorySnapshot(true),
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(
+        assertStrictEquals(
             op.freshSnap.isPanelOpen, true,
         );
         const sel =
             op.freshSnap.interaction.selection;
-        assert.equal(sel.kind, 'nodes');
+        assertStrictEquals(sel.kind, 'nodes');
         if (sel.kind !== 'nodes') return;
-        assert.equal(sel.nodeIds.size, 1);
-        assert.equal(
+        assertStrictEquals(sel.nodeIds.size, 1);
+        assertStrictEquals(
             sel.nodeIds.has(NODE_A), true,
         );
         const restored = op.freshSnap.nodes
             .find(n => n.id === NODE_A);
-        assert.ok(restored);
-        assert.deepEqual(
+        assert(restored);
+        assertEquals(
             restored!.memberIds, [],
         );
     },
 );
 
-test(
+Deno.test(
     'performUndo: closes the panel when the'
     + ' selected node is gone',
     async () => {
@@ -1403,12 +1395,12 @@ test(
             snap,
             buildFlowHistorySnapshot(true),
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(
+        assertStrictEquals(
             op.freshSnap.isPanelOpen, false,
         );
-        assert.equal(
+        assertStrictEquals(
             op.freshSnap.interaction
                 .selection.kind,
             'none',
@@ -1418,7 +1410,7 @@ test(
 
 // -- performRedo ------------------------------
 
-test(
+Deno.test(
     'performRedo: with an empty redo stack is a'
     + ' no-op that returns the same snapshot',
     async () => {
@@ -1430,13 +1422,13 @@ test(
             createRequestContext(db, DEV_TOKEN), snap,
             buildFlowHistorySnapshot(false),
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.freshSnap, snap);
+        assertStrictEquals(op.freshSnap, snap);
     },
 );
 
-test(
+Deno.test(
     'performRedo: locked flow fails',
     async () => {
         const { db } = await setupFlow();
@@ -1450,11 +1442,11 @@ test(
                 buildFlowVersion(),
             ),
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
     },
 );
 
-test(
+Deno.test(
     'performRedo: re-applies the popped version,'
     + ' snapshots the current state, and marks'
     + ' undo available',
@@ -1479,15 +1471,15 @@ test(
         const op = await performRedo(
             createRequestContext(db, DEV_TOKEN), snap, history,
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(
+        assertStrictEquals(
             op.freshSnap.nodes.length, 2,
         );
-        assert.equal(
+        assertStrictEquals(
             op.newHistory.hasUndoHistory, true,
         );
-        assert.equal(
+        assertStrictEquals(
             op.newHistory.redoStack.length, 0,
         );
         // Undo-as-replay (Phase 14 Task 8): redo no longer
@@ -1495,11 +1487,11 @@ test(
         // its own putFlow write is what a LATER undo's
         // message-plane walk would find instead. flow_versions
         // stays untouched by the live redo path.
-        assert.equal(
+        assertStrictEquals(
             await flowVersionCount(db), 0,
         );
         const g = await persistedGraph(db);
-        assert.equal(g.nodes.length, 2);
+        assertStrictEquals(g.nodes.length, 2);
     },
 );
 
@@ -1512,7 +1504,7 @@ test(
 // postFlowVersion's read used to, so the SAME graceful failOp
 // this test pins still holds, matching every sibling perform*
 // mutation's read-then-write covenant.
-test(
+Deno.test(
     'performRedo: a missing flow fails gracefully —'
     + ' putFlow\'s own baseline read shares the SAME'
     + ' covenant catch every sibling perform* mutation'
@@ -1533,9 +1525,9 @@ test(
                 snap, history,
             ),
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(op.toast, /redo failed/i);
+        assertMatch(op.toast, /redo failed/i);
     },
 );
 
@@ -1636,7 +1628,7 @@ function faultingPutCtx(
 // this test used to need is dropped entirely; the assertion it
 // fed becomes "flow_versions stays untouched", not "the
 // consumed row survives".
-test(
+Deno.test(
     'performUndo: a faulted POST /organizations/:id/flows/:id/undo'
     + ' applies nothing',
     async () => {
@@ -1657,20 +1649,20 @@ test(
                 buildFlowHistorySnapshot(true),
             ),
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(op.toast, /undo failed/i);
-        assert.equal(faulting.posts(), 1);
+        assertMatch(op.toast, /undo failed/i);
+        assertStrictEquals(faulting.posts(), 1);
         // nothing applied: flow_versions is never touched by
         // the live undo path, and the persisted graph keeps
         // the seeded start + complete pair (the revert never
         // landed; the 3-node snap was only ever the client's
         // view, never persisted).
-        assert.equal(
+        assertStrictEquals(
             await flowVersionCount(db), 0,
         );
         const g = await persistedGraph(db);
-        assert.equal(g.nodes.length, 2);
+        assertStrictEquals(g.nodes.length, 2);
     },
 );
 
@@ -1693,7 +1685,7 @@ test(
 // the toast channel every other perform* mutation already
 // uses). putFlow's OWN internal loop separately absorbs a 412
 // (up to 3 attempts) before ever reaching this catch.
-test(
+Deno.test(
     'performRedo: a faulted document-PUT fails'
     + ' gracefully',
     async () => {
@@ -1719,18 +1711,18 @@ test(
                 faulting.ctx, snap, history,
             ),
         );
-        assert.equal(op.kind, 'fail');
+        assertStrictEquals(op.kind, 'fail');
         if (op.kind !== 'fail') return;
-        assert.match(op.toast, /redo failed/i);
-        assert.equal(faulting.puts(), 1);
+        assertMatch(op.toast, /redo failed/i);
+        assertStrictEquals(faulting.puts(), 1);
         // nothing applied: flow_versions is never touched by
         // the live redo path, and the document PUT never
         // landed — the graph stays the seeded start + complete
         // pair.
-        assert.equal(
+        assertStrictEquals(
             await flowVersionCount(db), 0,
         );
         const g = await persistedGraph(db);
-        assert.equal(g.nodes.length, 2);
+        assertStrictEquals(g.nodes.length, 2);
     },
 );

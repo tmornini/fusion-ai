@@ -1,7 +1,6 @@
-import { test } from 'node:test';
+import { assertNotStrictEquals, assertStrictEquals } from '@std/assert';
 import { generateIdentifier } from
     '../shared/identifier.ts';
-import { strict as assert } from 'node:assert';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -136,7 +135,7 @@ async function createFlow(
             graphDelta: emptyDelta(),
         },
     ));
-    assert.equal(created.status, 201);
+    assertStrictEquals(created.status, 201);
 }
 
 async function flowDocumentPairCount(
@@ -158,7 +157,7 @@ async function flowDocumentPairCount(
     ).length;
 }
 
-test(
+Deno.test(
     'opening a flow does not append pairs',
     async () => {
         const db = await freshDb();
@@ -206,7 +205,7 @@ test(
         await enqueueFlowSave(
             flowId, async () => undefined,
         );
-        assert.equal(
+        assertStrictEquals(
             await flowDocumentPairCount(
                 db, flowId,
             ),
@@ -216,9 +215,9 @@ test(
             ctx, opened,
             buildFlowHistorySnapshot(true),
         );
-        assert.equal(op.kind, 'ok');
+        assertStrictEquals(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.notEqual(
+        assertNotStrictEquals(
             op.freshSnap.flowName,
             'Alpha Renamed',
         );
