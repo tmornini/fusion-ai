@@ -311,9 +311,14 @@ graph gives `process` to every file in that check, and a
 type-only `import type … from 'node:fs'` is enough.
 `npm:` does not unlock — `npm:postgres` and the bare
 `postgres` mapping both still reject `process`.
-`web-app` carries six `node:` importers of its own, so
-`deno check … web-app` passes a file whose only line
-is `process.env.HOME`. Nothing under `web-app/` is
+`web-app` no longer carries a `node:` importer of its
+own — the Deno port took the last one — but the gate
+checks it in one invocation with `server` and `tests`,
+and either alone suffices: `server/scrypt-hash.ts`'s
+`node:crypto` unlocks it even with `tests` excluded. So
+`deno check --frozen api shared server tests web-app`
+passes a file under `web-app/app/` whose only line is
+`process.env.HOME`. Nothing under `web-app/` is
 type-fenced against `process` today, and `Deno.*` never
 was: `deno.ns` sits in the lib array.
 `tests/browser-fence.test.ts` checks a hermetically

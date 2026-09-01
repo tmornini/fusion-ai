@@ -1228,16 +1228,22 @@ Off the critical path; each with its oracle.
 - The browser type fence is gone, not weakened. Ambient
   Node globals unlock per `deno check` invocation: one
   `node:` specifier anywhere in the checked graph gives
-  `process` to every file in it, and `web-app` carries
-  six of its own, so no arrangement of the gate's roots
-  fences it. `npm:` does not unlock; `Deno.*` never
+  `process` to every file in it. `web-app` carries none
+  of its own since the Deno port, but the gate checks it
+  in one invocation with `server` and `tests`, and
+  either alone suffices — `server/scrypt-hash.ts`'s
+  `node:crypto` means retiring `node:test` will not
+  restore it. `npm:` does not unlock; `Deno.*` never
   fenced at all, via `deno.ns`.
   `tests/browser-fence.test.ts` checks an isolated file,
   so it passes while the property is false. Restoring
-  the fence needs a second `deno check` over the
-  browser-reachable subset alone, excluding the
-  Node-only modules the retired `exclude` named. Oracle:
-  that invocation rejects `process` with TS2591.
+  the `process` half now costs one line:
+  `deno check --frozen web-app` alone is green on the
+  tree today and rejects a `process` reference under
+  `web-app/` with TS2591. It leaves `Deno.*` unfenced;
+  that half needs a lib array without `deno.ns`.
+  Oracle: that invocation in `./validate`, red on a
+  `process` reference under `web-app/`.
 - The `exists()` helper is duplicated five times, byte
   for byte, all under `web-app/app/` — `compose.ts`,
   `generate-api-documentation.ts`, `measure-viz.ts`,
