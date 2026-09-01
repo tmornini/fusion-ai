@@ -1,5 +1,3 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
 
 // flow-operations.ts → logger.ts → preferences.ts
 // reads localStorage, which is absent in Node. Stub it
@@ -11,6 +9,7 @@ globalThis.localStorage = {
     setItem: () => {},
 };
 
+import { assert, assertStrictEquals } from '@std/assert';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -262,7 +261,7 @@ async function latestSidecarStateFor(
                     : a.id > b.id ? 1
                         : 0);
     const last = events.at(-1);
-    assert.ok(
+    assert(
         last !== undefined,
         'no graph-sidecar events for ' + entityId,
     );
@@ -274,7 +273,7 @@ async function latestSidecarStateFor(
 // genuine saveGraph edit, so this fixture must say so (true).
 const HAS_UNDO_HISTORY = buildFlowHistorySnapshot(true);
 
-test(
+Deno.test(
     'DELETE-THEN-UNDO revives the deleted node and its'
     + ' edge: pair graph includes them, latest state'
     + " is 'restored'",
@@ -293,14 +292,14 @@ test(
         await putFlow(ctx, FLOW_ID, save([a], []));
 
         const afterDelete = await messagePairGraph(ctx);
-        assert.ok(
+        assert(
             !afterDelete.nodes.some(n => n.id === NODE_X),
             'X is tombstoned after the deleting save',
         );
-        assert.equal(
+        assertStrictEquals(
             await latestSidecarStateFor(db, NODE_X), 'deleted',
         );
-        assert.equal(
+        assertStrictEquals(
             await latestSidecarStateFor(db, EDGE_XE), 'deleted',
         );
 
@@ -309,34 +308,34 @@ test(
         const undo = await performUndo(
             ctx, snapOf([a], []), HAS_UNDO_HISTORY,
         );
-        assert.equal(undo.kind, 'ok');
+        assertStrictEquals(undo.kind, 'ok');
         if (undo.kind !== 'ok') return;
 
         // KEYSTONE: X and its edge are REVIVED — the
         // message-plane graph includes them again.
         const afterUndo = await messagePairGraph(ctx);
-        assert.ok(
+        assert(
             afterUndo.nodes.some(n => n.id === NODE_X),
             'undo REVIVES the deleted node X',
         );
-        assert.ok(
+        assert(
             afterUndo.edges.some(e => e.id === EDGE_XE),
             'undo REVIVES the edge deleted alongside X',
         );
         // And X's LATEST state event supersedes the
         // tombstone with a non-'deleted' 'restored'.
-        assert.equal(
+        assertStrictEquals(
             await latestSidecarStateFor(db, NODE_X), 'restored',
             "revived node's latest state is 'restored'",
         );
-        assert.equal(
+        assertStrictEquals(
             await latestSidecarStateFor(db, EDGE_XE), 'restored',
             "revived edge's latest state is 'restored'",
         );
     },
 );
 
-test(
+Deno.test(
     'ADD-THEN-UNDO deletes the added node: pair graph'
     + ' omits it (working-not-target is a deletion)',
     async () => {
@@ -350,28 +349,28 @@ test(
         await putFlow(ctx, FLOW_ID, save([a, x], []));
 
         const afterAdd = await messagePairGraph(ctx);
-        assert.ok(afterAdd.nodes.some(n => n.id === NODE_X));
+        assert(afterAdd.nodes.some(n => n.id === NODE_X));
 
         // Undo the add -> X is in current-not-target, so it
         // is deleted by the undo delta.
         const undo = await performUndo(
             ctx, snapOf([a, x], []), HAS_UNDO_HISTORY,
         );
-        assert.equal(undo.kind, 'ok');
+        assertStrictEquals(undo.kind, 'ok');
         if (undo.kind !== 'ok') return;
 
         const afterUndo = await messagePairGraph(ctx);
-        assert.ok(
+        assert(
             !afterUndo.nodes.some(n => n.id === NODE_X),
             'undo of an add deletes the added node',
         );
-        assert.equal(
+        assertStrictEquals(
             await latestSidecarStateFor(db, NODE_X), 'deleted',
         );
     },
 );
 
-test(
+Deno.test(
     'MEMBER add + undo: the member is gone after undo',
     async () => {
         const { ctx } = await setupMemDb();
@@ -387,7 +386,7 @@ test(
         await putFlow(ctx, FLOW_ID, save([aWithMember], []));
 
         const afterAdd = await messagePairGraph(ctx);
-        assert.ok(
+        assert(
             afterAdd.nodes.find(n => n.id === NODE_A)!
                 .memberIds.includes('mFNSxZqywTSMXhgUTdTqtA'),
         );
@@ -396,11 +395,11 @@ test(
         const undo = await performUndo(
             ctx, snapOf([aWithMember], []), HAS_UNDO_HISTORY,
         );
-        assert.equal(undo.kind, 'ok');
+        assertStrictEquals(undo.kind, 'ok');
         if (undo.kind !== 'ok') return;
 
         const afterUndo = await messagePairGraph(ctx);
-        assert.ok(
+        assert(
             !afterUndo.nodes.find(n => n.id === NODE_A)!
                 .memberIds.includes('mFNSxZqywTSMXhgUTdTqtA'),
             'undo removes the added member',
@@ -408,7 +407,7 @@ test(
     },
 );
 
-test(
+Deno.test(
     'REDO round-trip: redo re-applies the delete after'
     + ' an undo revived it (X tombstoned again)',
     async () => {
@@ -426,24 +425,24 @@ test(
         const undo = await performUndo(
             ctx, snapOf([a], []), HAS_UNDO_HISTORY,
         );
-        assert.equal(undo.kind, 'ok');
+        assertStrictEquals(undo.kind, 'ok');
         if (undo.kind !== 'ok') return;
         const afterUndo = await messagePairGraph(ctx);
-        assert.ok(afterUndo.nodes.some(n => n.id === NODE_X));
+        assert(afterUndo.nodes.some(n => n.id === NODE_X));
 
         // Redo -> re-apply the delete (X tombstoned again).
         const redo = await performRedo(
             ctx, snapOf([a, x], [xEdge]), undo.newHistory,
         );
-        assert.equal(redo.kind, 'ok');
+        assertStrictEquals(redo.kind, 'ok');
         if (redo.kind !== 'ok') return;
 
         const afterRedo = await messagePairGraph(ctx);
-        assert.ok(
+        assert(
             !afterRedo.nodes.some(n => n.id === NODE_X),
             'redo re-applies the delete: X tombstoned again',
         );
-        assert.equal(
+        assertStrictEquals(
             await latestSidecarStateFor(db, NODE_X), 'deleted',
             "redo re-tombstones X (latest state 'deleted')",
         );
