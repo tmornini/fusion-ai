@@ -338,9 +338,11 @@ for a gate that would restore the fence.
 adopted because `node --strip-types` required them at
 runtime. Deno requires neither: with no config at all it
 both runs and checks an enum and a namespace. They stay a
-deliberate repo choice, and `deno check` is the only thing
-that binds them now — an enum or namespace is TS1294 under
-this `deno.json`. What the choice buys is that every `.ts`
+deliberate repo choice, and `deno check` and `./build`'s
+`deno compile` bind them now — `deno compile` type-checks
+unless told not to, and `build` passes no `--no-check`, so
+an enum or namespace is TS1294 at either gate under this
+`deno.json`. What the choice buys is that every `.ts`
 file here stays strippable rather than compiled, so type
 erasure alone is enough to run this source.
 
