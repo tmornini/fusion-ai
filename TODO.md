@@ -1105,10 +1105,6 @@ Off the critical path; each with its oracle.
   TEST-PLAN case claims the feedback survives. Oracle: a
   Layer 1 test asserting the typed feedback reaches the
   transition
-- A stale manual-coverage pointer —
-  `tests/flow-designer-presenter.test.ts:352` points its
-  comment at "TEST-PLAN F51"; the locked-members case is
-  F62
 - Two dormant seed map entries still carry the deleted
   slice seeder's identity `dtmZgnDBlVcoyjxKzlaKgA`
   ('g-unseated') — `api/mock-data.ts:204`
