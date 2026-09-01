@@ -604,7 +604,7 @@ Off the critical path; each with its oracle.
     `renderShell`/`renderUpdate` by choice, and
     `makeRecordingContainer`
     (`tests/presenter-project-detail-impact.test.ts:30`)
-    already renders a DOM-slot shell under Node
+    already renders a DOM-slot shell under `deno test`
   - The Edit → editable-inputs toggle and Cancel
     restoring the original (D12, D14) — Layer 2;
     `handleIdeaActions`'s edit and cancel branches are
