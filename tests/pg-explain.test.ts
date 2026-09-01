@@ -15,7 +15,7 @@ import { decodeIdentifier } from
 // Postgres-free: skip when POSTGRES_URL is unset. Private
 // schema per file; do not share schemas across files.
 
-const POSTGRES_URL = process.env['POSTGRES_URL'];
+const POSTGRES_URL = Deno.env.get('POSTGRES_URL');
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 const IDEA_COLLECTION = '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/';
@@ -37,12 +37,12 @@ const OPERATION = 'WvNiHVgksjrlfhPfdgfcyQ';
 const AUTH_CONTAINMENT = { code: 'abc' };
 
 function schemaName(): string {
-    const base = process.env['SCHEMA_NAME']
+    const base = Deno.env.get('SCHEMA_NAME')
         ?? (
             'fusion_test_'
             + String(Date.now())
             + '_'
-            + String(process.pid)
+            + String(Deno.pid)
         );
     const name = base + '_explain';
     if (!IDENT.test(name)) {

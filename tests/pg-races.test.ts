@@ -38,19 +38,19 @@ import {
 // Skip when POSTGRES_URL is unset so ./validate stays
 // Postgres-free.
 
-const POSTGRES_URL = process.env['POSTGRES_URL'];
+const POSTGRES_URL = Deno.env.get('POSTGRES_URL');
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const AT = '2026-01-01T00:00:00.000000Z';
 const IDEA_PREFIX = '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/';
 const FLOW_PREFIX = '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/';
 
 function schemaName(): string {
-    const base = process.env['SCHEMA_NAME']
+    const base = Deno.env.get('SCHEMA_NAME')
         ?? (
             'fusion_test_'
             + String(Date.now())
             + '_'
-            + String(process.pid)
+            + String(Deno.pid)
         );
     const name = base + '_races';
     if (!IDENT.test(name)) {

@@ -13,16 +13,16 @@ import { defineStoreAcceptance } from
 // tables before seedAdminSchema. Do not share schemas
 // across files.
 
-const POSTGRES_URL = process.env['POSTGRES_URL'];
+const POSTGRES_URL = Deno.env.get('POSTGRES_URL');
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 function schemaName(): string {
-    const base = process.env['SCHEMA_NAME']
+    const base = Deno.env.get('SCHEMA_NAME')
         ?? (
             'fusion_test_'
             + String(Date.now())
             + '_'
-            + String(process.pid)
+            + String(Deno.pid)
         );
     const name = base + '_acceptance';
     if (!IDENT.test(name)) {

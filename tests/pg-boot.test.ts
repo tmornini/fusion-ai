@@ -28,7 +28,7 @@ import type { SqlClient } from
 // Unit pins stay Postgres-free. Live SHOW runs only
 // when POSTGRES_URL is set (./test-postgres).
 
-const POSTGRES_URL = process.env['POSTGRES_URL'];
+const POSTGRES_URL = Deno.env.get('POSTGRES_URL');
 
 function fakeClient(
     rows: Record<string, unknown>[],
