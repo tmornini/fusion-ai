@@ -40,10 +40,26 @@ async function runCrank(
     );
     // signal only bounds the async output() — the sync
     // outputSync() ignores it and blocks regardless.
+    // POSTGRES_URL and JWT_HMAC_SIGNING_KEY are blanked
+    // deliberately: Node's spawnSync REPLACED the child env
+    // with exactly {PATH, HOME, TMPDIR}, so ./crank never
+    // saw either var regardless of the ambient shell.
+    // Deno.Command MERGES, and ./test exports
+    // JWT_HMAC_SIGNING_KEY ambiently, so omitting this would
+    // leak it into a child the original deliberately
+    // starved. No case below reaches ./crank past its
+    // argument parsing (each exits on a usage error or
+    // --help, before line 85 of ./crank mints these), so no
+    // current assertion depends on the blank — kept anyway
+    // for parity with the original isolation.
     const output = await new Deno.Command('./crank', {
         args,
         signal: AbortSignal.timeout(4000),
-        env: { PATH: pathWithDockerStub(stamp) },
+        env: {
+            PATH: pathWithDockerStub(stamp),
+            POSTGRES_URL: '',
+            JWT_HMAC_SIGNING_KEY: '',
+        },
     }).output();
     const decoder = new TextDecoder();
     return {
