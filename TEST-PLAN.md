@@ -326,8 +326,9 @@ them separately. Abort on any AT red.
        stdout/HTTP boundary, and that
        `demo@example.com` and
        `sarah.chen@company.com` are specifically
-       among the 11 printed lines (the test
-       counts lines, not names)
+       among the 12 printed lines, including
+       Riley Okafor (the test counts lines, not
+       names)
 - [ ] **A4** Open `http://localhost:8080/` in the test browser with site data deleted and no `refresh_token` cookie. PASS: unsigned root hops to `landing/index.html` (one hop from the blank root document). Does not open `auth/` and does not open `snapshots/`. Landing remains the public marketing page; it is now also the unsigned root target.
   Pin: tests/apex-destination.test.ts 'a dead session
        hops to landing'; tests/root-redirect.test.ts
@@ -2206,8 +2207,10 @@ covering the D20–D24 run between them.
        interaction restoring the original data
 - [ ] **E10a** On a project whose state shows action-bar buttons (`submitted` → Approve / Decline / Send back, or `approved` → Archive / View history), click "Edit". PASS: those action-bar buttons are hidden; only the State select, editable fields, and Cancel / Save remain. Click Cancel: the action-bar buttons reappear.
   Observable: `#project-review-actions` /
-  `#project-lifecycle-actions` carry `hidden`
-  while the inner `.action-bar` keeps its own
+  `#project-lifecycle-actions` gain the
+  `.hidden` class (`display: none` from
+  utilities.css), not the HTML `hidden`
+  attribute. The inner `.action-bar` keeps
   `display:flex`. The objectives section and
   flows sidebar stay visible in edit mode.
   Pin: exploratory — the action-bar buttons hiding
