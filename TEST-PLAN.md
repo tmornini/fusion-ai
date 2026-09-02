@@ -2119,12 +2119,20 @@ covering the D20–D24 run between them.
        false by construction); exploratory — the
        live absence of the buttons for a state other
        than the one tested
-- [ ] **D32a** On an in_review idea, click "Edit". PASS: the header shows only Cancel / Save — no Send Back, Approve, Submit, or Convert. Click Cancel: the read header (Send Back / Approve / Edit) returns.
-  Pin: exploratory — `IdeaEditPresenter`'s action
-       buttons are unconditionally Cancel/Save (no
-       CLI test renders them), and no test composes
-       the read-header's button set for `in_review`
-       specifically
+- [ ] **D32a** On an in_review idea, click "Edit".
+  PASS: `.idea-actions-slot` contains only Cancel /
+  Save — no Send Back, Approve, Submit, or Convert
+  *in that slot*. Buttons inside a closed
+  `<dialog>` in `.idea-dialogs-slot` (including
+  `data-idea-action="send-back-confirm"`) are the
+  confirm dialog, not the header. Click Cancel: the
+  read header (Send Back / Approve / Edit in
+  `.idea-actions-slot`) returns.
+  Pin: exploratory — no CLI test renders
+       `.idea-actions-slot`; `IdeaEditPresenter`'s
+       action buttons are unconditionally Cancel/Save,
+       and no test composes the read-header's button
+       set for `in_review` specifically
 
 ### Ideas Workflow Integration
 
@@ -2665,7 +2673,10 @@ opens and renders.)
        position' (decides a real compositor body drag
        changes the node's stored positionX/positionY);
        exploratory — the per-frame rAF paint
-- [ ] **F17** Drag the start node by its body. PASS: it
+- [ ] **F17** Drag the start node by its body. If
+  Create is off-canvas, Auto Fit on or pan until its
+  `transform` is inside the viewBox, then drag.
+  Off-canvas drag is BLOCKED. PASS: it
   moves freely like any standard node — start and complete
   nodes are both draggable. With Auto Layout on the drop
   re-lays out: Create returns to the head of the first
@@ -3582,16 +3593,23 @@ gesture pans instead of dragging, marquee-ing, or connecting.
        a text input is the editable target that suppresses
        the canvas chord); exploratory — the space character
        landing in the input
-- [ ] **F57a** Tab to a node, tap Space. PASS: the
-  node's panel opens (Space activates the
-  focused item); pan mode stays off.
-  Pin: tests/flow-fsm-reduce.test.ts 'canvas-key-activate
-       on a node single-selects it, opens the panel, and
-       requests an update' (decides the activation path
-       Space shares with Enter selects the node and emits
-       open-panel:true); exploratory — pan mode staying
-       off, which rests on the interaction layer's
-       `defaultPrevented` guard and carries no test
+- [ ] **F57a** Tab to a regular node (not Create or
+  Archive — those panels have no `#prop-node-name`).
+  Tap Enter. PASS: the node's panel opens
+  (`#prop-node-name` exists); pan mode stays off.
+  Space on a focused node toggles pan and does not
+  open the panel — that is F12, not this case.
+  Pin: tests/browser/canvas-keyboard.test.ts
+       'Tab from the canvas enters the ring and
+       marks the node' (drives Tab then Enter and
+       waits for `#prop-node-name`);
+       tests/flow-fsm-reduce.test.ts
+       'canvas-key-activate on a node single-selects
+       it, opens the panel, and requests an update'
+       (decides Enter's activation path);
+       tests/browser/canvas-pan.test.ts
+       'Space on a focused node toggles pan off
+       and does not open the panel (F12)'
 
 ### Members Selector (Node Panel)
 
@@ -3769,7 +3787,8 @@ gesture pans instead of dragging, marquee-ing, or connecting.
        exploratory — the row's mode and Required controls
        and the dropdown staying available
 - [ ] **F70** Continuing from F69, click the remove ("×")
-  control on the "Industry" attribute row. PASS: the row
+  control on the "Industry" attribute row. If the
+  Industry row is absent, DEFERRED on F69. PASS: the row
   disappears from the attributes list, leaving Review as
   the seed had it.
   Pin: tests/flow-operations.test.ts
@@ -4259,12 +4278,6 @@ gesture pans instead of dragging, marquee-ing, or connecting.
   notice and a warning toast ("This instance changed
   underneath you — values refreshed; re-apply your
   edit"), and does **not** auto-retry the transition.
-  After PASS, restore the mutated instance's
-  Company Name to "Acme Corp" (and any other
-  field this case changed). WB19a overwrites
-  the only seeded Customer Profile instance;
-  R14's bind picker and R16's instance list
-  read that value.
   Pin: tests/api-work-order-transition-instance.test.ts
        'value-bearing stale If-Match → 412' (decides the
        server 412 when a transition's held etag is
@@ -6135,7 +6148,11 @@ NPS", and "Improve employee morale" are not.
        count (four or five, depending on K5)
 - [ ] **K13** Drag the "Increase incomes" and "Raise
   customer NPS" sliders to non-zero values — send "Raise
-  customer NPS" to the far left (−100); Save. PASS if the
+  customer NPS" to the far left (−100); Save. Drive
+  each slider as `.project-objective-row` (name cell
+  matches) → `.baseline-slider`. A bare
+  `input[type=range]` selector is the first row twice.
+  PASS if the
   shared `Save` button enables (dirty-tracked), the rows
   show the saved baselines including the signed −100, and
   Approve is **still** disabled because at least "Improve
@@ -6583,16 +6600,18 @@ K30 only describes.
        with at least one required attribute with a
        null stored value'; exploratory — the action
        screen's disabled inputs and the bind prompt
-- [ ] **R14** Bind `#gate0001` to the seeded Customer
-  Profile instance (Company Name "Acme Corp") via the
-  bind picker — an existing instance, never a minted
-  one — then fill Company Name + Contact Email and
+- [ ] **R14** Bind `#gate0001` to an existing Customer
+  Profile instance in the picker (label may be Acme Corp
+  or Walk Co B after WB19a) — never mint a new one —
+  then fill Company Name + Contact Email and
   click submit. PASS: transition succeeds; work order
   advances to Review (does NOT demand Reviewer Notes —
   that is current-node only when leaving Review). A
   value-bearing transition while still unbound is
   refused with 400 (`ValidationError` →
-  `HTTP_BAD_REQUEST`), not 409; 409 is rebind.
+  `HTTP_BAD_REQUEST`), not 409; 409 is rebind. R13's
+  open claimed the WO; bind while claimed by the
+  current member is expected.
   Pin: tests/adapters-record-transitions.test.ts
        'validateRecordTransition does not require
        TARGET-node attributes when the current node is
@@ -6631,12 +6650,12 @@ K30 only describes.
        records/ card and chip rendering, and the
        chip's live toggle
 - [ ] **R16** Open Customer Profile detail. PASS: an
-  Instances section lists the seeded instances (id +
-  readable values) — at least one seeded instance
-  (Company Name "Acme Corp") — with a "New instance"
-  control. WB19a must have restored that name; a leftover
-  "Walk Co B" is this walk's hygiene failure, not
-  a missing seed. The empty "No instances yet" state is a
+  Instances section lists at least one
+  instance (id + readable values) and a "New instance"
+  control. The genesis Company Name is "Acme Corp";
+  WB19a may have renamed it to "Walk Co B". Either
+  name is this walk's instance, not a missing seed.
+  The empty "No instances yet" state is a
   real UI branch the CLI pin below decides; Customer
   Profile is never empty on this seed, so the
   explorer will not see it live.
@@ -6720,6 +6739,9 @@ K30 only describes.
   open New instance on Project Brief — Approved renders
   `data-access="readonly"`, Priority is ABSENT from the
   form, and Project Name / Description stay writable.
+  If the Wayne halves are not driven, BLOCKED
+  naming throttle or time. Do not FAIL a half
+  that was not opened.
   Setting an ACL remains `PUT …/attributes/:id` only — no
   UI reaches it; the seed, not the walk, produced the
   restricted state (TODO.md names the ACL-editing UI).
