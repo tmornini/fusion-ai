@@ -39,6 +39,25 @@ function makeListStub(): {
     };
 }
 
+function makeCreateButtonStub(): {
+    classList: {
+        add: (c: string) => void;
+        remove: (c: string) => void;
+        contains: (c: string) => boolean;
+    };
+    addEventListener: () => void;
+} {
+    const classes = new Set<string>();
+    return {
+        classList: {
+            add: (c: string) => { classes.add(c); },
+            remove: (c: string) => { classes.delete(c); },
+            contains: (c: string) => classes.has(c),
+        },
+        addEventListener: () => {},
+    };
+}
+
 Deno.test(
     'an empty initial ideas load still subscribes'
     + ' to cross-tab changes',
@@ -65,6 +84,7 @@ Deno.test(
             string, unknown
         >;
         const listStub = makeListStub();
+        const createButton = makeCreateButtonStub();
         g['window'] = {
             matchMedia: () => ({
                 matches: false,
@@ -82,10 +102,13 @@ Deno.test(
                 className: '',
                 setAttribute: () => {},
             }),
-            querySelector: (sel: string) =>
-                sel === '#ideas-list'
-                    ? listStub
-                    : null,
+            querySelector: (sel: string) => {
+                if (sel === '#ideas-list') return listStub;
+                if (sel === '#create-idea-btn') {
+                    return createButton;
+                }
+                return null;
+            },
         };
         try {
             await import('./in-page-facade.ts');
@@ -115,6 +138,11 @@ Deno.test(
                 ),
                 'precondition: empty state'
                 + ' rendered',
+            );
+            assert(
+                createButton.classList.contains('hidden'),
+                'the empty render hides the header'
+                + ' create button',
             );
             // Another tab writes an idea. The raw
             // ctx.PUT pair is the wire idea creation
@@ -202,6 +230,11 @@ Deno.test(
                 ),
                 'the empty page must re-init on'
                 + ' the first cross-tab bell',
+            );
+            assert(
+                !createButton.classList.contains('hidden'),
+                'the populated re-init shows the header'
+                + ' create button again',
             );
         } finally {
             // The divorce point opened ONE channel per

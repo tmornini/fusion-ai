@@ -308,11 +308,6 @@ Off the critical path; each with its oracle.
   `version` column hashed on write and was never checked
   on read. `request_hash` is replay identity, not
   response integrity — `SCHEMA.md` item 4
-- The empty-state `onEmpty` removes the header create
-  button irreversibly; a live empty→populated re-init
-  (run-six Task 9) leaves the list without its header
-  CTA — hide, don't remove —
-  `web-app/ideas/index.ts`, `web-app/records/index.ts`
 - Claim-on-load with no release-on-leave plus the
   8-hour `DEFAULT_LOCK_TIMEOUT` turns a drive-by
   work-order view into an 8-hour claim
