@@ -231,9 +231,7 @@ Off the critical path; each with its oracle.
   `web-app/ideas/convert.ts:356`;
   `docs/superpowers/test-plan-mitigations/`
   `2026-08-26-d-d6.md`)
-- The run-four remediation's remaining seams — Edit
-  rendered for members on record detail
-  (`web-app/app/presenters/record-detail.ts:495-500`);
+- The run-four remediation's remaining seams —
   the binding PUT not probing record existence
   (`api/routes.ts:5583-5586`); R12 without a positive
   subject; stale G9 / R6 / R7 notes
