@@ -149,10 +149,19 @@ not repeat the note in every case.
   Chrome is fullscreen or flush with the menu bar, and
   the next click opens About This Mac. Then click the
   intended control once.
-- Shift-drag (AA32/F19): if the compositor does not
+- Shift-drag (AA32/F19/F23): if the compositor does not
   deliver Shift on pointer-up, the FSM emits add-node
   instead of add-edge. Record BLOCKED naming that; do
   not FAIL. Layer 1 and Layer 2 pins decide add-edge.
+  F23's mid-gesture Shift is the same compositor limit.
+- AA33/AA34: DEFERRED on AA32 when AA32's stray
+  "New State" nodes re-flow the graph and a
+  double-click misses Data Capture.
+- F37b: after F37a opens a second tab (born hidden),
+  re-activate tab A and confirm
+  `document.visibilityState === 'visible'` before
+  the port-drag. Driving the hidden tab is BLOCKED,
+  not FAIL.
 - B21: the access JWT is memory-only. There is no
   public `putSessionToken` on the production bundle.
   If the in-memory token cannot be replaced without
@@ -178,6 +187,10 @@ not repeat the note in every case.
 | BLOCKED | a step could not be performed for a named reason outside the product (driver or environment); the reason is the note |
 | DEFERRED | a prerequisite case did not produce what this case needs |
 | DRIFT | passes in substance; the document or the UI text disagrees — the document changes |
+
+Walk-specific: F23 scores BLOCKED like AA32 when
+Shift is missing on pointer-up. AA33/AA34 score
+DEFERRED on AA32 when stray nodes block targeting.
 
 Nothing blocks on any outcome. BLOCKED is allowed for a
 driver limit: with no gate riding on the walk, an honest
