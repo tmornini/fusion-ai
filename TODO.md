@@ -308,8 +308,6 @@ Off the critical path; each with its oracle.
   `version` column hashed on write and was never checked
   on read. `request_hash` is replay identity, not
   response integrity — `SCHEMA.md` item 4
-- `flows/stats.ts` wires no change subscription; the
-  stats page stays stale until navigation
 - The empty-state `onEmpty` removes the header create
   button irreversibly; a live empty→populated re-init
   (run-six Task 9) leaves the list without its header
