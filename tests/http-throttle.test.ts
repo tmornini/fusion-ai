@@ -8,6 +8,8 @@ import {
     type RequestHandler,
 } from '../server/http-server.ts';
 import { createAuthThrottle } from '../server/throttle.ts';
+import { fetchDiscardingBody } from
+    './fixtures/fetch-discarding-body.ts';
 
 async function withServer(
     handle: RequestHandler,
@@ -53,8 +55,9 @@ function postRaw(
     base: string,
     path: string,
 ): Promise<number> {
-    return fetch(base + path, { method: 'POST' })
-        .then((res) => res.status);
+    return fetchDiscardingBody(base + path, {
+        method: 'POST',
+    }).then((res) => res.status);
 }
 
 Deno.test('sixth authorize in a minute is 429', async () => {
@@ -66,10 +69,10 @@ Deno.test('sixth authorize in a minute is 429', async () => {
     await withServer(handle, async (base) => {
         const url = base + '/api/authentication/authorize';
         for (let i = 0; i < 5; i++) {
-            const res = await fetch(url, { method: 'POST' });
+            const res = await fetchDiscardingBody(url, { method: 'POST' });
             assertStrictEquals(res.status, 200);
         }
-        const sixth = await fetch(url, { method: 'POST' });
+        const sixth = await fetchDiscardingBody(url, { method: 'POST' });
         assertStrictEquals(sixth.status, HTTP_TOO_MANY_REQUESTS);
         assertStrictEquals(handled, 5);
     });
@@ -88,7 +91,7 @@ async () => {
             grant_type: 'refresh',
         });
         for (let i = 0; i < 6; i++) {
-            const res = await fetch(url, {
+            const res = await fetchDiscardingBody(url, {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
@@ -114,7 +117,7 @@ async () => {
             grant_type: 'token-exchange',
         });
         for (let i = 0; i < 6; i++) {
-            const res = await fetch(url, {
+            const res = await fetchDiscardingBody(url, {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
@@ -140,7 +143,7 @@ async () => {
             grant_type: 'client_credentials',
         });
         for (let i = 0; i < 5; i++) {
-            const res = await fetch(url, {
+            const res = await fetchDiscardingBody(url, {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
@@ -149,7 +152,7 @@ async () => {
             });
             assertStrictEquals(res.status, 200);
         }
-        const sixth = await fetch(url, {
+        const sixth = await fetchDiscardingBody(url, {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -171,10 +174,10 @@ async () => {
     await withServer(handle, async (base) => {
         const url = base + '/api/authentication/authorize/';
         for (let i = 0; i < 5; i++) {
-            const res = await fetch(url, { method: 'POST' });
+            const res = await fetchDiscardingBody(url, { method: 'POST' });
             assertStrictEquals(res.status, 200);
         }
-        const sixth = await fetch(url, { method: 'POST' });
+        const sixth = await fetchDiscardingBody(url, { method: 'POST' });
         assertStrictEquals(sixth.status, HTTP_TOO_MANY_REQUESTS);
         assertStrictEquals(handled, 5);
     });
@@ -190,7 +193,7 @@ async () => {
     await withServer(handle, async (base) => {
         const url = base + '/api/authentication/authorize';
         for (let i = 0; i < 5; i++) {
-            const res = await fetch(url, {
+            const res = await fetchDiscardingBody(url, {
                 method: 'POST',
                 headers: {
                     'x-forwarded-for': '203.0.113.10',
@@ -198,7 +201,7 @@ async () => {
             });
             assertStrictEquals(res.status, 200);
         }
-        const sixth = await fetch(url, {
+        const sixth = await fetchDiscardingBody(url, {
             method: 'POST',
             headers: {
                 'x-forwarded-for': '203.0.113.20',
@@ -219,7 +222,7 @@ async () => {
     await withServer(handle, async (base) => {
         const url = base + '/api/authentication/authorize';
         for (let i = 0; i < 5; i++) {
-            const res = await fetch(url, {
+            const res = await fetchDiscardingBody(url, {
                 method: 'POST',
                 headers: {
                     'x-forwarded-for': '203.0.113.10',
@@ -227,14 +230,14 @@ async () => {
             });
             assertStrictEquals(res.status, 200);
         }
-        const other = await fetch(url, {
+        const other = await fetchDiscardingBody(url, {
             method: 'POST',
             headers: {
                 'forwarded': 'for=203.0.113.20',
             },
         });
         assertStrictEquals(other.status, 200);
-        const sixth = await fetch(url, {
+        const sixth = await fetchDiscardingBody(url, {
             method: 'POST',
             headers: {
                 'x-forwarded-for': '203.0.113.10',

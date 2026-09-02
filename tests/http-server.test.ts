@@ -20,6 +20,8 @@ import {
     type HttpListener,
     type RequestHandler,
 } from '../server/http-server.ts';
+import { fetchDiscardingBody } from
+    './fixtures/fetch-discarding-body.ts';
 
 async function withServer(
     files: Record<string, string>,
@@ -108,14 +110,14 @@ async () => {
         );
         assertStrictEquals(await page.text(), '<p>hi</p>');
 
-        const app = await fetch(base + '/assets/app.js');
+        const app = await fetchDiscardingBody(base + '/assets/app.js');
         assertStrictEquals(app.status, 200);
         assertStrictEquals(
             app.headers.get('cache-control'),
             NO_STORE,
         );
 
-        const hashed = await fetch(
+        const hashed = await fetchDiscardingBody(
             base + '/assets/app.deadbeef.js',
         );
         assertStrictEquals(hashed.status, 200);
@@ -132,7 +134,7 @@ async () => {
         'landing/index.html': '<p>hi</p>',
         'assets/app.js': 'console.log(1)',
     }, undefined, async (base) => {
-        const page = await fetch(
+        const page = await fetchDiscardingBody(
             base + '/landing/index.html',
         );
         assertStrictEquals(page.status, 200);
@@ -150,7 +152,7 @@ async () => {
             CONTENT_SECURITY_POLICY,
         );
 
-        const head = await fetch(
+        const head = await fetchDiscardingBody(
             base + '/landing/index.html',
             { method: 'HEAD' },
         );
@@ -160,14 +162,14 @@ async () => {
             CONTENT_SECURITY_POLICY,
         );
 
-        const app = await fetch(base + '/assets/app.js');
+        const app = await fetchDiscardingBody(base + '/assets/app.js');
         assertStrictEquals(app.status, 200);
         assertStrictEquals(
             app.headers.get('content-security-policy'),
             null,
         );
 
-        const miss = await fetch(base + '/assets/no.js');
+        const miss = await fetchDiscardingBody(base + '/assets/no.js');
         assertStrictEquals(miss.status, 404);
         assertStrictEquals(
             miss.headers.get('content-security-policy'),
@@ -178,7 +180,7 @@ async () => {
 
 Deno.test('missing static file is 404', async () => {
     await withServer({}, undefined, async (base) => {
-        const res = await fetch(base + '/assets/no.js');
+        const res = await fetchDiscardingBody(base + '/assets/no.js');
         assertStrictEquals(res.status, HTTP_NOT_FOUND);
     });
 });
@@ -186,7 +188,7 @@ Deno.test('missing static file is 404', async () => {
 Deno.test('API path without a token is 401 before 404',
 async () => {
     await withServer({}, undefined, async (base, logs) => {
-        const res = await fetch(
+        const res = await fetchDiscardingBody(
             base
             + '/api/organizations/AjdvjuECVZEgZoFajaIEkg/ideas?secret=1',
         );

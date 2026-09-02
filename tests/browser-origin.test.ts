@@ -7,6 +7,8 @@ import {
     passwordOf,
     startOrigin,
 } from './browser/fixtures.ts';
+import { fetchDiscardingBody } from
+    './fixtures/fetch-discarding-body.ts';
 
 // The list route the API actually exposes: there is no
 // /api/organizations/ collection, so the origin proves
@@ -27,7 +29,7 @@ async () => {
             passwordOf(origin.credentials, ADMIN_EMAIL)
                 .length > 0,
         );
-        const anonymous = await fetch(
+        const anonymous = await fetchDiscardingBody(
             origin.baseUrl + MEMBERS_PATH,
         );
         assertStrictEquals(anonymous.status, 401);

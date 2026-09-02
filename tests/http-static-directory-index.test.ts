@@ -10,6 +10,8 @@ import {
     type HttpListener,
     type RequestHandler,
 } from '../server/http-server.ts';
+import { fetchDiscardingBody } from
+    './fixtures/fetch-discarding-body.ts';
 
 async function withServer(
     files: Record<string, string>,
@@ -179,7 +181,7 @@ async () => {
         'api-documentation/index.html':
             '<p>docs home</p>',
     }, handle, async (base) => {
-        const res = await fetch(
+        const res = await fetchDiscardingBody(
             base + '/api-documentation/post/',
         );
         assertStrictEquals(res.status, HTTP_NOT_FOUND);
@@ -258,7 +260,7 @@ async () => {
         return new Response('ok', { status: 200 });
     };
     await withServer({}, handle, async (base) => {
-        const res = await fetch(
+        const res = await fetchDiscardingBody(
             base + '/api/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/',
         );
         assertStrictEquals(res.status, 200);
@@ -296,7 +298,7 @@ async () => {
         return new Response('ok', { status: 200 });
     };
     await withServer({}, handle, async (base) => {
-        await fetch(base + '/api/');
+        await fetchDiscardingBody(base + '/api/');
         assertStrictEquals(seen, '/');
     });
 });
