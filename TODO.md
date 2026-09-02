@@ -130,10 +130,8 @@ spec → plan → ship cycle, implemented sequentially. A
    guarded by no test); the second instance the
    remediation added (`canvasFocusOf`'s walk); the undo
    path's duplicated pure helpers
-   (`api/flow-graph-diff.ts:16-26`); the `#flowDesc` stub
-   (`web-app/app/presenters/flow-stats.ts:414-417` —
-   remove the comment at `flow-stats.ts:414-415` when
-   done); `toRecordAttribute`'s `??` ACL default
+   (`api/flow-graph-diff.ts:16-26`); `toRecordAttribute`'s
+   `??` ACL default
    (`web-app/app/adapters/record-attributes.ts:76-79`)
    and the two readings of an absent role array
    (`api/routes.ts:843-856, 1000-1005` —
