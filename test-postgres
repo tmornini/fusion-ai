@@ -10,6 +10,7 @@ export SCHEMA_NAME="fusion_test_$(date +%s)_$$"
 # fixtures. Permissions match ./test minus write.
 DENO_PG_TEST=(
     deno test --frozen --no-check
+    --sanitize-ops --sanitize-resources
     --allow-env --allow-read --allow-net --allow-run
 )
 TZ=UTC "${DENO_PG_TEST[@]}" \
