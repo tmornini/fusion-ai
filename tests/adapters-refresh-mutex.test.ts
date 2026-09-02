@@ -30,9 +30,17 @@ import {
 } from './token-fixtures.ts';
 import { principalFromToken } from
     '../shared/access-token-decode.ts';
+import { deleteRefreshChannel } from
+    '../web-app/app/adapters/session-refresh-mutex.ts';
 
+// The single-flight mutex opens ONE refresh channel per
+// process, lazily, and a test process has no unload to
+// reclaim it. Release after each test, so the handle never
+// outlives the test that opened it; the next refresh
+// reopens it.
 Deno.test.afterEach(() => {
     setCookieSession(false);
+    deleteRefreshChannel();
 });
 
 async function withMockFetch(

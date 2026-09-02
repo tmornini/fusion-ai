@@ -5,11 +5,19 @@ import {
     resolveApexLocation,
     probeRefreshSession,
 } from '../web-app/app/apex-destination.ts';
+import { deleteRefreshChannel } from
+    '../web-app/app/adapters/session-refresh-mutex.ts';
 
 const originalFetch = globalThis.fetch;
 
+// The single-flight mutex opens ONE refresh channel per
+// process, lazily, and a test process has no unload to
+// reclaim it. Release after each test, so the handle never
+// outlives the test that opened it; the next probe reopens
+// it.
 Deno.test.afterEach(() => {
     globalThis.fetch = originalFetch;
+    deleteRefreshChannel();
 });
 
 Deno.test('a live session hops to dashboard', async () => {

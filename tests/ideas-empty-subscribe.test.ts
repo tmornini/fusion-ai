@@ -190,6 +190,15 @@ Deno.test(
                 + ' the first cross-tab bell',
             );
         } finally {
+            // The divorce point opened ONE channel per
+            // process when init subscribed; a test process
+            // has no unload to reclaim it, so release it
+            // here — after the assertion above.
+            const { deleteNotificationChannel } =
+                await import(
+                    '../web-app/app/adapters/broadcast-channel.ts'
+                );
+            deleteNotificationChannel();
             delete g['window'];
             delete g['MutationObserver'];
             delete g['document'];

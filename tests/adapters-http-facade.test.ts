@@ -20,6 +20,17 @@ import { DEV_TOKEN } from './token-fixtures.ts';
 import { isIdentifier } from '../shared/identifier.ts';
 import { postPasswordLogin } from
     '../web-app/app/adapters/authentication.ts';
+import { deleteRefreshChannel } from
+    '../web-app/app/adapters/session-refresh-mutex.ts';
+
+// The single-flight mutex opens ONE refresh channel per
+// process, lazily, and a test process has no unload to
+// reclaim it. Release after each test, so the handle never
+// outlives the test that opened it; the next refresh
+// reopens it.
+Deno.test.afterEach(() => {
+    deleteRefreshChannel();
+});
 
 async function withMockFetch(
     handler: typeof fetch,

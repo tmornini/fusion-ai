@@ -64,6 +64,17 @@ import { refreshTokenFromSetCookie } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
 import { generateIdentifier } from
     '../shared/identifier.ts';
+import { deleteRefreshChannel } from
+    '../web-app/app/adapters/session-refresh-mutex.ts';
+
+// The single-flight mutex opens ONE refresh channel per
+// process, lazily, and a test process has no unload to
+// reclaim it. Release after each test, so the handle never
+// outlives the test that opened it; the next refresh
+// reopens it.
+Deno.test.afterEach(() => {
+    deleteRefreshChannel();
+});
 
 const ORGANIZATION_A = generateIdentifier();
 const ORGANIZATION_B = generateIdentifier();

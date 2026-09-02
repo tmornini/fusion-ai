@@ -21,6 +21,17 @@ import {
     organizationToken,
     reachableToken,
 } from './token-fixtures.ts';
+import { deleteNotificationChannel } from
+    '../web-app/app/adapters/broadcast-channel.ts';
+
+// The divorce point opens ONE channel per process, lazily,
+// and a test process has no unload to reclaim it. Release
+// after each test, so the handle never outlives the test
+// that opened it; the next subscription reopens it and
+// getChannel re-registers dispatch on the new handle.
+Deno.test.afterEach(() => {
+    deleteNotificationChannel();
+});
 
 Deno.test('subscribe receives subsequent send', () => {
     const ch = createChannel<number>();
