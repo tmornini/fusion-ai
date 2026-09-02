@@ -2699,6 +2699,9 @@ opens and renders.)
        then shift-key toggles connect.isShift (F23)'
        (decides a bare shift-key input flips the in-flight
        connect gesture's `isShift` with no pointer move);
+       tests/browser/canvas-gestures.test.ts
+       'Shift held mid port-drag commits an edge
+       and adds no node (F23)';
        tests/flow-interactions-shift.test.ts 'pointerIsShift
        is true when the window tracks Shift even if the
        pointer event reports false' (decides the held key

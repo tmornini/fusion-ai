@@ -186,3 +186,53 @@ Deno.test(
         );
     },
 );
+
+Deno.test(
+    'Shift held mid port-drag commits an edge'
+    + ' and adds no node (F23)',
+    async () => {
+        await withAdminPage(
+            browser.get(),
+            async (page, origin) => {
+                await openFlow(
+                    page, origin, ONBOARDING,
+                );
+                const nodes = await nodeCount(page);
+                const edges = await edgeCount(page);
+                const capture = await nodeIdNamed(
+                    page, 'Data Capture',
+                );
+                const archive = await nodeIdNamed(
+                    page, 'Archive',
+                );
+                const port = await page.center(
+                    portSelector(capture),
+                );
+                const target = await page.center(
+                    nodeSelector(archive),
+                );
+                await page.press(port);
+                await page.move({
+                    x: port.x
+                        + (target.x - port.x) * 0.4,
+                    y: port.y
+                        + (target.y - port.y) * 0.4,
+                });
+                await page.keyDown('Shift');
+                await page.move(target, SHIFT);
+                await page.release(target, SHIFT);
+                await page.keyUp('Shift');
+                await page.until(
+                    `document.querySelectorAll(`
+                    + `'${EDGE}').length === ${
+                        edges + 1
+                    }`,
+                    'one more edge',
+                );
+                assertStrictEquals(
+                    await nodeCount(page), nodes,
+                );
+            },
+        );
+    },
+);
