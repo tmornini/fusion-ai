@@ -4,7 +4,7 @@ import {
 } from './fixtures.ts';
 import {
     CANVAS, ONBOARDING, WRAP, openFlow,
-    nodeIdNamed, nodeSelector,
+    doubleClick, nodeIdNamed, nodeSelector,
 } from './canvas.ts';
 
 const browser = useBrowser();
@@ -99,6 +99,58 @@ Deno.test(
                 );
                 await stays(
                     page, PANEL_ABSENT, STAY_MS,
+                );
+            },
+        );
+    },
+);
+
+Deno.test(
+    'Zoom-in viewBox survives panel open and close'
+    + ' with Auto Fit off (F14)',
+    async () => {
+        await withAdminPage(
+            browser.get(),
+            async (page, origin) => {
+                await openFlow(
+                    page, origin, ONBOARDING,
+                );
+                await page.click(AUTO_FIT);
+                const viewBoxOf =
+                    `document.querySelector('${CANVAS}')`
+                    + `.getAttribute('viewBox')`;
+                const before = await page.evaluate<
+                    string | null
+                >(viewBoxOf);
+                await page.click(
+                    '[data-action="zoom-in"]',
+                );
+                await page.until(
+                    `${viewBoxOf} !== ${
+                        JSON.stringify(before)
+                    }`,
+                    'viewBox zoomed',
+                );
+                const zoomed = await page.evaluate<
+                    string | null
+                >(viewBoxOf);
+                const review = await nodeIdNamed(
+                    page, 'Review',
+                );
+                await doubleClick(
+                    page, nodeSelector(review),
+                );
+                await page.waitFor('.flow-props-panel');
+                await page.key('Escape');
+                await page.until(
+                    PANEL_ABSENT,
+                    'panel closed',
+                );
+                assertStrictEquals(
+                    await page.evaluate<string | null>(
+                        viewBoxOf,
+                    ),
+                    zoomed,
                 );
             },
         );
