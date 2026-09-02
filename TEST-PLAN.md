@@ -2753,6 +2753,9 @@ opens and renders.)
        selects edge and opens panel (F26)' (decides two
        edge pointerdowns inside the window select that edge
        and emit exactly one open-panel with open=true);
+       tests/browser/canvas-gestures.test.ts
+       'an edge-label click selects and a double-click
+       opens Transition Properties (F26)';
        tests/flow-fsm-scenarios.test.ts 'single edge click
        selects but does not open panel (F26 single)';
        tests/presenter-misc.test.ts 'buildEdgePanel shows
@@ -2785,8 +2788,10 @@ opens and renders.)
        edge' (decides the selected edge leaves the
        persisted graph); tests/flow-operations.test.ts
        'performDeleteSelectedEdge: a node selection is a
-       no-op'; exploratory — the toolbar click and the
-       canvas repaint
+       no-op'; tests/browser/canvas-gestures.test.ts
+       'an edge selection enables Delete and
+       removes the edge (F28)'; exploratory — the
+       toolbar click and the canvas repaint
 - [ ] **F29** Close the properties panel if it is
   open (empty-canvas click with a panel open
   restores the F14 saved viewBox — that is not

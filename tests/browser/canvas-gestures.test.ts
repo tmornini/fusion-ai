@@ -2,8 +2,9 @@ import { assert, assertNotEquals, assertStrictEquals } from '@std/assert';
 import { SHIFT, useBrowser, withAdminPage } from
     './fixtures.ts';
 import {
-    CANVAS, EDGE, NODE, ONBOARDING,
-    edgeCount, flowGraph, nodeCount, nodeIdNamed,
+    CANVAS, EDGE, NODE, ONBOARDING, LAYOUT_TEST,
+    doubleClick, edgeCount, edgeLabelSelector,
+    flowGraph, nodeCount, nodeIdNamed,
     nodeSelector, openFlow, portSelector,
 } from './canvas.ts';
 
@@ -107,3 +108,81 @@ async () => {
         assertStrictEquals(selected, total);
     });
 });
+
+Deno.test(
+    'an edge-label click selects and a double-click'
+    + ' opens Transition Properties (F26)',
+    async () => {
+        await withAdminPage(
+            browser.get(),
+            async (page, origin) => {
+                await openFlow(
+                    page, origin, LAYOUT_TEST,
+                );
+                await page.click(
+                    '#flow-auto-fit-switch',
+                );
+                const label = edgeLabelSelector();
+                await page.waitFor(label);
+                await doubleClick(page, label);
+                await page.waitFor('.flow-props-panel');
+                const title = await page.evaluate<
+                    string | null
+                >(
+                    `document.querySelector(`
+                    + `'.flow-props-panel h3')`
+                    + `?.textContent ?? null`,
+                );
+                assert(
+                    (title ?? '').includes(
+                        'Transition Properties',
+                    ),
+                    `panel title was ${title}`,
+                );
+            },
+        );
+    },
+);
+
+Deno.test(
+    'an edge selection enables Delete and'
+    + ' removes the edge (F28)',
+    async () => {
+        await withAdminPage(
+            browser.get(),
+            async (page, origin) => {
+                await openFlow(
+                    page, origin, LAYOUT_TEST,
+                );
+                const label = edgeLabelSelector();
+                await page.waitFor(label);
+                const before = await edgeCount(page);
+                await page.click(label);
+                await page.until(
+                    `document.querySelector(`
+                    + `'${EDGE}[aria-current="true"]')`
+                    + ` !== null`,
+                    'edge selected',
+                );
+                const disabled =
+                    await page.evaluate<boolean>(
+                        `document.querySelector(`
+                        + `'[data-action="delete-selected"]')`
+                        + `?.hasAttribute('disabled')`
+                        + ` === true`,
+                    );
+                assertStrictEquals(disabled, false);
+                await page.click(
+                    '[data-action="delete-selected"]',
+                );
+                await page.until(
+                    `document.querySelectorAll(`
+                    + `'${EDGE}').length === ${
+                        before - 1
+                    }`,
+                    'one fewer edge',
+                );
+            },
+        );
+    },
+);
