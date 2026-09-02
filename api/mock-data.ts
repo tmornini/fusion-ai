@@ -115,6 +115,7 @@ import {
     WO01_ID,
     WO01_REVIEW_EVENT_ID,
     WO01_COMPLETE_EVENT_ID,
+    flowRecordOrganizationFor,
 } from './mock-data/seed-message-pairs.ts';
 import { buildSeedScoreRows } from './mock-data/scores.ts';
 import {
@@ -952,12 +953,20 @@ async function postMockDataLoadIn(
                 recordMessagePairs,
             );
         }),
-        ...mockFlowRecords.map(r =>
+    ]);
+
+    // Bindings probe their record inside the write gate
+    // (postFlowRecordDocumentOp), so the records above must
+    // have landed first — a second wave, not a spread into
+    // the first.
+    await Promise.all(
+        mockFlowRecords.map(r =>
             postFlowRecordDocumentOp(
                 adapter,
                 r.id,
                 flowRecordJoinSeedBody(r),
                 SYSTEM_MEMBER_ID,
+                flowRecordOrganizationFor(r),
                 requireMessagePair(
                     messagePairs,
                     seedMessagePairKey(
@@ -966,7 +975,7 @@ async function postMockDataLoadIn(
                 ),
             ),
         ),
-    ]);
+    );
 
     // A score or revision author is always a member of the
     // scored entity's org. Seed authors from that org ONLY:

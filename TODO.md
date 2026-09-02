@@ -232,9 +232,7 @@ Off the critical path; each with its oracle.
   `docs/superpowers/test-plan-mitigations/`
   `2026-08-26-d-d6.md`)
 - The run-four remediation's remaining seams —
-  the binding PUT not probing record existence
-  (`api/routes.ts:5583-5586`); R12 without a positive
-  subject; stale G9 / R6 / R7 notes
+  R12 without a positive subject; stale G9 / R6 / R7 notes
 - A replay is indistinguishable from a creation. The
   gate's replay branch renders a previously-stored
   pair but passes `appended: true`
