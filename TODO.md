@@ -1082,12 +1082,6 @@ Off the critical path; each with its oracle.
   TEST-PLAN case claims the feedback survives. Oracle: a
   Layer 1 test asserting the typed feedback reaches the
   transition
-- Two dormant seed map entries still carry the deleted
-  slice seeder's identity `dtmZgnDBlVcoyjxKzlaKgA`
-  ('g-unseated') — `api/mock-data.ts:204`
-  (`SEED_PASSWORD_CREDENTIAL_BY_IDENTITY`) and
-  `api/mock-data/seed-hash-preimage.ts:175`. Pruning
-  them was out of the three-layers spec's scope
 - Undo at the stack bottom returns 201 — `api/derive-flows.ts`
   computes `hasUndoHistory` as `pairs > 1`, so the first undo
   past the bottom is accepted instead of refused. Named by
