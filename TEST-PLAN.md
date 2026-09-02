@@ -4158,6 +4158,12 @@ gesture pans instead of dragging, marquee-ing, or connecting.
   notice and a warning toast ("This instance changed
   underneath you — values refreshed; re-apply your
   edit"), and does **not** auto-retry the transition.
+  After PASS, restore the mutated instance's
+  Company Name to "Acme Corp" (and any other
+  field this case changed). WB19a overwrites
+  the only seeded Customer Profile instance;
+  R14's bind picker and R16's instance list
+  read that value.
   Pin: tests/api-work-order-transition-instance.test.ts
        'value-bearing stale If-Match → 412' (decides the
        server 412 when a transition's held etag is
@@ -6448,18 +6454,15 @@ K30 only describes.
 - [ ] **R13** From workbox, open the gate-violation work
   order (`#gate0001`, `eOlNZpGQfmCdpSFWXGkzFQ`) at Data
   Capture, unbound. PASS: current node is Data Capture;
-  the action screen shows Company Name and Contact Email
-  inputs (fillable path); empty submit is blocked — the
-  page-module empty-required pre-check toasts "Please fill
-  all required attributes" before the POST. The typed
-  gate (`validateRecordTransition` on CURRENT-node refs)
-  is the durable covenant; CLI pins it; constraint
-  failures still surface via
+  every attribute input is disabled/readonly behind the
+  bind prompt (WB10b) — there is no fillable-while-unbound
+  path. The typed gate (`validateRecordTransition` on
+  CURRENT-node refs) is the durable covenant; CLI pins
+  it; constraint failures still surface via
   `WorkboxDetailPresenter.buildViolations` banner. Only
   WO01 (`a7c3e1f9`) is instance-bound — do not bind
   `#gate0001` here (the seeded Customer Profile instance,
-  Acme, already has values set), or the empty-submit toast
-  can no longer be observed.
+  Acme, already has values set).
   Pin: tests/adapters-record-transitions.test.ts
        'validateRecordTransition returns a required
        violation when the CURRENT node has a required
@@ -6471,15 +6474,17 @@ K30 only describes.
        gate-violation work order has a current node
        with at least one required attribute with a
        null stored value'; exploratory — the action
-       screen's rendered inputs and the pre-check
-       toast text
-- [ ] **R14** Fill Company Name + Contact Email, click
-  submit. PASS: transition succeeds; work order advances
-  to Review (does NOT demand Reviewer Notes — that is
-  current-node only when leaving Review). The work order
-  is still `#gate0001`; if it is still unbound, bind the
-  seeded Customer Profile instance (Acme) via the bind
-  picker — an existing instance, never a minted one.
+       screen's disabled inputs and the bind prompt
+- [ ] **R14** Bind `#gate0001` to the seeded Customer
+  Profile instance (Company Name "Acme Corp") via the
+  bind picker — an existing instance, never a minted
+  one — then fill Company Name + Contact Email and
+  click submit. PASS: transition succeeds; work order
+  advances to Review (does NOT demand Reviewer Notes —
+  that is current-node only when leaving Review). A
+  value-bearing transition while still unbound is
+  refused with 400 (`ValidationError` →
+  `HTTP_BAD_REQUEST`), not 409; 409 is rebind.
   Pin: tests/adapters-record-transitions.test.ts
        'validateRecordTransition does not require
        TARGET-node attributes when the current node is
@@ -6521,7 +6526,9 @@ K30 only describes.
   Instances section lists the seeded instances (id +
   readable values) — at least one seeded instance
   (Company Name "Acme Corp") — with a "New instance"
-  control. The empty "No instances yet" state is a
+  control. WB19a must have restored that name; a leftover
+  "Walk Co B" is this walk's hygiene failure, not
+  a missing seed. The empty "No instances yet" state is a
   real UI branch the CLI pin below decides; Customer
   Profile is never empty on this seed, so the
   explorer will not see it live.
