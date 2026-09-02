@@ -288,6 +288,12 @@ Deno.test(
                 ctx, generateIdentifier(), Date.now(),
             ),
         );
+        // getFlowStats fans four reads out through
+        // Promise.all; getFlowGraph's rejection settles the
+        // caller while the other three are still in flight.
+        // Yield a macrotask turn so those ops complete in
+        // the test that started them.
+        await new Promise(resolve => setTimeout(resolve, 0));
     },
 );
 

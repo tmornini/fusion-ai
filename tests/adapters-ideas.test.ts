@@ -181,6 +181,11 @@ Deno.test('getIdea throws on missing submission', async () => {
         Error,
         'submission not found',
     );
+    // getIdea fans three reads out through Promise.all; the
+    // submission's rejection settles the caller while the
+    // other two are still in flight. Yield a macrotask turn
+    // so those ops complete in the test that started them.
+    await new Promise(resolve => setTimeout(resolve, 0));
 });
 
 Deno.test('putIdea persists changes', async () => {
