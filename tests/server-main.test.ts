@@ -1,5 +1,6 @@
 import {
-    assertMatch, assertStrictEquals,
+    assertMatch, assertNotMatch,
+    assertStrictEquals,
 } from '@std/assert';
 import { USAGE, dispatch } from '../server/main.ts';
 
@@ -53,4 +54,40 @@ async () => {
     );
     assertStrictEquals(result.code, 1);
     assertMatch(result.text, /no arguments/i);
+});
+
+// A boot fault whose raw message carries POSTGRES_URL
+// whole: postgres.js parses the URL with `new URL`, and
+// the TypeError names the string it was handed. The child
+// runs ./build's generated entry shape, so this pins the
+// compiled binary's path and not a test-only one.
+const LEAKY_SECRET = 'never-reaches-the-logs';
+const LEAKY_URL =
+    `postgres://fusion:${LEAKY_SECRET}@@@bad host/db`;
+
+Deno.test('a failed serve boot redacts POSTGRES_URL',
+async () => {
+    const program = 'import { dispatch } from '
+        + `'${import.meta.resolve('../server/main.ts')}';\n`
+        + 'Deno.exit(await dispatch('
+        + `new URL('${SITE.href}'), Deno.args));\n`;
+    // signal only bounds the async output() — the sync
+    // outputSync() ignores it and blocks regardless.
+    const result = await new Deno.Command('deno', {
+        args: [
+            'eval', '--frozen', '--config', 'deno.json',
+            '--allow-env', '--allow-net', '--allow-read',
+            program, 'serve',
+        ],
+        signal: AbortSignal.timeout(60_000),
+        env: {
+            POSTGRES_URL: LEAKY_URL,
+            JWT_HMAC_SIGNING_KEY: 'k',
+            HTTP_SERVER_PORT: '8099',
+        },
+    }).output();
+    const stderr = new TextDecoder().decode(result.stderr);
+    assertStrictEquals(result.code, 1);
+    assertMatch(stderr, /"message":"boot failed"/);
+    assertNotMatch(stderr, new RegExp(LEAKY_SECRET));
 });
