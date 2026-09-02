@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assert, assertStrictEquals } from '@std/assert';
 import {
     ADMIN_EMAIL,
     passwordOf,
@@ -12,7 +11,7 @@ import { registryUrl } from
 
 const browser = useBrowser();
 
-test('sign-in lands on the dashboard as the seeded admin',
+Deno.test('sign-in lands on the dashboard as the seeded admin',
 async () => {
     const origin = await startOrigin();
     const page = await browser.get().newPage();
@@ -21,13 +20,13 @@ async () => {
         const path = await page.evaluate<string>(
             'location.pathname',
         );
-        assert.ok(path.includes('/dashboard/'), path);
+        assert(path.includes('/dashboard/'), path);
         const name = await page.until<string>(
             `document.querySelector('#sidebar-member-name')
                 ?.textContent?.trim() || null`,
             'sidebar member name',
         );
-        assert.equal(name, 'Tony Stark');
+        assertStrictEquals(name, 'Tony Stark');
     } finally {
         try {
             await browser.get()
@@ -38,7 +37,7 @@ async () => {
     }
 });
 
-test('a wrong password stays on auth with the inline error',
+Deno.test('a wrong password stays on auth with the inline error',
 async () => {
     const origin = await startOrigin();
     const page = await browser.get().newPage();
@@ -70,8 +69,8 @@ async () => {
                 ?.textContent?.trim() || null`,
             'password error',
         );
-        assert.ok(error.length > 0);
-        assert.ok((await page.evaluate<string>(
+        assert(error.length > 0);
+        assert((await page.evaluate<string>(
             'location.pathname',
         )).includes('/auth/'));
     } finally {

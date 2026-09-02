@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import { assertStrictEquals } from '@std/assert';
 import { handleRequest } from '../../api/api.ts';
 import { nowUtc } from '../../api/types.ts';
 import { STARK_ORGANIZATION } from
@@ -54,7 +53,7 @@ async function createIdea(
             state: 'active',
         },
     }));
-    assert.equal(res.status, 201);
+    assertStrictEquals(res.status, 201);
     const submissionsPath =
         `/organizations/${STARK_ORGANIZATION}`
         + `/ideas/${ideaId}/submissions/`;
@@ -70,7 +69,7 @@ async function createIdea(
             },
         }),
     );
-    assert.equal(submissionRes.status, 201);
+    assertStrictEquals(submissionRes.status, 201);
     const readBack = await handleRequest(
         origin.db, apiRequest({
             method: 'GET',
@@ -80,11 +79,11 @@ async function createIdea(
     );
     const submissions = await readBack.json() as
         { idea_id: string }[];
-    assert.equal(submissions.length, 1);
-    assert.equal(submissions[0]?.idea_id, ideaId);
+    assertStrictEquals(submissions.length, 1);
+    assertStrictEquals(submissions[0]?.idea_id, ideaId);
 }
 
-test('two contexts hold two identities on one origin',
+Deno.test('two contexts hold two identities on one origin',
 async () => {
     const origin = await startOrigin();
     const a = await browser.get().newPage();
@@ -102,11 +101,11 @@ async () => {
         );
         await signIn(a, origin, ADMIN_EMAIL);
         await signIn(b, origin, SECOND_EMAIL);
-        assert.equal(
+        assertStrictEquals(
             await a.until<string>(MEMBER_NAME, 'chip A'),
             'Tony Stark',
         );
-        assert.equal(
+        assertStrictEquals(
             await b.until<string>(MEMBER_NAME, 'chip B'),
             'Sarah Chen',
         );
@@ -120,7 +119,7 @@ async () => {
         // would render Sarah, not Tony.
         await a.navigate(registryUrl(origin.baseUrl, 'dashboard'));
         await a.ready('dashboard');
-        assert.equal(
+        assertStrictEquals(
             await a.until<string>(MEMBER_NAME, 'chip A again'),
             'Tony Stark',
         );
@@ -153,7 +152,7 @@ async () => {
     }
 });
 
-test('two tabs share the cookie; sign-out in one bounces the other',
+Deno.test('two tabs share the cookie; sign-out in one bounces the other',
 async () => {
     const origin = await startOrigin();
     const a = await browser.get().newPage();
@@ -162,7 +161,7 @@ async () => {
         await signIn(a, origin, ADMIN_EMAIL);
         await b.navigate(registryUrl(origin.baseUrl, 'dashboard'));
         await b.ready('dashboard');
-        assert.equal(
+        assertStrictEquals(
             await b.until<string>(MEMBER_NAME, 'chip'),
             'Tony Stark',
         );
