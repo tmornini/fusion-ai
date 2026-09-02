@@ -1,6 +1,7 @@
 import { assert, assertNotEquals, assertStrictEquals } from '@std/assert';
-import { SHIFT, useBrowser, withAdminPage } from
-    './fixtures.ts';
+import {
+    SHIFT, useBrowser, withAdminPage, type Page,
+} from './fixtures.ts';
 import {
     CANVAS, EDGE, NODE, ONBOARDING, LAYOUT_TEST,
     doubleClick, edgeCount, edgeLabelSelector,
@@ -232,6 +233,198 @@ Deno.test(
                 assertStrictEquals(
                     await nodeCount(page), nodes,
                 );
+            },
+        );
+    },
+);
+
+Deno.test(
+    'plain port-drag on an auto-layout flow adds a'
+    + ' node and Undo restores (F37b)',
+    async () => {
+        await withAdminPage(
+            browser.get(),
+            async (page, origin) => {
+                await openFlow(
+                    page, origin, ONBOARDING,
+                );
+                const nodes = await nodeCount(page);
+                const review = await nodeIdNamed(
+                    page, 'Review',
+                );
+                const port = await page.center(
+                    portSelector(review),
+                );
+                const svg = await page.rect(CANVAS);
+                await page.drag(port, {
+                    x: svg.x + svg.width * 0.5,
+                    y: svg.y + svg.height * 0.92,
+                });
+                await page.until(
+                    `document.querySelectorAll(`
+                    + `'${NODE}').length === ${
+                        nodes + 1
+                    }`,
+                    'one more node',
+                );
+                await page.click(
+                    '[data-action="undo"]',
+                );
+                await page.until(
+                    `document.querySelectorAll(`
+                    + `'${NODE}').length === ${
+                        nodes
+                    }`,
+                    'undo restored node count',
+                );
+            },
+        );
+    },
+);
+
+function dispatchChange(
+    page: Page, selector: string, value: string,
+): Promise<unknown> {
+    return page.evaluate(
+        `(() => {
+            const el = document.querySelector(${
+                JSON.stringify(selector)
+            });
+            el.value = ${JSON.stringify(value)};
+            el.dispatchEvent(new Event(
+                'change', { bubbles: true }));
+        })()`,
+    );
+}
+
+function dispatchChecked(
+    page: Page, selector: string,
+): Promise<unknown> {
+    return page.evaluate(
+        `(() => {
+            const el = document.querySelector(${
+                JSON.stringify(selector)
+            });
+            el.checked = true;
+            el.dispatchEvent(new Event(
+                'change', { bubbles: true }));
+        })()`,
+    );
+}
+
+Deno.test(
+    'Shift-drag adds an edge and Review accepts'
+    + ' two attribute refs (AA32/AA33/AA34)',
+    async () => {
+        await withAdminPage(
+            browser.get(),
+            async (page, origin) => {
+                await openFlow(
+                    page, origin, ONBOARDING,
+                );
+                const nodes = await nodeCount(page);
+                const edges = await edgeCount(page);
+                const capture = await nodeIdNamed(
+                    page, 'Data Capture',
+                );
+                const archive = await nodeIdNamed(
+                    page, 'Archive',
+                );
+                const review = await nodeIdNamed(
+                    page, 'Review',
+                );
+                const port = await page.center(
+                    portSelector(capture),
+                );
+                const target = await page.center(
+                    nodeSelector(archive),
+                );
+                await page.keyDown('Shift');
+                await page.drag(
+                    port, target, { modifiers: SHIFT },
+                );
+                await page.keyUp('Shift');
+                await page.until(
+                    `document.querySelectorAll(`
+                    + `'${EDGE}').length === ${
+                        edges + 1
+                    }`,
+                    'one more edge',
+                );
+                assertStrictEquals(
+                    await nodeCount(page), nodes,
+                );
+                await page.click(
+                    '#flow-auto-fit-switch',
+                );
+                await doubleClick(
+                    page, nodeSelector(review),
+                );
+                await page.waitFor(
+                    '#prop-node-attribute-picker',
+                );
+                const ids = await page.evaluate<
+                    string[]
+                >(
+                    `[...document.querySelectorAll(`
+                    + `'#prop-node-attribute-picker`
+                    + ` option')].map(o => o.value)`
+                    + `.filter(Boolean)`,
+                );
+                assert(
+                    ids.length >= 2, 'two free attrs',
+                );
+                const first = ids[0]!;
+                const second = ids[1]!;
+                await dispatchChange(
+                    page,
+                    '#prop-node-attribute-picker',
+                    first,
+                );
+                await page.waitFor(
+                    `.flow-attribute-ref-row`
+                    + `[data-attribute-id="${first}"]`,
+                );
+                await dispatchChange(
+                    page,
+                    '#prop-node-attribute-picker',
+                    second,
+                );
+                await page.waitFor(
+                    `.flow-attribute-ref-row`
+                    + `[data-attribute-id="${second}"]`,
+                );
+                await dispatchChange(
+                    page,
+                    `.flow-attribute-ref-row`
+                    + `[data-attribute-id="${first}"]`
+                    + ` [data-action="update-attribute-mode"]`,
+                    'readonly',
+                );
+                await dispatchChecked(
+                    page,
+                    `.flow-attribute-ref-row`
+                    + `[data-attribute-id="${second}"]`
+                    + ` [data-action="update-attribute-required"]`,
+                );
+                const mode = await page.until<string>(
+                    `document.querySelector(`
+                    + `'.flow-attribute-ref-row`
+                    + `[data-attribute-id="${first}"]`
+                    + ` [data-action="update-attribute-mode"]')`
+                    + `?.value`,
+                    'mode readonly',
+                );
+                const required =
+                    await page.evaluate<boolean>(
+                        `document.querySelector(`
+                        + `'.flow-attribute-ref-row`
+                        + `[data-attribute-id="${second}"]`
+                        + ` [data-action="update-attribute-required"]')`
+                        + `?.checked === true`,
+                    );
+                assertStrictEquals(mode, 'readonly');
+                assertStrictEquals(required, true);
             },
         );
     },

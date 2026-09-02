@@ -981,7 +981,10 @@ the second organization.
        tests/flow-designer-actions.test.ts
        'applyUpdateEdge patches matching id' (decides
        the "needs revision" and "approve" edge-rename
-       mechanics); exploratory — the live
+       mechanics); tests/browser/canvas-gestures.test.ts
+       'Shift-drag adds an edge and Review accepts
+       two attribute refs (AA32/AA33/AA34)';
+       exploratory — the live
        dashed-orange vs. solid-blue preview rendering
 - [ ] **AA33** In the flow header, set the "Record:"
   dropdown to "Customer Profile" (Stark's seeded record
@@ -1000,7 +1003,11 @@ the second organization.
        binding persists); tests/flow-operations.test.ts
        'performAddAttributeRef: appends a ref to the
        single selected node' (decides the
-       attribute-ref write); exploratory — the picker
+       attribute-ref write);
+       tests/browser/canvas-gestures.test.ts
+       'Shift-drag adds an edge and Review accepts
+       two attribute refs (AA32/AA33/AA34)';
+       exploratory — the picker
        rendering and the mode/required-toggle UI only
 - [ ] **AA34** Add more attributes to "Data Capture":
   select 2–3 attributes from the picker, each with a
@@ -2531,7 +2538,11 @@ opens and renders.)
        tests/flow-designer-actions.test.ts
        'applyPanelTransition restores the viewBox on
        close' (decides close writes the saved x/y/w/h
-       back and clears the save); tests/flow-zoom-to-fit.test.ts
+       back and clears the save);
+       tests/browser/canvas-pan.test.ts
+       'Zoom-in viewBox survives panel open and close
+       with Auto Fit off (F14)';
+       tests/flow-zoom-to-fit.test.ts
        'fitBoxToCanvas with
        panel offset centers content in the right visible
        region (panel is on the left)' (decides the Auto Fit
@@ -3015,8 +3026,11 @@ that the canvas re-renders after each step.)
        lays out an auto-layout flow whose stored positions
        are placeholders' (decides an auto-layout flow's
        positions are recomputed rather than read back
-       verbatim); exploratory — the re-flow landing on the
-       next edit rather than on the undo
+       verbatim); tests/browser/canvas-gestures.test.ts
+       'plain port-drag on an auto-layout flow adds a
+       node and Undo restores (F37b)'; exploratory —
+       the re-flow landing on the next edit rather
+       than on the undo
 
 ### Flow Designer — Keyboard Shortcuts
 
