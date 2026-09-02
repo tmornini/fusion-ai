@@ -342,9 +342,6 @@ Off the critical path; each with its oracle.
   its callback synchronously; all thirteen
   `subscribe<Entity>Changes` delegate to `createChannel`,
   so it is inert — guard only if that changes
-- Run-six cosmetics, none load-bearing: `unknown[]`
-  returns now provably narrower
-  (`api/document-family.ts:438,:445`)
 - Node-only modules by directory — once whole-tree type
   checking ships, the browser tsconfig's `exclude` is
   the last hand-kept registry (seven, growing with the
