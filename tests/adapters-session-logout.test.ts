@@ -17,8 +17,9 @@ import { adminContext } from './context-fixtures.ts';
 import { deriveTokenRevocationsFor } from
     '../api/derive-identity-spine.ts';
 
-// A fresh Map-backed fake per test — bodies below call
-// localStorage.clear() directly.
+// A fresh Map-backed fake per test — bodies below reach
+// localStorage only through the session adapter; clear()
+// is the fake's own reset, which no body calls.
 function freshStorage(): Partial<Storage> {
     const store = new Map<string, string>();
     return {

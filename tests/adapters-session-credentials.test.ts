@@ -21,7 +21,8 @@ import { devToken, organizationToken } from './token-fixtures.ts';
 const KEY = STORAGE_KEY_AUTHORIZATION;
 
 // A fresh Map-backed fake per test — bodies below call
-// localStorage.clear()/getItem/setItem directly.
+// localStorage.getItem/setItem directly; clear() is the
+// fake's own reset, which no body calls.
 function freshStorage(): Partial<Storage> {
     const store = new Map<string, string>();
     return {
