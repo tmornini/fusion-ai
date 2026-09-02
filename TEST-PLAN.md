@@ -231,6 +231,12 @@ not repeat the note in every case.
   and `Walk Co B` are both this walk's instance.
 - R21: four identity/org halves. Auth is 5 per 60 s.
   If Wayne halves are not driven, BLOCKED, not FAIL.
+- AA9: click `.strength-chip` buttons with
+  `data-strength`. Layer 2 pin
+  tests/browser/member-strengths.test.ts
+  'chip toggles persist on save and reload (AA9)'
+  decides the save. If the chips do not toggle,
+  record BLOCKED naming that. Do not FAIL.
 
 ### Scoring
 
@@ -555,10 +561,15 @@ the second organization.
        (decides that toggling Data Analysis off and
        Agile Methods on in one save leaves exactly
        [Strategic Planning, Stakeholder Management,
-       Agile Methods] on the next GET); exploratory —
-       the live toast, read-mode return, the Phone/Bio
-       edit (a separate `PUT identities/:id/pii` this
-       test never calls), and reload persistence
+       Agile Methods] on the next GET);
+       tests/browser/member-strengths.test.ts
+       'chip toggles persist on save and reload (AA9)'
+       (decides Edit → toggle Data Analysis off and
+       Agile Methods on → Save → reload leaves
+       Strategic Planning, Stakeholder Management,
+       Agile Methods);
+       exploratory — the Phone/Bio edit (a separate
+       `PUT identities/:id/pii` this test never calls)
 - [ ] **AA9a** From "Ops Assistant" (AA7a)'s member
   detail, click Edit, change Description and Skill
   Focus, and pick a different Model from the pulldown
