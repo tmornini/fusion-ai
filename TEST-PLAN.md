@@ -6451,9 +6451,16 @@ K30 only describes.
   ref row shows attribute name + Editable/Read-only picker
   + Required checkbox + remove (×) button; picker dropdown
   lists unreferenced attributes only.
-  Pin: exploratory — the whole node-panel ref-row
-       rendering; `buildAttributeRefRow` carries no CLI
-       test today
+  Pin: tests/presenter-misc.test.ts
+       'buildAttributeRefRow renders name, mode,
+       required, and remove (R12)';
+       tests/presenter-misc.test.ts
+       'buildAttributeRefRow disables controls
+       when the flow is locked (R12)';
+       tests/presenter-misc.test.ts
+       'buildNodePanel picker lists only
+       unreferenced attributes (R12)';
+       exploratory — the live node-panel paint
 - [ ] **R13** From workbox, open the gate-violation work
   order (`#gate0001`, `eOlNZpGQfmCdpSFWXGkzFQ`) at Data
   Capture, unbound. PASS: current node is Data Capture;
