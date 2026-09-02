@@ -130,11 +130,8 @@ spec → plan → ship cycle, implemented sequentially. A
    guarded by no test); the second instance the
    remediation added (`canvasFocusOf`'s walk); the undo
    path's duplicated pure helpers
-   (`api/flow-graph-diff.ts:16-26`); the dead
-   `FK_SPECIAL` map
-   (`web-app/app/schema-svg.ts:100-110` — remove the
-   comment at `schema-svg.ts:100-110` when done);
-   `callerOrganizationIds`, zero callers
+   (`api/flow-graph-diff.ts:16-26`); `callerOrganizationIds`,
+   zero callers
    (`api/request-auth.ts:189-197` — remove the comment
    at `request-auth.ts:189-191` when done); the
    test-only `deriveRecordStateHistory` alias
