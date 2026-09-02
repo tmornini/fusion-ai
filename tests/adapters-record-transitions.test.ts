@@ -129,8 +129,8 @@ async function seedWorkOrder(
     });
 }
 
-// Task 18: the binding PUT and the attribute PUT (below) both
-// need their record to exist first. Guarded ensure-exists —
+// The binding PUT and the attribute PUT (below) both need
+// their record to exist first. Guarded ensure-exists —
 // GET, and on miss the composed create op with its
 // initialState 'active' state event — is the ONE creation
 // path both share, so neither shadows the other with a
@@ -171,8 +171,8 @@ async function seedBinding(
     recordId: string,
 ): Promise<void> {
     const ctx = createRequestContext(db, await organizationToken());
-    // Task 18: the binding PUT now probes the bound record's
-    // own existence, so it must be seeded first.
+    // The binding PUT probes the bound record's own
+    // existence, so it must be seeded first.
     await ensureRecord(ctx, recordId);
     await ctx.PUT(
         'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId

@@ -274,8 +274,8 @@ async () => {
     const frid = generateIdentifier();
     const recordId = generateIdentifier();
     await createFlow(db, token, flowId, generateIdentifier());
-    // Task 18: the binding PUT now probes the bound record's
-    // own existence, so it must be seeded first.
+    // The binding PUT probes the bound record's own
+    // existence, so it must be seeded first.
     const seededRecord = await handleRequest(db, req(
         'PUT',
         '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'

@@ -92,10 +92,10 @@ async function seedWorkOrder(
     );
 }
 
-// Task 18: the binding PUT now probes the bound record's own
-// existence, so every record_id a test binds must be seeded
-// first — the SAME record-types PUT the live route serves,
-// same precedent as seedFlow/seedWorkOrder above.
+// The binding PUT probes the bound record's own existence,
+// so every record_id a test binds must be seeded first —
+// the SAME record-types PUT the live route serves, same
+// precedent as seedFlow/seedWorkOrder above.
 async function seedRecord(
     db: MemoryDbAdapter,
     id: string,
