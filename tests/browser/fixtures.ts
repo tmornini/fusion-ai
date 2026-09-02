@@ -3,9 +3,6 @@
 // test, compositor input, condition waits. Runs only
 // under ./test-browser (FUSION_ANGLE_STATIC_ROOT).
 
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -358,10 +355,10 @@ export class Browser {
                 await CdpClient.connect(attach), null, null,
             );
         }
-        const userDataDir = mkdtempSync(join(
-            Deno.env.get('TMPDIR') ?? tmpdir(),
-            'fusion-browser-',
-        ));
+        // makeTempDirSync honours TMPDIR itself.
+        const userDataDir = Deno.makeTempDirSync({
+            prefix: 'fusion-browser-',
+        });
         // launchChrome spawns detached and unrefs, so an
         // orphan outlives this process and holds its
         // profile. Release both on every failure path,
@@ -389,8 +386,8 @@ export class Browser {
             try {
                 killProcessTree(chrome);
             } finally {
-                rmSync(userDataDir, {
-                    recursive: true, force: true,
+                Deno.removeSync(userDataDir, {
+                    recursive: true,
                 });
             }
             throw error;
@@ -460,8 +457,8 @@ export class Browser {
                 killProcessTree(this.chrome);
             } finally {
                 if (this.userDataDir !== null) {
-                    rmSync(this.userDataDir, {
-                        recursive: true, force: true,
+                    Deno.removeSync(this.userDataDir, {
+                        recursive: true,
                     });
                 }
             }
