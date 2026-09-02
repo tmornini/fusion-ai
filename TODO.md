@@ -811,7 +811,7 @@ Off the critical path; each with its oracle.
     `tests/presenter-projects-organization.test.ts`,
     whose edit-form test already calls
     `toGeneralInfoDraft` (`web-app/app/adapters/admin.ts:58`)
-    and asserts no `value=`
+    and makes no `value=` assertion
   - The sidebar member chip's click-to-profile navigation
     (G12) — Layer 2; `web-app/app/sidebar-member.ts`
     carries no test, and the browser tests read the
