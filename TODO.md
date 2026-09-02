@@ -295,9 +295,9 @@ Off the critical path; each with its oracle.
   lists provenance, not comments, and the reproductions
   that might have were scratchpad, never committed —
   the pass re-derives its enumeration by reading. The
-  seven "remove the comment at … when done" pointers
-  under `## Critical path` are that path's property,
-  not stale
+  two remaining "remove the comment at … when done"
+  pointers under `## Critical path` are that path's
+  property, not stale
 - Cryptographically verifiable ledger — brainstorm
   hash-and-verify (or sign) of stored pairs. The dropped
   `version` column hashed on write and was never checked
