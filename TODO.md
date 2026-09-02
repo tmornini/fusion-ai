@@ -130,10 +130,7 @@ spec → plan → ship cycle, implemented sequentially. A
    guarded by no test); the second instance the
    remediation added (`canvasFocusOf`'s walk); the undo
    path's duplicated pure helpers
-   (`api/flow-graph-diff.ts:16-26`); `callerOrganizationIds`,
-   zero callers
-   (`api/request-auth.ts:189-197` — remove the comment
-   at `request-auth.ts:189-191` when done); the
+   (`api/flow-graph-diff.ts:16-26`); the
    test-only `deriveRecordStateHistory` alias
    (`api/derive-record-types.ts:185-189` — remove the
    comment at `derive-record-types.ts:185-189` when
