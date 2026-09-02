@@ -204,9 +204,9 @@ spec → plan → ship cycle, implemented sequentially. A
     the plan is
     `docs/superpowers/plans/2026-08-30-deno-migration.md`;
     the roadmap they inherit is `9620d38c`. Oracle: the
-    suite counts hold at every step — 3477 passing,
+    suite counts hold at every step — 3489 passing,
     7 ignored, `tests/tz/` 8, `./test-browser` ten files
-    green.
+    green (19 passed, 0 failed).
 
 ## Later work
 
