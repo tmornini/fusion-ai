@@ -1,7 +1,12 @@
 import { assertMatch, assertNotStrictEquals } from '@std/assert';
 import { join } from '@std/path';
 
-Deno.test('browser project rejects process (TS2591)',
+// The name is the whole claim: this file is hermetic —
+// no `node:` importer in its graph — so it proves only
+// that a lone file rejects `process`. It is NOT evidence
+// of a fence over `web-app/`, which has none today; the
+// restoration oracle lives in TODO.md.
+Deno.test('a hermetic file rejects process (TS2591)',
 async () => {
     const dir = Deno.makeTempDirSync({ prefix: 'deno-fence-' });
     try {
