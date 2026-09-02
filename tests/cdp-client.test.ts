@@ -41,14 +41,17 @@ type Sent = {
 const SETTLE_DEADLINE_MS = 1_000;
 
 function withinDeadline<T>(promise: Promise<T>): Promise<T> {
-    return Promise.race([
-        promise,
-        new Promise<T>((_resolve, reject) => {
-            setTimeout(() => {
-                reject(new Error('still pending'));
-            }, SETTLE_DEADLINE_MS).unref();
-        }),
-    ]);
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    const expiry = new Promise<T>((_resolve, reject) => {
+        deadline = setTimeout(() => {
+            reject(new Error('still pending'));
+        }, SETTLE_DEADLINE_MS);
+    });
+    // The race settles on the promise long before the
+    // deadline fires, leaving a pending timer the ops
+    // sanitizer reports; clear it whichever side wins.
+    return Promise.race([promise, expiry])
+        .finally(() => clearTimeout(deadline));
 }
 
 Deno.test('send carries the session id and resolves by id',
