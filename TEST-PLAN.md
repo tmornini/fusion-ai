@@ -117,6 +117,14 @@ the product working, not a FAIL.
 
 Do not patch. Do not re-seed. Do not retry the plan.
 
+Score from ### Scoring. FAIL only when you drove the
+step and the product disagreed, and the disagree is
+not already decided by a green Pin. A missed
+compositor gesture, a hidden tab, a missing
+prerequisite, or a green pin for the unobserved half
+is BLOCKED or DEFERRED — never FAIL. DRIFT when the
+product matches a pin and the document is wrong.
+
 Return one line per case:
 ID PASS|FAIL|BLOCKED|DEFERRED|DRIFT — one-line note.
 ```
@@ -177,20 +185,88 @@ not repeat the note in every case.
 - F29 empty-canvas click: close the properties panel
   first. An open panel's close restores the F14 saved
   viewBox — that is not this case.
+- Compositor gestures (double-click as two
+  pointerdowns on one element id inside
+  `DBLCLICK_MS`, body-drag, port-drag, `.drag-handle`
+  pointer capture, `input[type=range]` drag): if the
+  driver does not deliver the gesture, record BLOCKED
+  naming that. Do not FAIL. Layer 1 and Layer 2 pins
+  decide the covenant. E11 (projects list-drag)
+  PASSed on the second 09-02 walk — the driver *can*
+  drag lists; a miss on D36 or K6 is still BLOCKED
+  this walk, not a missing product.
+- F12: after the pan-mode node drag, Space toggles
+  pan off (Layer 2 pin). The double-click half
+  retargets the same node id; landing on Archive or
+  missing `#prop-node-name` is BLOCKED targeting, not
+  FAIL. Create/Archive panels have no
+  `#prop-node-name`.
+- F17: F12/F14 leave Auto Fit off and the camera
+  elsewhere. Create is min-x. If Create's
+  `transform` is outside the viewBox, Auto Fit on or
+  pan until it is inside, then drag. Dragging an
+  off-canvas node is BLOCKED, not FAIL.
+- F57a: Enter opens the focused node's panel; Space
+  toggles pan. Do not score F57a FAIL for Space
+  toggling pan — that is F12's covenant.
+- D32a: assert `.idea-actions-slot` only. Buttons
+  inside a closed `dialog` (including
+  `data-idea-action="send-back-confirm"`) are not the
+  header.
+- K13: drag `.baseline-slider` *inside* the
+  `.project-objective-row` whose name cell is the
+  objective. Do not query a bare
+  `input[type=range]` — at 1280×800 the rows are a
+  140/110/1fr grid; identical y means the same
+  element was hit twice.
+- F70: if the Industry row is not in the open
+  panel, DEFERRED on F69.
+- R14: bind `#gate0001` to any existing Customer
+  Profile instance in the picker (never mint). The
+  label may read `Walk Co B` after WB19a. R13's
+  open claimed the WO; bind while claimed by the
+  current member is expected.
+- R16: PASS if the Instances section lists at least
+  one instance with id + readable values. `Acme Corp`
+  and `Walk Co B` are both this walk's instance.
+- R21: four identity/org halves. Auth is 5 per 60 s.
+  If Wayne halves are not driven, BLOCKED, not FAIL.
 
 ### Scoring
 
 | Outcome | Meaning |
 |---|---|
 | PASS | the PASS line was observed |
-| FAIL | the PASS line could not be observed as driven — a finding, not a verdict |
-| BLOCKED | a step could not be performed for a named reason outside the product (driver or environment); the reason is the note |
+| FAIL | the step was driven and the product disagreed with the PASS line, and no green Layer 1/2 pin already decides that observation — a finding, not a verdict |
+| BLOCKED | a step could not be performed (driver or environment), or the compositor did not deliver the gesture a green pin already decides; the reason is the note |
 | DEFERRED | a prerequisite case did not produce what this case needs |
 | DRIFT | passes in substance; the document or the UI text disagrees — the document changes |
+
+A case whose `Pin:` names a Layer 1 or Layer 2 test
+for the unobserved half scores BLOCKED or DEFERRED,
+never FAIL. FAIL is only for an *exploratory* half
+the explorer actually drove, or for a pin that is
+itself red. The walk still gates nothing; this rule
+exists so FAIL can reach zero without lying.
 
 Walk-specific: F23 scores BLOCKED like AA32 when
 Shift is missing on pointer-up. AA33/AA34 score
 DEFERRED on AA32 when stray nodes block targeting.
+F12's double-click miss after a pan-drag, F17
+off-canvas body-drag, F37b port-drag (hidden tab
+or otherwise), D36/D37/K6 list-drag, K13–K15
+slider-drag: BLOCKED when the gesture was not
+delivered. Layer 1/2 pins decide the math.
+F70 without an Industry row: DEFERRED on F69.
+K14/K15 when K13 did not dirty a slider: DEFERRED
+on K13.
+R21 Wayne halves not driven: BLOCKED naming
+throttle or time, not FAIL. The Stark default-ACL
+half may still PASS.
+R16 leftover `Walk Co B`: PASS (the instance is
+present). Missing Instances section: FAIL of the
+exploratory half (no Layer 1 pin renders the live
+Customer Profile list).
 
 Nothing blocks on any outcome. BLOCKED is allowed for a
 driver limit: with no gate riding on the walk, an honest
