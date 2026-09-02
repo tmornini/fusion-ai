@@ -341,10 +341,6 @@ Off the critical path; each with its oracle.
   rendering —
   `web-app/app/adapters/objectives.ts:311`,
   `web-app/projects/detail.ts:318`
-- The resolve-and-throw block in
-  `web-app/app/presenters/project-score-history.ts` is four
-  identical 11-line copies (:139, :161, :182, :201) — a
-  `#definitionAt(objectiveId, at)` helper collapses each
 - Untested by design after run-six: the records/projects/
   flows `onEmpty` arms (only ideas is pinned), `loadInto`'s
   retry branch, a work order both claimed and completed,
