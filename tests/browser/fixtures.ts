@@ -445,8 +445,8 @@ export class Browser {
         );
     }
 
-    // Three releases, each guaranteed by the one before
-    // it. killProcessTree can throw, and a throw between
+    // Each release runs even if the one before it
+    // throws. killProcessTree can, and a throw between
     // the socket and the profile would leave a detached
     // Chrome holding a directory nothing later removes.
     async close(): Promise<void> {
@@ -535,13 +535,11 @@ export async function withAdminPage(
     fn: (page: Page, origin: Origin) => Promise<void>,
 ): Promise<void> {
     await withTimeout((async () => {
-        // Each acquisition opens its own try, so the NEXT
-        // one failing still releases it: newPage rejecting
-        // used to strand the origin's HTTP listener.
-        // disposeBrowserContext closes every target in the
-        // context, so page.close() is redundant — and a
-        // redundant reject would strand the listener, so
-        // the origin's release wraps the context's.
+        // One try per acquisition, so a later failure
+        // still releases the earlier resource. Disposing
+        // the context closes its targets, so page.close()
+        // is redundant — and a redundant reject would
+        // strand the listener.
         const origin = await startOrigin();
         try {
             const page = await browser.newPage();
