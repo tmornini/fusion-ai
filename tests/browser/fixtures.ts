@@ -383,10 +383,16 @@ export class Browser {
                 client, chrome, userDataDir,
             );
         } catch (error) {
-            killProcessTree(chrome);
-            rmSync(userDataDir, {
-                recursive: true, force: true,
-            });
+            // killProcessTree walks a ps snapshot and can
+            // throw, so the profile's removal nests inside
+            // it rather than following it.
+            try {
+                killProcessTree(chrome);
+            } finally {
+                rmSync(userDataDir, {
+                    recursive: true, force: true,
+                });
+            }
             throw error;
         }
     }
@@ -442,13 +448,23 @@ export class Browser {
         );
     }
 
+    // Three releases, each guaranteed by the one before
+    // it. killProcessTree can throw, and a throw between
+    // the socket and the profile would leave a detached
+    // Chrome holding a directory nothing later removes.
     async close(): Promise<void> {
-        this.client.close();
-        killProcessTree(this.chrome);
-        if (this.userDataDir !== null) {
-            rmSync(this.userDataDir, {
-                recursive: true, force: true,
-            });
+        try {
+            this.client.close();
+        } finally {
+            try {
+                killProcessTree(this.chrome);
+            } finally {
+                if (this.userDataDir !== null) {
+                    rmSync(this.userDataDir, {
+                        recursive: true, force: true,
+                    });
+                }
+            }
         }
     }
 }
@@ -522,22 +538,26 @@ export async function withAdminPage(
     fn: (page: Page, origin: Origin) => Promise<void>,
 ): Promise<void> {
     await withTimeout((async () => {
+        // Each acquisition opens its own try, so the NEXT
+        // one failing still releases it: newPage rejecting
+        // used to strand the origin's HTTP listener.
+        // disposeBrowserContext closes every target in the
+        // context, so page.close() is redundant — and a
+        // redundant reject would strand the listener, so
+        // the origin's release wraps the context's.
         const origin = await startOrigin();
-        const page = await browser.newPage();
         try {
-            await signIn(page, origin, ADMIN_EMAIL);
-            await fn(page, origin);
-        } finally {
-            // disposeBrowserContext closes every target in
-            // the context, so page.close() is redundant —
-            // and a redundant reject would strand both the
-            // releases below. Nest them so the listener
-            // closes even if the context does not.
+            const page = await browser.newPage();
             try {
-                await browser.disposeContext(page.contextId);
+                await signIn(page, origin, ADMIN_EMAIL);
+                await fn(page, origin);
             } finally {
-                await origin.close();
+                await browser.disposeContext(
+                    page.contextId,
+                );
             }
+        } finally {
+            await origin.close();
         }
     })(), 'withAdminPage');
 }
