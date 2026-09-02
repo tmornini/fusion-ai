@@ -398,7 +398,20 @@ export class Browser {
         const created = await this.client.send(
             'Target.createBrowserContext',
         ) as { browserContextId: string };
-        return this.newPageIn(created.browserContextId);
+        // The caller disposes the context through the id
+        // the Page carries, so a newPageIn reject would
+        // strand a Chrome-side context nobody can name.
+        // Dispose it here, then rethrow the real failure.
+        try {
+            return await this.newPageIn(
+                created.browserContextId,
+            );
+        } catch (error) {
+            await this.disposeContext(
+                created.browserContextId,
+            );
+            throw error;
+        }
     }
 
     async newPageIn(contextId: string): Promise<Page> {

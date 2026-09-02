@@ -85,95 +85,113 @@ async function createIdea(
 
 Deno.test('two contexts hold two identities on one origin',
 async () => {
+    // One try per acquisition, so a later failure still
+    // releases the earlier resource: a newPage() reject
+    // would otherwise strand the origin's HTTP listener.
+    // disposeContext closes every target in its context,
+    // so page.close() is redundant — and a redundant
+    // reject would strand the releases outside it.
     const origin = await startOrigin();
-    const a = await browser.get().newPage();
-    const b = await browser.get().newPage();
     try {
-        // Positive proof of isolation: B is a fresh
-        // context with no cookie at all, so a protected
-        // route bounces it to auth before it ever signs
-        // in. Same bounce-to-auth idiom as the second
-        // test.
-        await b.navigate(registryUrl(origin.baseUrl, 'dashboard'));
-        await b.until(
-            `location.pathname.includes('/auth/')`,
-            'B has no cookie before signing in',
-        );
-        await signIn(a, origin, ADMIN_EMAIL);
-        await signIn(b, origin, SECOND_EMAIL);
-        assertStrictEquals(
-            await a.until<string>(MEMBER_NAME, 'chip A'),
-            'Tony Stark',
-        );
-        assertStrictEquals(
-            await b.until<string>(MEMBER_NAME, 'chip B'),
-            'Sarah Chen',
-        );
-        // The chip renders once at boot with no live-
-        // refresh path (web-app/app/sidebar-member.ts), so
-        // the two reads above only prove each context
-        // rendered once before the other ever signed in —
-        // not that A stays isolated from B afterwards.
-        // Force A to read again now that B has signed in:
-        // under a shared cookie jar this re-navigation
-        // would render Sarah, not Tony.
-        await a.navigate(registryUrl(origin.baseUrl, 'dashboard'));
-        await a.ready('dashboard');
-        assertStrictEquals(
-            await a.until<string>(MEMBER_NAME, 'chip A again'),
-            'Tony Stark',
-        );
-        const title = 'Two jars ' + generateIdentifier();
-        await createIdea(origin, title);
-        await b.navigate(registryUrl(origin.baseUrl, 'ideas'));
-        await b.ready('ideas');
-        await b.until(
-            `[...document.querySelectorAll('[data-idea-card]')]`
-            + `.some(c => c.textContent.includes(${JSON.stringify(title)}))`,
-            'idea visible to the second identity',
-        );
-    } finally {
-        // disposeContext closes every target in its
-        // context, so page.close() is redundant — and a
-        // redundant reject would strand the releases
-        // below, including the origin's HTTP listener.
-        // Nest each release so it runs even if an earlier
-        // one rejects.
+        const a = await browser.get().newPage();
         try {
-            await browser.get().disposeContext(a.contextId);
-        } finally {
+            const b = await browser.get().newPage();
             try {
+                // Positive proof of isolation: B is a fresh
+                // context with no cookie at all, so a protected
+                // route bounces it to auth before it ever signs
+                // in. Same bounce-to-auth idiom as the second
+                // test.
+                await b.navigate(registryUrl(origin.baseUrl, 'dashboard'));
+                await b.until(
+                    `location.pathname.includes('/auth/')`,
+                    'B has no cookie before signing in',
+                );
+                await signIn(a, origin, ADMIN_EMAIL);
+                await signIn(b, origin, SECOND_EMAIL);
+                assertStrictEquals(
+                    await a.until<string>(MEMBER_NAME, 'chip A'),
+                    'Tony Stark',
+                );
+                assertStrictEquals(
+                    await b.until<string>(MEMBER_NAME, 'chip B'),
+                    'Sarah Chen',
+                );
+                // The chip renders once at boot with no live-
+                // refresh path (web-app/app/sidebar-member.ts), so
+                // the two reads above only prove each context
+                // rendered once before the other ever signed in —
+                // not that A stays isolated from B afterwards.
+                // Force A to read again now that B has signed in:
+                // under a shared cookie jar this re-navigation
+                // would render Sarah, not Tony.
+                await a.navigate(registryUrl(origin.baseUrl, 'dashboard'));
+                await a.ready('dashboard');
+                assertStrictEquals(
+                    await a.until<string>(MEMBER_NAME, 'chip A again'),
+                    'Tony Stark',
+                );
+                const title = 'Two jars ' + generateIdentifier();
+                await createIdea(origin, title);
+                await b.navigate(registryUrl(origin.baseUrl, 'ideas'));
+                await b.ready('ideas');
+                await b.until(
+                    `[...document.querySelectorAll('[data-idea-card]')]`
+                    + `.some(c => c.textContent.includes(`
+                    + `${JSON.stringify(title)}))`,
+                    'idea visible to the second identity',
+                );
+            } finally {
                 await browser.get()
                     .disposeContext(b.contextId);
-            } finally {
-                await origin.close();
             }
+        } finally {
+            await browser.get()
+                .disposeContext(a.contextId);
         }
+    } finally {
+        await origin.close();
     }
 });
 
 Deno.test('two tabs share the cookie; sign-out in one bounces the other',
 async () => {
+    // One try per acquisition, as above. b is a second tab
+    // inside a's context, so a's disposal releases it too —
+    // b takes no guard of its own, and a reject from
+    // newPageIn still reaches a's.
     const origin = await startOrigin();
-    const a = await browser.get().newPage();
-    const b = await browser.get().newPageIn(a.contextId);
     try {
-        await signIn(a, origin, ADMIN_EMAIL);
-        await b.navigate(registryUrl(origin.baseUrl, 'dashboard'));
-        await b.ready('dashboard');
-        assertStrictEquals(
-            await b.until<string>(MEMBER_NAME, 'chip'),
-            'Tony Stark',
-        );
-        await a.click('[data-signout]');
-        await a.until(`location.pathname.includes('/auth/')`, 'A on auth');
-        await b.navigate(registryUrl(origin.baseUrl, 'dashboard'));
-        await b.until(`location.pathname.includes('/auth/')`, 'B bounced');
-    } finally {
+        const a = await browser.get().newPage();
         try {
-            await browser.get().disposeContext(a.contextId);
+            const b = await browser.get()
+                .newPageIn(a.contextId);
+            await signIn(a, origin, ADMIN_EMAIL);
+            await b.navigate(
+                registryUrl(origin.baseUrl, 'dashboard'),
+            );
+            await b.ready('dashboard');
+            assertStrictEquals(
+                await b.until<string>(MEMBER_NAME, 'chip'),
+                'Tony Stark',
+            );
+            await a.click('[data-signout]');
+            await a.until(
+                `location.pathname.includes('/auth/')`,
+                'A on auth',
+            );
+            await b.navigate(
+                registryUrl(origin.baseUrl, 'dashboard'),
+            );
+            await b.until(
+                `location.pathname.includes('/auth/')`,
+                'B bounced',
+            );
         } finally {
-            await origin.close();
+            await browser.get()
+                .disposeContext(a.contextId);
         }
+    } finally {
+        await origin.close();
     }
 });
