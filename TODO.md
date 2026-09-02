@@ -308,9 +308,6 @@ Off the critical path; each with its oracle.
   `version` column hashed on write and was never checked
   on read. `request_hash` is replay identity, not
   response integrity — `SCHEMA.md` item 4
-- The add-identity dialog never clears its fields —
-  AA-Obj's stale-state sibling —
-  `web-app/identities/index.ts:213-281`
 - `flows/stats.ts` wires no change subscription; the
   stats page stays stale until navigation
 - The empty-state `onEmpty` removes the header create
