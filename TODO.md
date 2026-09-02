@@ -130,11 +130,7 @@ spec → plan → ship cycle, implemented sequentially. A
    guarded by no test); the second instance the
    remediation added (`canvasFocusOf`'s walk); the undo
    path's duplicated pure helpers
-   (`api/flow-graph-diff.ts:16-26`); the
-   test-only `deriveRecordStateHistory` alias
-   (`api/derive-record-types.ts:185-189` — remove the
-   comment at `derive-record-types.ts:185-189` when
-   done); the `#flowDesc` stub
+   (`api/flow-graph-diff.ts:16-26`); the `#flowDesc` stub
    (`web-app/app/presenters/flow-stats.ts:414-417` —
    remove the comment at `flow-stats.ts:414-415` when
    done); `toRecordAttribute`'s `??` ACL default
