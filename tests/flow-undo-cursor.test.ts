@@ -822,7 +822,7 @@ Deno.test(
 // the old cursor rule; this is the retarget, not a weaken.
 // putClientFacade(wrapInPageAdapter(db)) plus
 // putSessionToken(DEV_TOKEN) makes sessionContext() live
-// under node:test — the seam earlier comments called
+// under Deno.test — the seam earlier comments called
 // unreachable.
 Deno.test(
     'undo cursor: a flag-only pair is not a step',

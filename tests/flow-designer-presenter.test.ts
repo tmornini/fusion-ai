@@ -348,7 +348,7 @@ Deno.test(
 // tests/flow-designer-open.test.ts:
 // putClientFacade(wrapInPageAdapter(db)) plus
 // putSessionToken(DEV_TOKEN) makes
-// sessionContext() live under node:test. Same
+// sessionContext() live under Deno.test. Same
 // reason no other withNode* mutation test exists
 // in this file.
 //
@@ -356,7 +356,7 @@ Deno.test(
 // manual (TEST-PLAN F51). The presenter's
 // #guardLocked() invokes showToast(), which
 // depends on document — no DOM under
-// node:test.
+// Deno.test.
 
 Deno.test(
     'withNodeMemberIds is a no-op when no node'
