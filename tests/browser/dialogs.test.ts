@@ -16,6 +16,12 @@ const ADD_IDENTITY_FIELDS = [
     '#svc-secret',
 ];
 
+const ADD_MEMBER_FIELDS = [
+    '#hw-name', '#hw-email', '#hw-title', '#hw-phone',
+    '#hw-bio', '#ai-name', '#ai-description',
+    '#ai-skill-focus',
+];
+
 async function openDialog(
     page: Page, id: string,
 ): Promise<void> {
@@ -66,6 +72,26 @@ async () => {
         );
         assertEquals(
             values, ADD_IDENTITY_FIELDS.map(() => ''),
+        );
+    });
+});
+
+Deno.test('the add-member dialog reopens with every field empty',
+async () => {
+    await withAdminPage(browser.get(), async (page, origin) => {
+        await page.navigate(
+            registryUrl(origin.baseUrl, 'members'),
+        );
+        await page.ready('members');
+        await openDialog(page, 'add-member');
+        await page.evaluate(fillFields(ADD_MEMBER_FIELDS));
+        await cancelDialog(page, 'add-member');
+        await openDialog(page, 'add-member');
+        const values = await page.evaluate<string[]>(
+            fieldValues(ADD_MEMBER_FIELDS),
+        );
+        assertEquals(
+            values, ADD_MEMBER_FIELDS.map(() => ''),
         );
     });
 });
