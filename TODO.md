@@ -90,7 +90,12 @@ spec → plan → ship cycle, implemented sequentially. A
    in-place `viewBox` mutation at four method sites
    (`web-app/app/presenters/flow-designer.ts:537, 556, 1012, 1042`),
    `hasUndoHistory` as `pairs > 1`
-   (`api/derive-flows.ts:108`), rotation only on the
+   (`api/derive-flows.ts:108` — the client's
+   approximation, read by no route; the undo route
+   walks the stack itself and its bottom-of-stack 201
+   is the documented no-op, `api/types.ts:1043-1051`,
+   which TEST-PLAN F36/F45 call PASS — the brainstorm
+   decides whether that stays), rotation only on the
    toggle path (`web-app/app/flow-layout.ts:1032-1037`),
    and the mirror trigger.
 7. Headless AI worker — a server-side process that
@@ -216,11 +221,15 @@ Off the critical path; each with its oracle.
   still sets `btn.disabled` — two forms, one
   directory, opposite validation voices
   (`web-app/ideas/create.ts:124`,
-  `web-app/ideas/convert.ts:356`;
-  `docs/superpowers/test-plan-mitigations/`
-  `2026-08-26-d-d6.md`)
-- The run-four remediation's remaining seams —
-  R12 without a positive subject; stale G9 / R6 / R7 notes
+  `web-app/ideas/convert.ts:356`). A design call, not
+  a defect: TEST-PLAN D6/D7 pin the toast, and the
+  2026-08-26 D6 stub files the voice question as its
+  separate finding
+- The run-four remediation's remaining seams — R6 and
+  R7, whose "toy" clauses need a Layer 3 observation
+  before any rewrite. G9's staleness was the corrupted
+  test name, restored by the small-items sweep; R12's
+  note is accurate and its gap is the Unpinned entry
 - A replay is indistinguishable from a creation. The
   gate's replay branch renders a previously-stored
   pair but passes `appended: true`
@@ -280,8 +289,15 @@ Off the critical path; each with its oracle.
   remediation design spec, second-commit paragraph
 - Stale-history comment cleanup as one pass — about 35
   code and 32 test comments describe a past state as
-  present; the enumeration is the run-four
-  remediation's Evidence
+  present. The run-four remediation's Evidence
+  (`docs/superpowers/specs/`
+  `2026-08-23-test-plan-run-four-remediation-design.md:911-932`)
+  lists provenance, not comments, and the reproductions
+  that might have were scratchpad, never committed —
+  the pass re-derives its enumeration by reading. The
+  seven "remove the comment at … when done" pointers
+  under `## Critical path` are that path's property,
+  not stale
 - Cryptographically verifiable ledger — brainstorm
   hash-and-verify (or sign) of stored pairs. The dropped
   `version` column hashed on write and was never checked
@@ -388,9 +404,9 @@ Off the critical path; each with its oracle.
     --no-zip` into a temp dir; today
     `tests/server-zip-metafile.test.ts` only regex-checks
     the build script's source text
-  - The mock-data reveal's 11 printed lines carry
+  - The mock-data reveal's 12 printed lines carry
     `demo@example.com` and `sarah.chen@company.com` by
-    name, not merely a count of 11 (A3) — Layer 1,
+    name, not merely a count of 12 (A3) — Layer 1,
     `tests/pg-seed.test.ts` `'mock-data seed prints every
     human sign-in'`; every `demo@example.com` assertion
     there sits on a `'bootstrap'` call or the synthetic
@@ -792,9 +808,10 @@ Off the critical path; each with its oracle.
   - The Organization edit form's prefill — the two inputs
     carrying the current Name and Domain as `value`
     attributes (G10) — Layer 1,
-    `tests/presenter-projects-organization.test.ts`;
-    nothing anywhere exercises `toGeneralInfoDraft`
-    (`web-app/app/adapters/admin.ts:58`)
+    `tests/presenter-projects-organization.test.ts`,
+    whose edit-form test already calls
+    `toGeneralInfoDraft` (`web-app/app/adapters/admin.ts:58`)
+    and asserts no `value=`
   - The sidebar member chip's click-to-profile navigation
     (G12) — Layer 2; `web-app/app/sidebar-member.ts`
     carries no test, and the browser tests read the
@@ -1067,13 +1084,6 @@ Off the critical path; each with its oracle.
   TEST-PLAN case claims the feedback survives. Oracle: a
   Layer 1 test asserting the typed feedback reaches the
   transition
-- Undo at the stack bottom returns 201 — `api/derive-flows.ts`
-  computes `hasUndoHistory` as `pairs > 1`, so the first undo
-  past the bottom is accepted instead of refused. Named by
-  the 2026-08-29 three-layers audit; observed in the F
-  undo/redo cases. Oracle: a Layer 1 test in
-  `tests/flow-operations.test.ts` asserting the bottom-of-stack
-  undo is refused.
 - The first click after a page reload only focuses the window
   — the focusing click is the viewport center, never the
   top-left brand (that is the Apple menu when Chrome is
