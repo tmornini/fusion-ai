@@ -1,8 +1,11 @@
 import { assertStrictEquals } from '@std/assert';
-import { useBrowser, withAdminPage, type Page } from
-    './fixtures.ts';
-import { CANVAS, ONBOARDING, WRAP, openFlow } from
-    './canvas.ts';
+import {
+    stays, useBrowser, withAdminPage, type Page,
+} from './fixtures.ts';
+import {
+    CANVAS, ONBOARDING, WRAP, openFlow,
+    nodeIdNamed, nodeSelector,
+} from './canvas.ts';
 
 const browser = useBrowser();
 const AUTO_FIT = '#flow-auto-fit-switch';
@@ -10,6 +13,10 @@ const PAN_ON =
     `document.querySelector('${WRAP}')`
     + `.classList.contains('flow-pan-cursor')`;
 const AUTOFIT_TOAST = 'Disable Auto-Fit to change the view';
+const STAY_MS = 600;
+const PANEL_ABSENT =
+    `document.querySelector('.flow-props-panel')`
+    + ` === null`;
 
 async function focusCanvas(page: Page): Promise<void> {
     await page.evaluate(
@@ -58,3 +65,42 @@ async () => {
         await page.until(`!(${PAN_ON})`, 'pan cursor off');
     });
 });
+
+Deno.test(
+    'Space on a focused node toggles pan off'
+    + ' and does not open the panel (F12)',
+    async () => {
+        await withAdminPage(
+            browser.get(),
+            async (page, origin) => {
+                await openFlow(
+                    page, origin, ONBOARDING,
+                );
+                await page.click(AUTO_FIT);
+                await focusCanvas(page);
+                await page.key(' ');
+                await page.until(
+                    PAN_ON, 'pan cursor on',
+                );
+                const review = await nodeIdNamed(
+                    page, 'Review',
+                );
+                await page.evaluate(
+                    `document.querySelector(${
+                        JSON.stringify(
+                            nodeSelector(review),
+                        )
+                    }).focus()`,
+                );
+                await page.key(' ');
+                await page.until(
+                    `!(${PAN_ON})`,
+                    'pan cursor off',
+                );
+                await stays(
+                    page, PANEL_ABSENT, STAY_MS,
+                );
+            },
+        );
+    },
+);

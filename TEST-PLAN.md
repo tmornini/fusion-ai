@@ -2479,6 +2479,9 @@ opens and renders.)
        (decides that the pan tracks the selected node —
        moving the node 100 to the right moves the viewBox
        origin by 100 — and that no selection means no pan);
+       tests/browser/canvas-pan.test.ts
+       'Space on a focused node toggles pan off
+       and does not open the panel (F12)';
        exploratory — the ~200 ms slide and the
        panel-aware half of the re-centre. This case turns
        Auto Fit OFF, and `reconcileFitFromDom` — the only
