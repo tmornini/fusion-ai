@@ -237,6 +237,12 @@ not repeat the note in every case.
   'chip toggles persist on save and reload (AA9)'
   decides the save. If the chips do not toggle,
   record BLOCKED naming that. Do not FAIL.
+- WB11: create or open an unbound Data Capture WO,
+  bind, fill, submit. Layer 2 pin
+  tests/browser/workbox-transition.test.ts
+  'bind, fill, and submit navigates to the inbox
+  (WB11)' decides the inbox navigation. If bind
+  cannot be driven, record BLOCKED. Do not FAIL.
 
 ### Scoring
 
@@ -4176,8 +4182,14 @@ gesture pans instead of dragging, marquee-ing, or connecting.
   Pin: tests/api-work-order-transition-instance.test.ts
        'value-bearing fresh If-Match → 204; head advances'
        (its own assertion checks `res.status === 201`,
-       despite the test's stale name); exploratory — the
-       live form fill and the navigation back to the inbox
+       despite the test's stale name);
+       tests/browser/workbox-transition.test.ts
+       'bind, fill, and submit navigates to the inbox
+       (WB11)' (decides bind → fill Company Name and
+       Contact Email → submit lands on
+       `/workbox/index.html` with the Transition
+       complete toast);
+       exploratory — the live keystroke fill
 - [ ] **WB16** Read the network log across WB11's bind
   and transition (never `js()` fetch — the bearer is
   memory-only, per the explorer prompt). Snapshot
